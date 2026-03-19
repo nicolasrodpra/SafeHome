@@ -1,26 +1,22 @@
 const admin = require("firebase-admin");
 
-const db = admin.firestore();
-
 exports.registerUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "email y password son requeridos" });
+    const { email, password, name } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: "Faltan campos requeridos" });
     }
+    // Firebase Admin crea el usuario con contraseña hasheada internamente
+    const user = await admin.auth().createUser({ email, password, displayName: name });
 
-    const newUser = {
-      email,
-      password,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
+    // Guarda solo datos no sensibles en Firestore
+    await admin.firestore()
+      .collection("users")
+      .doc(user.uid)
+      .set({ nombre: name, correo: email, rol: "Vigilante", creadoEn: admin.firestore.FieldValue.serverTimestamp() });
 
-    const userRef = await db.collection("users").add(newUser);
-
-    return res.status(201).json({ id: userRef.id, message: "Usuario creado correctamente" });
+    return res.status(201).json({ uid: user.uid, message: "Usuario creado" });
   } catch (error) {
-    console.error("Error en registerUser:", error);
-    return res.status(500).json({ message: "Error interno del servidor", error: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };

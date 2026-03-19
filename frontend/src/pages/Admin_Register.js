@@ -1,107 +1,84 @@
-import "../styles/Register.css";
-import illustration from "../assets/REgistro.png";
+import "../styles/Admin_Register.css";
+import illustration from "../assets/Admin.png";
 import { useState } from "react";
-// Firebase
+import { Link } from "react-router-dom";
 import { auth, db } from "../FireBase/firebase";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
 
-export default function Register() {
-  const [name, setName]                       = useState("");
+export default function Resident_Register() {
   const [email, setEmail]                     = useState("");
   const [password, setPassword]               = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
- 
+
   const handleRegister = async (e) => {
     e.preventDefault();
- 
-    const rol = "Vigilante";
- 
-    // Validar campos vacíos
-    if (!email || !name || !password) {
-      Swal.fire({
-        title: "Error",
-        text: "Complete todos los campos requeridos",
-        confirmButtonColor: "#460669",
-        icon: "error",
-      });
+
+    if (!email || !password || !confirmPassword) {
+      Swal.fire({ title: "Error", text: "Complete todos los campos", confirmButtonColor: "#460669", icon: "error" });
       return;
     }
- 
-    // Validar contraseñas
+
     if (password !== confirmPassword) {
-      Swal.fire({
-        title: "Error",
-        text: "Las contraseñas no coinciden",
-        confirmButtonColor: "#460669",
-        icon: "error",
-      });
+      Swal.fire({ title: "Error", text: "Las contraseñas no coinciden", confirmButtonColor: "#460669", icon: "error" });
       return;
     }
- 
+
+    if (password.length < 6) {
+      Swal.fire({ title: "Error", text: "La contraseña debe tener al menos 6 caracteres", confirmButtonColor: "#460669", icon: "error" });
+      return;
+    }
+
     try {
-      // Crear usuario en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
- 
-      // Enviar correo de verificación
+
       await sendEmailVerification(auth.currentUser);
- 
-      // Guardar datos en Firestore
-      await addDoc(collection(db, "Users", "User_id", "Private_Data"), {
-        Nombre: name,
-        Correo: email,
-        Id: user.uid,
-        Rol: rol,
+
+      await setDoc(doc(db, "users", user.uid), {
+        correo: email,
+        rol: "Administrador",
+        creadoEn: serverTimestamp(),
       });
- 
-      // Éxito
+
       Swal.fire({
         position: "center",
         icon: "success",
-        title: "Se ha registrado con éxito, verifique el correo electrónico",
+        title: "Registrado con éxito, verifique su correo electrónico",
         showConfirmButton: false,
         timer: 3000,
       });
- 
-      // Limpiar formulario
-      setName("");
+
       setEmail("");
       setPassword("");
       setConfirmPassword("");
- 
+
     } catch (error) {
-      Swal.fire({
-        title: "Error",
-        text: error.message,
-        icon: "error",
-      });
+      let mensaje = error.message;
+      if (error.code === "auth/email-already-in-use") mensaje = "Este correo ya está registrado.";
+      else if (error.code === "auth/invalid-email")   mensaje = "El correo no tiene un formato válido.";
+      else if (error.code === "auth/weak-password")   mensaje = "La contraseña debe tener al menos 6 caracteres.";
+
+      Swal.fire({ title: "Error", text: mensaje, icon: "error", confirmButtonColor: "#460669" });
     }
   };
- 
 
   return (
     <div className="register-wrapper">
 
- 
       <div className="left-panel">
         <div className="circle"></div>
-        <img
-          className="illustration"
-          src={illustration}
-          alt="ilustración"
-        />
-        <button className="btn-back">
+        <img className="illustration" src={illustration} alt="ilustración" />
+        <Link to="/login" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
-        </button>
+        </Link>
       </div>
-
 
       <div className="right-panel">
         <div className="form-box">
           <p className="welcome">Bienvenido</p>
-          <h1 className="title">Regístrate</h1>
+          <h1 className="title">Registra un Administrador</h1>
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
@@ -133,7 +110,9 @@ export default function Register() {
             />
           </div>
 
-          <button className="btn-register">Registrar</button>
+          <link className="btn-register" onClick={handleRegister}>
+            Registrar
+          </link>
         </div>
       </div>
 

@@ -42,7 +42,7 @@
 
 .illustration {
   position: absolute;
-  width: 70vw;
+  width: 60vw;
   max-width: none;
   top: 50%;
   left: 50%;
@@ -55,8 +55,8 @@
 .btn-back {
   position: absolute;
   bottom: 36px;
-  left: 40%;
-  transform: translateX(-50%);
+  left: 50%;
+  transform: translateX(-30%);
   border: 2px solid rgba(255, 255, 255, 0.85);
   color: #fff;
   background: transparent;
@@ -98,7 +98,7 @@
 }
 
 .form-box .title {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 600;
   color: #111;
   margin-bottom: 32px;
