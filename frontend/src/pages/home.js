@@ -1,5 +1,5 @@
 import "../styles/home.css";
-
+import { Link } from "react-router-dom";
 function Home() {
   return (
     <>
@@ -28,9 +28,9 @@ function Home() {
               desde una sola plataforma moderna, rápida y confiable
             </p>
 
-            <a href="/login" className="btn-primary">
+            <Link to="/login" className="btn-primary">
               Iniciar Sesión
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -275,3 +275,4 @@ function Home() {
 }
 
 export default Home;
+

@@ -1,7 +1,17 @@
-import Home from "./pages/Registro_Vehiculos";
-
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/home.js";
+import Login from "./pages/login.js";
+import Register from "./pages/Register.js"; 
 function App() {
-  return <Home />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;
