@@ -7,7 +7,10 @@ import AdminRegister from "./pages/Admin_Register";
 import RecidenteMenu from "./pages/Resident_Menu";
 import VigilantMenu from "./pages/Vigilant_Menu";
 import AdminMenu from "./pages/adminMenu.js";
+<<<<<<< HEAD
 import RegistroVehiculos from "./pages/Registro_Vehiculos.js";
+=======
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 
 function App() {
   return (
@@ -21,7 +24,10 @@ function App() {
         <Route path="/Resident_Menu" element={<RecidenteMenu />} />
         <Route path="/Vigilant_Menu" element={<VigilantMenu />} />
         <Route path="/Admin_Menu" element={<AdminMenu />} />
+<<<<<<< HEAD
         <Route path="/Registro_Vehiculos" element={<RegistroVehiculos />} />
+=======
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
       </Routes>
     </BrowserRouter>
   );

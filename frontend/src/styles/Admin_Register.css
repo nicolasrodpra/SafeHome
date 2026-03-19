@@ -12,10 +12,18 @@
   font-family: 'Poppins', sans-serif;
   display: flex;
   width: 100vw;
+<<<<<<< HEAD
   min-height: 100vh;
   overflow: visible;
 }
 
+=======
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ── */
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .left-panel {
   width: 52%;
   position: relative;
@@ -29,6 +37,7 @@
 
 .circle {
   position: absolute;
+<<<<<<< HEAD
   width: 150vh;
   height: 180vh;
   border-top-left-radius: 0%;
@@ -37,6 +46,15 @@
   border-bottom-right-radius: 50%;
   background: #460669;
   top: 50%;
+=======
+  width: 130vh;
+  height: 130vh;
+  border-radius: 50%;
+  background: #460669;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 }
 
 
@@ -75,6 +93,10 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+<<<<<<< HEAD
+=======
+/* ── RIGHT PANEL ── */
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .right-panel {
   width: 48%;
   background: #fff;
@@ -103,6 +125,10 @@
   margin-bottom: 32px;
 }
 
+<<<<<<< HEAD
+=======
+/* Inputs */
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .input-wrap {
   position: relative;
   margin-bottom: 18px;
@@ -141,6 +167,10 @@
   background: #fff;
 }
 
+<<<<<<< HEAD
+=======
+/* Botón Registrar */
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .btn-register {
   width: 100%;
   padding: 14px;

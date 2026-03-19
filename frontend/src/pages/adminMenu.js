@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import ilustracionMenu from "../assets/ilustracionMenu.png";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import { Link } from "react-router-dom";
@@ -160,3 +161,11 @@ function adminMenu() {
 }
 
 export default adminMenu;
+=======
+
+export default function AdminMenu() {
+  return (
+  <p className="welcome">Bienvenido Administrador</p>
+  );
+}
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7

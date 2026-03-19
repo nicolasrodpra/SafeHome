@@ -1,6 +1,9 @@
 import "../styles/home.css";
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 import { Link } from "react-router-dom";
 function Home() {
   return (
@@ -246,6 +249,7 @@ function Home() {
             </p>
           </div>
 
+<<<<<<< HEAD
           <div className="servicio-item">
             <i className="ph-thin ph-suitcase-simple svc-icon-bare"></i>
             <h4>Panel Administrativo</h4>
@@ -262,6 +266,8 @@ function Home() {
             </p>
           </div>
 
+=======
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
         </div>
 
       </section>

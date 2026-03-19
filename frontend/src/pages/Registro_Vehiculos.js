@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import {
   collection,
@@ -11,6 +12,11 @@ import {
 import { db } from "../FireBase/firebase";
 import "../styles/Registro_Vehiculos.css";
 
+=======
+import { useState } from "react";
+import "../styles/Registro_Vehiculos.css";
+// ── Icons ────────────────────────────────────────────────────────────────────
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 const PQRIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
@@ -84,6 +90,7 @@ const EditIcon = () => (
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
+<<<<<<< HEAD
 const CloseIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 6L6 18M6 6l12 12" />
@@ -412,6 +419,118 @@ export default function VehicleEntry() {
                 ) : (
                   vehicles.map((v) => (
                     <tr key={v.id}>
+=======
+
+const initialVehicles = [
+  { id: 1, propietario: "Luis Stiven Pan", documento: "1027665943", placa: "RFM354", telefono: "3456789213", fecha: "23/05/2026",},
+  { id: 2, propietario: "Luis Stiven Pan", documento: "1027665943", placa: "RFM354", telefono: "3456789213", fecha: "23/05/2026",},
+  { id: 3, propietario: "Luis Stiven Pan", documento: "1027665943", placa: "RFM354", telefono: "3456789213", fecha: "23/05/2026", },
+  { id: 3, propietario: "Luis Stiven Pan", documento: "1027665943", placa: "RFM354", telefono: "3456789213", fecha: "23/05/2026",},
+  { id: 3, propietario: "Luis Stiven Pan", documento: "1027665943", placa: "RFM354", telefono: "3456789213", fecha: "23/05/2026",},
+  { id: 3, propietario: "Luis Stiven Pan", documento: "1027665943", placa: "RFM354", telefono: "3456789213", fecha: "23/05/2026",},
+  
+];
+
+const navItems = [
+  { label: "PQR", icon: <PQRIcon /> },
+  { label: "Reservas", icon: <ReservasIcon /> },
+  { label: "Comunicados", icon: <ComunicadosIcon /> },
+  { label: "Manual de convivencia", icon: <ManualIcon /> },
+  { label: "Actualizar datos", icon: <ActualizarIcon /> },
+  { label: "Botón Panico", icon: <PanicIcon /> },
+];
+
+
+
+export default function VehicleEntry() {
+  const [vehicles] = useState(initialVehicles);
+  const [activeNav, setActiveNav] = useState(null);
+
+
+  return (
+    
+      <div className="app">
+        {/* ── Sidebar ── */}
+        <aside className="sidebar">
+          <div className="sidebar-logo">SafeHome</div>
+
+          <button className="create-btn">
+            <span>Crear<br />nuevo correo</span>
+            <span className="plus-circle"><PlusIcon /></span>
+          </button>
+
+          <ul className="nav-list">
+            {navItems.map((item) => (
+              <li
+                key={item.label}
+                className="nav-item"
+                onClick={() => setActiveNav(item.label)}
+                style={activeNav === item.label ? { background: "#f3e8ff", color: "#ff0000" } : {}}
+              >
+                {item.icon}
+                {item.label}
+              </li>
+            ))}
+          </ul>
+
+          {/* Illustration */}
+          <div className="sidebar-illustration">
+            <span className="q-mark">?</span>
+            <span className="figure" />
+          </div>
+
+          <div className="asistente-box">
+            <span className="asistente-label">Asistente<br />virtual</span>
+            <button className="iniciar-btn">Iniciar</button>
+          </div>
+        </aside>
+
+        {/* ── Main ── */}
+        <div className="main">
+          {/* Top bar */}
+          <header className="topbar">
+            <div className="topbar-left">
+              <div className="location">Abundara</div>
+              <div className="date">
+                Lunes, <span>2 Marzo 2026</span>
+              </div>
+            </div>
+            <div className="topbar-right">
+              <button className="icon-btn"><MailIcon /></button>
+              <button className="icon-btn"><BellIcon /></button>
+              <div className="user-avatar">NR</div>
+              <span className="user-name">
+                Nicolas Rodriguez <ChevronDown />
+              </span>
+            </div>
+          </header>
+
+          {/* Content */}
+          <main className="content">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Ingreso de Vehículos</h2>
+                <button className="register-btn">
+                  <span>Registrar nueva<br />correpondencia</span>
+                  <span className="plus-sq"><PlusIcon /></span>
+                </button>
+              </div>
+
+              <table className="vehicle-table">
+                <thead>
+                  <tr>
+                    <th>Propietario</th>
+                    <th>Documento</th>
+                    <th>Placa</th>
+                    <th>Telefono</th>
+                    <th>Fecha de ingreso</th>
+                    <th>Accion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vehicles.map((v) => (
+                    <tr key={v.id} className={v.highlighted ? "highlighted" : ""}>
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
                       <td>{v.propietario}</td>
                       <td>{v.documento}</td>
                       <td>{v.placa}</td>
@@ -421,22 +540,33 @@ export default function VehicleEntry() {
                         <div className="action-btns">
                           <button
                             className="action-icon-btn delete"
+<<<<<<< HEAD
                             title="Eliminar"
                             disabled={deletingId === v.id}
                             onClick={() => handleDelete(v)}
                           >
                             {deletingId === v.id ? "..." : <DeleteIcon />}
+=======
+                          
+                            title="Eliminar"
+                          >
+                            <DeleteIcon />
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
                           </button>
                           <button
                             className="action-icon-btn"
                             title="Editar"
+<<<<<<< HEAD
                             onClick={() => handleOpenEdit(v)}
+=======
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
                           >
                             <EditIcon />
                           </button>
                         </div>
                       </td>
                     </tr>
+<<<<<<< HEAD
                   ))
                 )}
               </tbody>
@@ -453,5 +583,15 @@ export default function VehicleEntry() {
         loading={loadingForm}
       />
     </div>
+=======
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </main>
+        </div>
+      </div>
+    
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
   );
 }

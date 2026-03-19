@@ -25,10 +25,13 @@ body {
     overflow-x: hidden;
 }
 
+<<<<<<< HEAD
 #root {
     min-height: 100vh;
 }
 
+=======
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .hero {
     display: grid;
     grid-template-columns: 1fr 0.48fr;
@@ -36,6 +39,10 @@ body {
     position: relative;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 nav {
     position: absolute;
     top: 0;
@@ -46,6 +53,10 @@ nav {
     align-items: center;
     padding: 0 48px;
     height: 64px;
+<<<<<<< HEAD
+=======
+    overflow: hidden;
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 }
 
 .nav-logo {
@@ -133,6 +144,10 @@ nav {
     border-radius: 0;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .hero-right::after {
     content: '';
     position: absolute;
@@ -145,6 +160,10 @@ nav {
     pointer-events: none;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .hero-img-wrapper {
     position: relative;
     width: 360px;
@@ -307,6 +326,10 @@ nav {
     margin: 0;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .section-heading {
     margin-bottom: 48px;
 }

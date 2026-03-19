@@ -36,6 +36,10 @@ export default function Login() {
 
       const rol = userDoc.data().rol;
 
+<<<<<<< HEAD
+=======
+      // 3. Redirigir según el rol
+>>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
       if (rol === "Vigilante") {
         navigate("/Vigilant_Menu");
       } else if (rol === "Administrador") {
