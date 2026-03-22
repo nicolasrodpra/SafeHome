@@ -1,22 +1,34 @@
 import ilustracionMenu from "../../assets/inicioHero.png";
 import asistenteVirtual from "../../assets/asistenteVirtual.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { cerrarSesion } from "../../services/authService";
 import '../../styles/admin/adminMenu.css';
 
-function adminMenu() {
+function AdminMenu() {
+
+  const navigate = useNavigate();
+  const fecha = new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  const fechaMayuscula = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+
+
   return (
     <div className="app">
 
       <aside className="sidebar">
         <div className="sidebar-logo">SafeHome</div>
 
-        <button className="btn-create">
-          <span>Crear nuevo comunicado</span>
-          <span className="plus">+</span>
-        </button>
-
         <ul className="nav-menu">
-          <li><a href="#" className="active"><i className="ph-light ph-megaphone"></i> Quejas</a></li>
+          <button className="btn-create">
+            <span>Crear nuevo <br />comunicado</span>
+            <span className="plus">+</span>
+          </button>
+
+          <li><a href="#"><i className="ph-light ph-megaphone"></i> Quejas</a></li>
           <li><a href="#"><i className="ph-light ph-calendar-blank"></i> Reservas</a></li>
           <li><a href="#"><i className="ph-light ph-megaphone"></i> Comunicados</a></li>
           <li><a href="#"><i className="ph-light ph-security-camera"></i> Vigilancia</a></li>
@@ -24,13 +36,13 @@ function adminMenu() {
           <li><a href="#"><i className="ph-light ph-book-bookmark"></i> Manual Convivencia</a></li>
           <li><a href="#"><i className="ph-light ph-pencil-simple"></i> Actualizar datos</a></li>
           <li><a href="#"><i className="ph-light ph-user-plus"></i> Registrar Usuario</a></li>
-        </ul>
 
-        <div className="sidebar-assistant">
-          <img src={asistenteVirtual} alt="asistenteVirtual" />
-          <p>Asistente<br />virtual</p>
-          <button className="btn-asst">Iniciar</button>
-        </div>
+          <div className="sidebar-assistant">
+            <img src={asistenteVirtual} alt="asistenteVirtual" />
+            <p>Asistente<br />Virtual</p>
+            <button className="btn-asst">Iniciar</button>
+          </div>
+        </ul>
       </aside>
 
       <div className="main">
@@ -38,11 +50,12 @@ function adminMenu() {
         <div className="topbar">
           <div className="topbar-left">
             <h2>Abundara</h2>
-            <span>Lunes, 2 Marzo 2026</span>
+            <span>{fechaMayuscula}</span>
           </div>
           <div className="topbar-right">
             <i className="ph-light ph-envelope-simple topbar-icon"></i>
             <i className="ph-light ph-bell topbar-icon"></i>
+            <i className="ph-light ph-sign-out topbar-icon" onClick={() => cerrarSesion(navigate)}></i>
             <div className="user-pill">
               <div className="user-avatar">NR</div>
               <span className="user-name">Nicolas Rodriguez</span>
@@ -58,7 +71,7 @@ function adminMenu() {
               <h1>Hola, <span>Nicolas</span></h1>
               <p>Optimiza procesos, mejora la seguridad<br />y fortalece la convivencia.</p>
             </div>
-        <img src={ilustracionMenu} alt="ilustracionMenu"/>
+            <img src={ilustracionMenu} alt="ilustracionMenu" />
           </div>
 
           <p className="section-label">Opciones</p>
@@ -140,7 +153,8 @@ function adminMenu() {
                 <i className="ph-light ph-arrow-right card-arrow"></i>
                 <i className="ph-light ph-pencil-simple card-icon"></i>
               </div>
-            </a>            
+            </a>
+
             <Link to="/registroResidente" className="option-card">
               <div className="card-top">
                 <h4>Registrar Usuario</h4>
@@ -159,4 +173,4 @@ function adminMenu() {
   );
 }
 
-export default adminMenu;
+export default AdminMenu;
