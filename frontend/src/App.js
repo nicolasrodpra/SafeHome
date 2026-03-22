@@ -1,16 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/home.js";
-import Login from "./pages/login.js";
-import VigilantRegister from "./pages/Vigilant_Register"; 
-import ResidentRegister from "./pages/Resident_Register";
-import AdminRegister from "./pages/Admin_Register";
-import RecidenteMenu from "./pages/Resident_Menu";
-import VigilantMenu from "./pages/Vigilant_Menu";
-import AdminMenu from "./pages/adminMenu.js";
-<<<<<<< HEAD
-import RegistroVehiculos from "./pages/Registro_Vehiculos.js";
-=======
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
+import Home from "./pages/general/home.js";
+import Login from "./pages/general/login.js";
+import VigilantRegister from "./pages/vigilante/registroVigilante.js"; 
+import ResidentRegister from "./pages/residente/registroResidente.js";
+import AdminRegister from "./pages/admin/registroAdmin.js";
+import RecidenteMenu from "./pages/residente/residenteMenu.js";
+import VigilantMenu from "./pages/vigilante/vigilanteMenu.js";
+import AdminMenu from "./pages/admin/adminMenu.js";
+import RegistroVehiculos from "./pages/vigilante/registroVehiculos.js";
 
 function App() {
   return (
@@ -18,16 +15,13 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/VigilantRegister" element={<VigilantRegister />} />
-        <Route path="/ResidentRegister" element={<ResidentRegister />} />
-        <Route path="/AdminRegister" element={<AdminRegister />} />
-        <Route path="/Resident_Menu" element={<RecidenteMenu />} />
-        <Route path="/Vigilant_Menu" element={<VigilantMenu />} />
-        <Route path="/Admin_Menu" element={<AdminMenu />} />
-<<<<<<< HEAD
-        <Route path="/Registro_Vehiculos" element={<RegistroVehiculos />} />
-=======
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
+        <Route path="/registroVigilante" element={<VigilantRegister />} />
+        <Route path="/registroResidente" element={<ResidentRegister />} />
+        <Route path="/registroAdmin" element={<AdminRegister />} />
+        <Route path="/residenteMenu" element={<RecidenteMenu />} />
+        <Route path="/vigilanteMenu" element={<VigilantMenu />} />
+        <Route path="/adminMenu" element={<AdminMenu />} />
+        <Route path="/registroVehiculos" element={<RegistroVehiculos />} />
       </Routes>
     </BrowserRouter>
   );

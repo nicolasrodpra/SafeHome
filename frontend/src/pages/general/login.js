@@ -1,10 +1,10 @@
-import "../styles/login.css";
-import illustration from "../assets/Login.png";
+import "../../styles/general/login.css";
+import illustration from "../../assets/login.png";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../FireBase/firebase";
+import { auth, db } from "../../firebase/firebase";
 import Swal from "sweetalert2";
 
 export default function Login() {
@@ -36,16 +36,12 @@ export default function Login() {
 
       const rol = userDoc.data().rol;
 
-<<<<<<< HEAD
-=======
-      // 3. Redirigir según el rol
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
       if (rol === "Vigilante") {
-        navigate("/Vigilant_Menu");
+        navigate("/vigilanteMenu");
       } else if (rol === "Administrador") {
-        navigate("/Admin_Menu");
+        navigate("/adminMenu");
       } else if (rol === "Residente") {
-        navigate("/Residente_Menu");
+        navigate("/residenteMenu");
       } else {
         Swal.fire({ title: "Error", text: "Rol no reconocido.", icon: "error", confirmButtonColor: "#460669" });
       }

@@ -16,22 +16,22 @@
 
 html {
     scroll-behavior: smooth;
+
 }
 
 body {
     font-family: 'Poppins', sans-serif;
     background: var(--bg);
     color: #333;
-    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: scroll !important;
 }
 
-<<<<<<< HEAD
 #root {
     min-height: 100vh;
 }
 
-=======
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
+
 .hero {
     display: grid;
     grid-template-columns: 1fr 0.48fr;
@@ -39,10 +39,6 @@ body {
     position: relative;
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 nav {
     position: absolute;
     top: 0;
@@ -53,10 +49,6 @@ nav {
     align-items: center;
     padding: 0 48px;
     height: 64px;
-<<<<<<< HEAD
-=======
-    overflow: hidden;
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 }
 
 .nav-logo {
@@ -141,13 +133,8 @@ nav {
     position: relative;
     overflow: hidden;
     margin: 0 28px 0 20px;
-    border-radius: 0;
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .hero-right::after {
     content: '';
     position: absolute;
@@ -160,10 +147,6 @@ nav {
     pointer-events: none;
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .hero-img-wrapper {
     position: relative;
     width: 360px;
@@ -193,6 +176,7 @@ nav {
     position: relative;
     z-index: 1;
 }
+
 
 .features {
     padding: 60px 60px 70px;
@@ -240,6 +224,7 @@ nav {
     color: var(--gray-text);
     line-height: 1.72;
 }
+
 
 .roles {
     padding: 90px 60px;
@@ -326,10 +311,7 @@ nav {
     margin: 0;
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .section-heading {
     margin-bottom: 48px;
 }
@@ -353,6 +335,7 @@ nav {
     width: 200px;
     margin: 0 auto;
 }
+
 
 .nosotros {
     padding: 80px 60px;
@@ -387,6 +370,7 @@ nav {
     color: var(--gray-text);
     line-height: 1.8;
 }
+
 
 .servicios {
     padding: 80px 60px;
@@ -434,6 +418,7 @@ nav {
     color: var(--gray-text);
     line-height: 1.65;
 }
+
 
 footer {
     background: var(--purple);
@@ -491,4 +476,213 @@ footer {
     font-size: 0.9rem;
     width: 16px;
     text-align: center;
+}
+
+
+
+@media (max-width: 1024px) {
+
+    nav {
+        width: 100%;
+        padding: 0 28px;
+    }
+
+    .nav-logo {
+        font-size: 1.5rem;
+        margin-right: 24px;
+    }
+
+    .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .hero-right {
+        display: none;
+    }
+
+    .hero-left {
+        padding: 120px 40px 60px;
+        min-height: 80vh;
+    }
+
+    .hero-text h1 {
+        font-size: 2.4rem;
+    }
+
+    .features {
+        padding: 60px 40px 70px;
+    }
+
+    .features-grid {
+        grid-template-columns: repeat(2, minmax(0, 300px));
+    }
+
+    .roles {
+        padding: 70px 40px;
+    }
+
+    .roles-inner {
+        grid-template-columns: 1fr;
+        gap: 48px;
+    }
+
+    .roles-text {
+        padding-right: 0;
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding-bottom: 40px;
+        text-align: center;
+    }
+
+    .roles-text h2 {
+        font-size: 2.2rem;
+    }
+
+    .roles-cards-wrap {
+        padding-left: 0;
+    }
+
+    .nosotros {
+        padding: 70px 40px;
+    }
+
+    .nosotros-box {
+        grid-template-columns: 1fr;
+    }
+
+    .nosotros-col {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .nosotros-col:last-child {
+        border-bottom: none;
+    }
+
+    .nosotros-col h3 {
+        font-size: 1.5rem;
+    }
+
+    .servicios {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding: 70px 40px;
+    }
+
+    .servicios-title h2 {
+        font-size: 3rem;
+    }
+
+    .servicios-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding-right: 0;
+    }
+
+    footer {
+        gap: 60px;
+        padding: 44px 40px;
+    }
+}
+
+
+
+@media (max-width: 640px) {
+
+    nav {
+        padding: 0 20px;
+        height: 56px;
+        justify-content: space-between;
+    }
+
+    .nav-logo {
+        font-size: 1.3rem;
+        margin-right: 0;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .hero-left {
+        padding: 90px 24px 48px;
+        min-height: 90vh;
+    }
+
+    .hero-text h1 {
+        font-size: 1.9rem;
+        line-height: 1.2;
+    }
+
+    .hero-text p {
+        font-size: 0.85rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        text-align: center;
+        padding: 14px;
+    }
+
+    .features {
+        padding: 50px 24px 60px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .section-heading h2 {
+        font-size: 1.8rem;
+    }
+
+    .roles {
+        padding: 56px 24px;
+    }
+
+    .roles-text h2 {
+        font-size: 1.9rem;
+    }
+
+    .roles-cards {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .nosotros {
+        padding: 56px 24px;
+    }
+
+    .nosotros-col h3 {
+        font-size: 1.3rem;
+    }
+
+    .servicios {
+        padding: 56px 24px;
+        gap: 32px;
+    }
+
+    .servicios-title h2 {
+        font-size: 2.4rem;
+    }
+
+    .servicios-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    footer {
+        flex-direction: column;
+        gap: 36px;
+        padding: 44px 24px;
+        text-align: center;
+    }
+
+    .footer-contact ul {
+        align-items: center;
+    }
+
+    .footer-brand .logo-text {
+        font-size: 2rem;
+    }
 }

@@ -1,8 +1,7 @@
-<<<<<<< HEAD
-import ilustracionMenu from "../assets/ilustracionMenu.png";
-import asistenteVirtual from "../assets/asistenteVirtual.png";
+import ilustracionMenu from "../../assets/inicioHero.png";
+import asistenteVirtual from "../../assets/asistenteVirtual.png";
 import { Link } from "react-router-dom";
-import '../styles/adminMenu.css';
+import '../../styles/admin/adminMenu.css';
 
 function adminMenu() {
   return (
@@ -99,7 +98,7 @@ function adminMenu() {
               </div>
             </a>
 
-            <Link to="/Registro_Vehiculos" className="option-card">
+            <Link to="/registroVehiculos" className="option-card">
               <div className="card-top">
                 <h4>Vigilancia</h4>
                 <p>Supervisa novedades de seguridad y registra eventos relevantes.</p>
@@ -142,7 +141,7 @@ function adminMenu() {
                 <i className="ph-light ph-pencil-simple card-icon"></i>
               </div>
             </a>            
-            <Link to="/ResidentRegister" className="option-card">
+            <Link to="/registroResidente" className="option-card">
               <div className="card-top">
                 <h4>Registrar Usuario</h4>
                 <p>Crea nuevos usuarios y asigna sus datos de acceso al sistema.</p>
@@ -161,11 +160,3 @@ function adminMenu() {
 }
 
 export default adminMenu;
-=======
-
-export default function AdminMenu() {
-  return (
-  <p className="welcome">Bienvenido Administrador</p>
-  );
-}
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7

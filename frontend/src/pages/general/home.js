@@ -1,14 +1,8 @@
-import "../styles/home.css";
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
+import "../../styles/general/home.css";
 import { Link } from "react-router-dom";
 function Home() {
   return (
     <>
-
       <section className="hero">
 
         <nav>
@@ -249,7 +243,6 @@ function Home() {
             </p>
           </div>
 
-<<<<<<< HEAD
           <div className="servicio-item">
             <i className="ph-thin ph-suitcase-simple svc-icon-bare"></i>
             <h4>Panel Administrativo</h4>
@@ -266,8 +259,6 @@ function Home() {
             </p>
           </div>
 
-=======
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
         </div>
 
       </section>
@@ -297,6 +288,5 @@ function Home() {
     </>
   );
 }
-
 export default Home;
 

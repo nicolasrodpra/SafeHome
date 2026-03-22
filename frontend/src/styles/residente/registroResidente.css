@@ -12,7 +12,7 @@
   font-family: 'Poppins', sans-serif;
   display: flex;
   width: 100vw;
-<<<<<<< HEAD
+
   min-height: 100vh;
   overflow: visible;
   background: white;
@@ -23,18 +23,17 @@
   position: relative;
   overflow: hidden;
   background: white;
-=======
+
   height: 100vh;
   overflow: hidden;
 }
 
-/* ── LEFT PANEL ── */
 .left-panel {
   width: 52%;
   position: relative;
   overflow: hidden;
   background: transparent;
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,7 +42,6 @@
 
 .circle {
   position: absolute;
-<<<<<<< HEAD
   width: 150vh;
   height: 180vh;
   border-top-left-radius: 0%;
@@ -52,7 +50,6 @@
   border-bottom-right-radius: 50%;
   background: #460669;
   top: 50%;
-=======
   width: 130vh;
   height: 130vh;
   border-radius: 50%;
@@ -60,7 +57,6 @@
   top: 50%;
   right: 0;
   transform: translateY(-50%);
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 }
 
 
@@ -69,11 +65,7 @@
   width: 50vw;
   max-width: none;
   top: 50%;
-<<<<<<< HEAD
   left: 49%;
-=======
-  left: 50%;
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
   transform: translate(-46%, -50%);
   mix-blend-mode: lighten;
   z-index: 1;
@@ -103,10 +95,6 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-<<<<<<< HEAD
-=======
-/* ── RIGHT PANEL ── */
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .right-panel {
   width: 48%;
   background: #fff;
@@ -135,10 +123,6 @@
   margin-bottom: 32px;
 }
 
-<<<<<<< HEAD
-=======
-/* Inputs */
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .input-wrap {
   position: relative;
   margin-bottom: 18px;
@@ -177,10 +161,6 @@
   background: #fff;
 }
 
-<<<<<<< HEAD
-=======
-/* Botón Registrar */
->>>>>>> 6de13a85a39d75d6608f5df00186ce93d4b015f7
 .btn-register {
   width: 100%;
   padding: 14px;

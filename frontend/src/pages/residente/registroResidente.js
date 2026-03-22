@@ -1,8 +1,8 @@
-import "../styles/Resident_Register.css";
-import illustration from "../assets/Resident_regi.png";
+import "../../styles/residente/registroResidente.css";
+import illustration from "../../assets/residenteRegistro.png";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { auth, db } from "../FireBase/firebase";
+import { auth, db } from "../../firebase/firebase";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
