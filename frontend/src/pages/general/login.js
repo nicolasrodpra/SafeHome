@@ -1,5 +1,5 @@
 import "../../styles/general/login.css";
-import illustration from "../../assets/login.png";
+import illustration from "../../assets/Login.png";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
