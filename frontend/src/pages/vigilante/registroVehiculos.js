@@ -8,7 +8,7 @@ import {
   doc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../../firebase/firebase";
+import { db } from "../../FireBase/firebase";
 import "../../styles/vigilante/registroVehiculos.css";
 
 const PQRIcon = () => (

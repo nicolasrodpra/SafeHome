@@ -2,7 +2,7 @@ import "../../styles/vigilante/registroVigilante.css";
 import illustration from "../../assets/registroVigilante.png";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { auth, db } from "../../firebase/firebase";
+import { auth, db } from "../../FireBase/firebase";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";

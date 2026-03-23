@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../../firebase/firebase";
+import { auth, db } from "../../FireBase/firebase";
 import Swal from "sweetalert2";
 
 export default function Login() {
