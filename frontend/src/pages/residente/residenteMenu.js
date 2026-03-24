@@ -4,3 +4,4 @@ export default function ResidentMenu() {
   <p className="welcome">Bienvenido Residente</p>
   );
 }
+

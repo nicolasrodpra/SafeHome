@@ -4,3 +4,4 @@ export default function VigilantMenu() {
   <p className="welcome">Bienvenido Vigilante</p>
   );
 }
+

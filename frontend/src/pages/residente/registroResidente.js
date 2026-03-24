@@ -2,7 +2,7 @@ import "../../styles/residente/registroResidente.css";
 import illustration from "../../assets/residenteRegistro.png";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { auth, db } from "../../FireBase/firebase";
+import { auth, db } from "../../firebase/firebase";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
@@ -70,7 +70,7 @@ export default function Resident_Register() {
       <div className="left-panel">
         <div className="circle"></div>
         <img className="illustration" src={illustration} alt="ilustración" />
-        <Link to="/login" className="btn-back">
+        <Link to="/adminMenu" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
         </Link>
       </div>

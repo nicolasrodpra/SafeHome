@@ -2,10 +2,10 @@
 import { initializeApp } from "firebase/app";
 import { getAuth }       from "firebase/auth";
 import { getFirestore }  from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
+// TODO: Add SDKs for firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
+// Your web app's firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyADGzP6nVEo6VVEzIfmNvYXpL1jSdg6jvA",
   authDomain: "safehome-92f39.firebaseapp.com",
@@ -15,7 +15,8 @@ const firebaseConfig = {
   appId: "1:772417643036:web:e8d63daaba3ab0430a75d9"
 };
 
-// Initialize Firebase
+// Initialize firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
+

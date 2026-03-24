@@ -8,7 +8,7 @@ import {
   doc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../../FireBase/firebase";
+import { db } from "../../firebase/firebase";
 import "../../styles/vigilante/registroVehiculos.css";
 
 const PQRIcon = () => (
@@ -90,10 +90,9 @@ const CloseIcon = () => (
   </svg>
 );
 const CarIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="7" width="20" height="14" rx="2" />
-    <path d="M16 3h-8l-2 4h12l-2-4z" />
-  </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m20.77 9.16l-1.37-4.1a2.99 2.99 0 0 0-2.85-2.05H7.44a3 3 0 0 0-2.85 2.05l-1.37 4.1c-.72.3-1.23 1.02-1.23 1.84v5a2 2 0 0 0 1 1.72V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-2h12v2c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-2.28a2 2 0 0 0 1-1.72v-5c0-.83-.51-1.54-1.23-1.84ZM19 13.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5s1.5.67 1.5 1.5m-11 0c0 .83-.67 1.5-1.5 1.5S5 14.33 5 13.5S5.67 12 6.5 12s1.5.67 1.5 1.5M20 11v5zM7.44 5h9.12a1 1 0 0 1 .95.68L18.62 9H5.39L6.5 5.68A1 1 0 0 1 7.45 5Z"/></svg>);
+const MotoIcon = () => (
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="currentColor" d="M216 120a41 41 0 0 0-6.6.55l-5.82-15.14A55.6 55.6 0 0 1 216 104a8 8 0 0 0 0-16h-19.12l-13.41-34.87A8 8 0 0 0 176 48h-32a8 8 0 0 0 0 16h26.51l9.23 24H152c-18.5 0-33.5 4.31-43.37 12.46a16 16 0 0 1-16.76 2.07c-10.58-4.81-73.29-30.12-73.8-30.26a8 8 0 0 0-5 15.19s55.5 21.94 66.53 32.94A55.67 55.67 0 0 1 95.43 152H79.2a40 40 0 1 0 0 16h52.12a31.91 31.91 0 0 0 30.74-23.1a56 56 0 0 1 26.59-33.72l5.82 15.13A40 40 0 1 0 216 120M40 168h22.62a24 24 0 1 1 0-16H40a8 8 0 0 0 0 16m176 16a24 24 0 0 1-15.58-42.23l8.11 21.1a8 8 0 1 0 14.94-5.74L215.35 136h.65a24 24 0 0 1 0 48"/></svg>
 );
 
 const EMPTY_FORM = {
@@ -101,6 +100,9 @@ const EMPTY_FORM = {
   documento: "",
   placa: "",
   telefono: "",
+  torre: "",
+  apartamento: "",
+  tipo: "",
 };
 
 const navItems = [
@@ -123,6 +125,9 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
         documento: editingVehicle.documento,
         placa: editingVehicle.placa,
         telefono: editingVehicle.telefono,
+        torre: editingVehicle.torre,
+        apartamento: editingVehicle.apartamento,
+        tipo: editingVehicle.tipo,
       });
     } else {
       setForm(EMPTY_FORM);
@@ -136,6 +141,9 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
     if (!form.documento.trim()) e.documento = "Requerido";
     if (!form.placa.trim()) e.placa = "Requerido";
     if (!form.telefono.trim()) e.telefono = "Requerido";
+    if (!form.torre.trim()) e.torre = "Requerido";
+    if (!form.apartamento.trim()) e.apartamento = "Requerido";
+    if (!form.tipo) e.tipo = "Requerido";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -211,7 +219,6 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             <div className="form-group">
               <label>Placa</label>
               <input
-                className="input-placa"
                 name="placa"
                 value={form.placa}
                 onChange={handleChange}
@@ -228,6 +235,42 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
                 placeholder="Número de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
+            </div>
+            <div className="form-group">
+              <label>Torre</label>
+              <input
+                name="torre"
+                value={form.torre}
+                onChange={handleChange}
+                placeholder="Torre"
+              />
+              {errors.torre && <span className="field-error">{errors.torre}</span>}
+            </div>
+            <div className="form-group">
+              <label>Apartamento</label>
+              <input
+                name="apartamento"
+                value={form.apartamento}
+                onChange={handleChange}
+                placeholder="Apartamento"
+              />
+              {errors.apartamento && <span className="field-error">{errors.apartamento}</span>}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Tipo de vehículo</label>
+              <select
+                name="tipo"
+                value={form.tipo}
+                onChange={handleChange}
+              >
+                <option value="">Seleccionar...</option>
+                <option value="Carro">Carro</option>
+                <option value="Moto">Moto</option>
+              </select>
+              {errors.tipo && <span className="field-error">{errors.tipo}</span>}
             </div>
           </div>
 
@@ -246,7 +289,6 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
 export default function VehicleEntry() {
   const [vehicles, setVehicles] = useState([]);
   const [activeNav, setActiveNav] = useState(null);
@@ -254,6 +296,9 @@ export default function VehicleEntry() {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+
+  const totalCarros = vehicles.filter((v) => v.tipo === "Carro").length;
+  const totalMotos = vehicles.filter((v) => v.tipo === "Moto").length;
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -265,6 +310,12 @@ export default function VehicleEntry() {
           fecha: d.data().fecha?.toDate
             ? d.data().fecha.toDate().toLocaleDateString("es-CO")
             : d.data().fecha ?? "",
+          hora: d.data().fecha?.toDate
+            ? d.data().fecha.toDate().toLocaleTimeString("es-CO", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "",
         }));
         setVehicles(data);
       },
@@ -331,7 +382,6 @@ export default function VehicleEntry() {
 
   return (
     <div className="app">
-      {/* ── Sidebar ── */}
       <aside className="sidebar">
         <div className="sidebar-logo">SafeHome</div>
 
@@ -354,18 +404,12 @@ export default function VehicleEntry() {
           ))}
         </ul>
 
-        <div className="sidebar-illustration">
-          <span className="q-mark">?</span>
-          <span className="figure" />
-        </div>
-
         <div className="asistente-box">
           <span className="asistente-label">Asistente<br />virtual</span>
           <button className="iniciar-btn">Iniciar</button>
         </div>
       </aside>
 
-      {/* ── Main ── */}
       <div className="main">
         <header className="topbar">
           <div className="topbar-left">
@@ -386,38 +430,70 @@ export default function VehicleEntry() {
           <div className="card">
             <div className="card-header">
               <h2 className="card-title">Ingreso de Vehículos</h2>
+              <div className="vehicle-counters">
+              <div className="counter-card">
+                <div className="counter-icon car">
+                  <CarIcon />
+                </div>
+                <div className="counter-info">
+                  <span className="counter-number">{totalCarros}</span>
+                </div>
+              </div>
+              <div className="counter-card">
+                <div className="counter-icon moto">
+                  <MotoIcon />
+                </div>
+                <div className="counter-info">
+                  <span className="counter-number">{totalMotos}</span>
+                </div>
+              </div>
+            </div>
               <button className="register-btn" onClick={handleOpenCreate}>
                 <span>Registrar nuevo<br />vehículo</span>
                 <span className="plus-sq"><PlusIcon /></span>
               </button>
             </div>
 
+
             <table className="vehicle-table">
               <thead>
                 <tr>
+                  <th>Tipo</th>
                   <th>Propietario</th>
                   <th>Documento</th>
                   <th>Placa</th>
                   <th>Teléfono</th>
-                  <th>Fecha de ingreso</th>
+                  <th>Torre</th>
+                  <th>Apartamento</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
                   <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {vehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
+                    <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
                       No hay vehículos registrados
                     </td>
                   </tr>
                 ) : (
                   vehicles.map((v) => (
                     <tr key={v.id}>
+                      {/* Icono según tipo */}
+                      <td>
+                        <div className={`tipo-icon ${v.tipo === "Moto" ? "moto" : "car"}`}>
+                          {v.tipo === "Moto" ? <MotoIcon /> : <CarIcon />}
+                        </div>
+                      </td>
                       <td>{v.propietario}</td>
                       <td>{v.documento}</td>
                       <td>{v.placa}</td>
                       <td>{v.telefono}</td>
+                      <td>{v.torre}</td>
+                      <td>{v.apartamento}</td>
                       <td>{v.fecha}</td>
+                      <td>{v.hora}</td>
                       <td>
                         <div className="action-btns">
                           <button

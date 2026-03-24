@@ -1,5 +1,5 @@
 import { signOut } from "firebase/auth";
-import { auth } from "../FireBase/firebase";
+import { auth } from "../firebase/firebase";
 import Swal from "sweetalert2";
 
 export const cerrarSesion = async (navigate) => {
