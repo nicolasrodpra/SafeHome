@@ -2,9 +2,6 @@ import "../../styles/general/login.css";
 import illustration from "../../assets/Login.png";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../../FireBase/firebase";
 import Swal from "sweetalert2";
 
 export default function Login() {
@@ -15,51 +12,28 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      Swal.fire({ title: "Error", text: "Completa todos los campos", icon: "error", confirmButtonColor: "#460669" });
-      return;
-    }
-
     try {
+      const res = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const data = await res.json();
 
-      
+      if (!res.ok) throw { message: data.mensaje };
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-
-      if (!userDoc.exists()) {
-        Swal.fire({ title: "Error", text: "No se encontró información del usuario.", icon: "error", confirmButtonColor: "#460669" });
-        return;
-      }
-
-      const rol = userDoc.data().rol;
-
-      if (rol === "Vigilante") {
-        navigate("/vigilanteMenu");
-      } else if (rol === "Administrador") {
-        navigate("/adminMenu");
-      } else if (rol === "Residente") {
-        navigate("/residenteMenu");
-      } else {
-        Swal.fire({ title: "Error", text: "Rol no reconocido.", icon: "error", confirmButtonColor: "#460669" });
-      }
+      if (data.rol === "Vigilante")        navigate("/vigilanteMenu");
+      else if (data.rol === "Administrador") navigate("/adminMenu");
+      else if (data.rol === "Residente")   navigate("/residenteMenu");
 
     } catch (error) {
-      let mensaje = error.message;
-      if (error.code === "auth/invalid-credential")     mensaje = "Correo o contraseña incorrectos.";
-      else if (error.code === "auth/user-not-found")    mensaje = "No existe una cuenta con este correo.";
-      else if (error.code === "auth/wrong-password")    mensaje = "Contraseña incorrecta.";
-      else if (error.code === "auth/too-many-requests") mensaje = "Demasiados intentos. Intenta más tarde.";
-
-      Swal.fire({ title: "Error", text: mensaje, icon: "error", confirmButtonColor: "#460669" });
+      Swal.fire({ title: "Error", text: error.message, icon: "error", confirmButtonColor: "#460669" });
     }
   };
 
   return (
     <div className="register-wrapper">
-
       <div className="left-panel">
         <div className="circle"></div>
         <img className="illustration" src={illustration} alt="ilustración" />
@@ -75,31 +49,19 @@ export default function Login() {
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
-            <input
-              type="email"
-              placeholder="Correo"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
 
           <div className="input-wrap">
             <i className="bi bi-lock"></i>
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-
 
           <button className="btn-register" onClick={handleLogin}>
             Iniciar sesión
           </button>
         </div>
       </div>
-
     </div>
   );
 }

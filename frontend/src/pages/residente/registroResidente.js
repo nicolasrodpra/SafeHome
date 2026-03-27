@@ -2,9 +2,6 @@ import "../../styles/residente/registroResidente.css";
 import illustration from "../../assets/residenteRegistro.png";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { auth, db } from "../../FireBase/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
 
 export default function Resident_Register() {
@@ -15,37 +12,21 @@ export default function Resident_Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    if (!email || !password || !confirmPassword) {
-      Swal.fire({ title: "Error", text: "Complete todos los campos", confirmButtonColor: "#460669", icon: "error" });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Swal.fire({ title: "Error", text: "Las contraseñas no coinciden", confirmButtonColor: "#460669", icon: "error" });
-      return;
-    }
-
-    if (password.length < 6) {
-      Swal.fire({ title: "Error", text: "La contraseña debe tener al menos 6 caracteres", confirmButtonColor: "#460669", icon: "error" });
-      return;
-    }
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await sendEmailVerification(auth.currentUser);
-
-      await setDoc(doc(db, "users", user.uid), {
-        correo: email,
-        rol: "Residente",
-        creadoEn: serverTimestamp(),
+      const res = await fetch("http://localhost:5000/api/registrar-residente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, confirmPassword }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok) throw { message: data.mensaje };
 
       Swal.fire({
         position: "center",
         icon: "success",
-        title: "Registrado con éxito, verifique su correo electrónico",
+        title: data.mensaje,
         showConfirmButton: false,
         timer: 3000,
       });
@@ -55,18 +36,12 @@ export default function Resident_Register() {
       setConfirmPassword("");
 
     } catch (error) {
-      let mensaje = error.message;
-      if (error.code === "auth/email-already-in-use") mensaje = "Este correo ya está registrado.";
-      else if (error.code === "auth/invalid-email")   mensaje = "El correo no tiene un formato válido.";
-      else if (error.code === "auth/weak-password")   mensaje = "La contraseña debe tener al menos 6 caracteres.";
-
-      Swal.fire({ title: "Error", text: mensaje, icon: "error", confirmButtonColor: "#460669" });
+      Swal.fire({ title: "Error", text: error.message, icon: "error", confirmButtonColor: "#460669" });
     }
   };
 
   return (
     <div className="register-wrapper">
-
       <div className="left-panel">
         <div className="circle"></div>
         <img className="illustration" src={illustration} alt="ilustración" />
@@ -82,32 +57,17 @@ export default function Resident_Register() {
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
-            <input
-              type="email"
-              placeholder="Correo"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
 
           <div className="input-wrap">
             <i className="bi bi-lock"></i>
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
 
           <div className="input-wrap">
             <i className="bi bi-check-circle"></i>
-            <input
-              type="password"
-              placeholder="Confirma la contraseña"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+            <input type="password" placeholder="Confirma la contraseña" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>
 
           <button className="btn-register" onClick={handleRegister}>
@@ -115,7 +75,6 @@ export default function Resident_Register() {
           </button>
         </div>
       </div>
-
     </div>
   );
 }
