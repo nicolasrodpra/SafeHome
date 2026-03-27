@@ -16,7 +16,6 @@
 
 html {
     scroll-behavior: smooth;
-
 }
 
 body {
@@ -32,18 +31,20 @@ body {
 }
 
 
+/* ─── HERO ─────────────────────────────────────────────── */
 .hero {
     display: grid;
-    grid-template-columns: 1fr 0.48fr;
+    grid-template-columns: 1fr 0.75fr;
     min-height: 100vh;
     position: relative;
+    overflow: visible;
 }
 
 nav {
     position: absolute;
     top: 0;
     left: 0;
-    width: calc(100% / 1.48);
+    width: calc(100% / 1.75);
     z-index: 300;
     display: flex;
     align-items: center;
@@ -125,14 +126,16 @@ nav {
     transform: translateY(-2px);
 }
 
+/* ─── HERO RIGHT (panel morado) ─────────────────────────── */
 .hero-right {
     background: var(--purple);
     display: flex;
     align-items: flex-end;
     justify-content: center;
     position: relative;
-    overflow: hidden;
+    overflow: visible;          /* permite que la imagen desborde */
     margin: 0 28px 0 20px;
+    z-index: 2;
 }
 
 .hero-right::after {
@@ -141,16 +144,20 @@ nav {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 45%;
+    height: 35%;
     background: linear-gradient(to bottom, transparent 0%, var(--purple) 100%);
     z-index: 3;
     pointer-events: none;
 }
 
+/* ─── IMAGEN HERO (desborda el panel) ───────────────────── */
 .hero-img-wrapper {
-    position: relative;
-    width: 360px;
-    z-index: 2;
+    position: absolute;         /* se posiciona respecto al panel */
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110%;                /* MÁS ANCHO que el panel → desborda lateralmente */
+    z-index: 10;
 }
 
 .hero-img-wrapper::before {
@@ -159,25 +166,27 @@ nav {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 360px;
-    height: 520px;
+    width: 85%;
+    height: 75vh;
     background: rgba(255, 255, 255, 0.93);
-    border-radius: 100px 100px 28px 28px;
+    border-radius: 120px 120px 0 0;
     z-index: 0;
 }
 
 .hero-img-wrapper img {
-    width: 360px;
-    height: 600px;
+    width: 100%;
+    height: 90vh;               /* casi toda la altura del viewport */
     object-fit: cover;
     object-position: top center;
     border-radius: 200px 200px 0 0;
     display: block;
     position: relative;
     z-index: 1;
+    margin-top: -80px;          /* sube para desbordar arriba del panel también */
 }
 
 
+/* ─── FEATURES ──────────────────────────────────────────── */
 .features {
     padding: 60px 60px 70px;
     background: var(--bg);
@@ -226,6 +235,7 @@ nav {
 }
 
 
+/* ─── ROLES ─────────────────────────────────────────────── */
 .roles {
     padding: 90px 60px;
     background: var(--bg);
@@ -312,6 +322,7 @@ nav {
 }
 
 
+/* ─── SECTION HEADING ───────────────────────────────────── */
 .section-heading {
     margin-bottom: 48px;
 }
@@ -337,6 +348,7 @@ nav {
 }
 
 
+/* ─── NOSOTROS ──────────────────────────────────────────── */
 .nosotros {
     padding: 80px 60px;
     background: var(--bg);
@@ -372,6 +384,7 @@ nav {
 }
 
 
+/* ─── SERVICIOS ─────────────────────────────────────────── */
 .servicios {
     padding: 80px 60px;
     background: var(--bg);
@@ -420,6 +433,7 @@ nav {
 }
 
 
+/* ─── FOOTER ────────────────────────────────────────────── */
 footer {
     background: var(--purple);
     color: #fff;
@@ -479,7 +493,7 @@ footer {
 }
 
 
-
+/* ─── RESPONSIVE 1024px ─────────────────────────────────── */
 @media (max-width: 1024px) {
 
     nav {
@@ -585,7 +599,7 @@ footer {
 }
 
 
-
+/* ─── RESPONSIVE 640px ──────────────────────────────────── */
 @media (max-width: 640px) {
 
     nav {

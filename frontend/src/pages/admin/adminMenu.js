@@ -69,7 +69,7 @@ function AdminMenu() {
           <div className="hero-banner">
             <div className="hero-banner-text">
               <h1>Hola, <span>Nicolas</span></h1>
-              <p>Optimiza procesos, mejora la seguridad<br />y fortalece la convivencia.</p>
+              <p>supervisa y mejora la seguridad de tu comunidad con<br/>herramientas inteligentes.</p>
             </div>
             <img src={ilustracionMenu} alt="ilustracionMenu" />
           </div>
