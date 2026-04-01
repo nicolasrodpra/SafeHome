@@ -21,6 +21,7 @@ const dashboardCards = [
     icon: "ph-megaphone",
     title: "Quejas",
     description: "Gestiona y da seguimiento a las quejas de los residentes.",
+    to: "/pqrRecibidosAdmin",
   },
   {
     icon: "ph-calendar-blank",

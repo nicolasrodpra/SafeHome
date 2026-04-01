@@ -3,7 +3,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import asistenteVirtual from "../../assets/asistenteVirtual.png";
-import { db } from "../../firebase/firebase";
+import { db } from "../FireBase/firebase";
 import { cerrarSesion } from "../../services/authService";
 import { getFechaActual } from "../../services/getDate";
 import "../../styles/vigilante/registroVehiculos.css";

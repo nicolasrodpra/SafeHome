@@ -3,8 +3,8 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import illustration from "../../assets/login.png";
-import { auth, db } from "../../firebase/firebase";
+import illustration from "../../assets/Login.png";
+import { auth, db } from "../FireBase/firebase";
 import "../../styles/general/login.css";
 
 export default function Login() {

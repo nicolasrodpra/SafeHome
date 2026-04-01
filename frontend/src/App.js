@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import RutaProtegida from "./components/rutaProtegida.js";
 import AdminComunicados from "./pages/admin/adminComunicados.js";
 import AdminMenu from "./pages/admin/adminMenu.js";
+import PqrRecibidosAdmin from "./pages/admin/pqrRecibidos.js";
 import AdminRegister from "./pages/admin/registroAdmin.js";
 import Home from "./pages/general/home.js";
 import Login from "./pages/general/login.js";
@@ -21,6 +22,7 @@ function App() {
         <Route path="/registroResidente" element={<ResidentRegister />} />
         <Route path="/registroAdmin" element={<AdminRegister />} />
         <Route path="/adminComunicados" element={<AdminComunicados />} />
+        <Route path="/pqrRecibidosAdmin" element={<PqrRecibidosAdmin />} />
         <Route
           path="/residenteMenu"
           element={

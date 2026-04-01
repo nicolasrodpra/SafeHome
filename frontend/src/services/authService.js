@@ -1,6 +1,6 @@
 import { signOut } from "firebase/auth";
 import Swal from "sweetalert2";
-import { auth } from "../firebase/firebase";
+import { auth } from "../pages/FireBase/firebase";
 
 export const cerrarSesion = async (navigate) => {
   const resultado = await Swal.fire({

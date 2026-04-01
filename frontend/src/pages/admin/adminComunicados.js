@@ -14,7 +14,7 @@ import asistenteVirtual from "../../assets/asistenteVirtual.png";
 import { Link, useNavigate } from "react-router-dom";
 import { cerrarSesion } from "../../services/authService";
 import { getFechaActual } from "../../services/getDate";
-import { db } from "../../firebase/firebase";
+import { db } from "../FireBase/firebase";
 import Swal from "sweetalert2";
 import "../../styles/admin/adminComunicados.css";
 
