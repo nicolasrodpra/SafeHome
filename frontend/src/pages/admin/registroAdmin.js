@@ -1,51 +1,34 @@
-import "../../styles/admin/registroAdmin.css";
-import illustration from "../../assets/registroAdmin.png";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { auth, db } from "../../firebase/firebase";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
+import illustration from "../../assets/registroAdmin.png";
+import "../../styles/admin/registroAdmin.css";
 
-export default function Resident_Register() {
-  const [email, setEmail]                     = useState("");
-  const [password, setPassword]               = useState("");
+export default function AdminRegister() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    if (!email || !password || !confirmPassword) {
-      Swal.fire({ title: "Error", text: "Complete todos los campos", confirmButtonColor: "#460669", icon: "error" });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Swal.fire({ title: "Error", text: "Las contraseñas no coinciden", confirmButtonColor: "#460669", icon: "error" });
-      return;
-    }
-
-    if (password.length < 6) {
-      Swal.fire({ title: "Error", text: "La contraseña debe tener al menos 6 caracteres", confirmButtonColor: "#460669", icon: "error" });
-      return;
-    }
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await sendEmailVerification(auth.currentUser);
-
-      await setDoc(doc(db, "users", user.uid), {
-        correo: email,
-        rol: "Administrador",
-        creadoEn: serverTimestamp(),
+      const res = await fetch("http://localhost:5000/api/registrar-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, confirmPassword }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.mensaje || "No se pudo registrar el administrador.");
+      }
 
       Swal.fire({
         position: "center",
         icon: "success",
-        title: "Registrado con éxito, verifique su correo electrónico",
+        title: data.mensaje,
         showConfirmButton: false,
         timer: 3000,
       });
@@ -53,23 +36,21 @@ export default function Resident_Register() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-
     } catch (error) {
-      let mensaje = error.message;
-      if (error.code === "auth/email-already-in-use") mensaje = "Este correo ya está registrado.";
-      else if (error.code === "auth/invalid-email")   mensaje = "El correo no tiene un formato válido.";
-      else if (error.code === "auth/weak-password")   mensaje = "La contraseña debe tener al menos 6 caracteres.";
-
-      Swal.fire({ title: "Error", text: mensaje, icon: "error", confirmButtonColor: "#460669" });
+      Swal.fire({
+        title: "Error",
+        text: error.message,
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
     }
   };
 
   return (
     <div className="register-wrapper">
-
       <div className="left-panel">
         <div className="circle"></div>
-        <img className="illustration" src={illustration} alt="ilustración" />
+        <img className="illustration" src={illustration} alt="ilustracion" />
         <Link to="/adminMenu" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
         </Link>
@@ -94,7 +75,7 @@ export default function Resident_Register() {
             <i className="bi bi-lock"></i>
             <input
               type="password"
-              placeholder="Contraseña"
+              placeholder="Contrasena"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -104,18 +85,17 @@ export default function Resident_Register() {
             <i className="bi bi-check-circle"></i>
             <input
               type="password"
-              placeholder="Confirma la contraseña"
+              placeholder="Confirma la contrasena"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
 
-          <link className="btn-register" onClick={handleRegister}>
+          <button type="button" className="btn-register" onClick={handleRegister}>
             Registrar
-          </link>
+          </button>
         </div>
       </div>
-
     </div>
   );
 }

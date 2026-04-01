@@ -1,0 +1,309 @@
+/* =====================
+   COMUNICADOS LAYOUT
+   ===================== */
+
+.page-title {
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 28px;
+}
+
+.sidebar-link-placeholder {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: 300;
+  font-family: "Poppins", sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.sidebar-link-placeholder i {
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.sidebar-link-placeholder:hover {
+  background: rgba(70, 6, 105, 0.08);
+  color: #460669;
+  font-weight: 600;
+}
+
+.comunicados-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* =====================
+   LISTA DE COMUNICADOS
+   ===================== */
+
+.comunicados-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comunicado-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.comunicado-card:hover {
+  box-shadow: 0 4px 20px rgba(70, 6, 105, 0.1);
+  transform: translateY(-1px);
+}
+
+.comunicado-card.is-editing {
+  border-color: rgba(70, 6, 105, 0.18);
+  box-shadow: 0 6px 24px rgba(70, 6, 105, 0.12);
+}
+
+.comunicado-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 16px;
+}
+
+.comunicado-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #460669;
+  margin: 0;
+}
+
+.comunicado-fecha {
+  font-size: 0.72rem;
+  color: rgba(80, 80, 80, 0.6);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.comunicado-card p {
+  font-size: 0.8rem;
+  color: rgba(80, 80, 80, 0.85);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.comunicado-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.comunicado-action {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(70, 6, 105, 0.08);
+  color: #460669;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s, opacity 0.2s;
+}
+
+.comunicado-action i {
+  font-size: 1rem;
+}
+
+.comunicado-action:hover {
+  background: #460669;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.comunicado-action.danger {
+  background: rgba(180, 35, 24, 0.08);
+  color: #b42318;
+}
+
+.comunicado-action.danger:hover {
+  background: #b42318;
+  color: #fff;
+}
+
+.comunicado-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =====================
+   FORMULARIO
+   ===================== */
+
+.comunicados-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+}
+
+.form-editing-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(70, 6, 105, 0.06);
+  border: 1px solid rgba(70, 6, 105, 0.12);
+}
+
+.editing-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(70, 6, 105, 0.1);
+  color: #460669;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.form-editing-banner p {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: rgba(80, 80, 80, 0.86);
+  line-height: 1.5;
+}
+
+.btn-cancelar-edicion {
+  border: 1px solid rgba(70, 6, 105, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  color: #460669;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-cancelar-edicion:hover {
+  background: rgba(70, 6, 105, 0.08);
+  transform: translateY(-1px);
+}
+
+.btn-cancelar-edicion:disabled,
+.btn-enviar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 0.8rem;
+  color: rgba(80, 80, 80, 0.8);
+  font-weight: 500;
+}
+
+.form-field input,
+.form-field textarea {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: none;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  border-color: #460669;
+}
+
+.form-field textarea {
+  min-height: 180px;
+}
+
+.btn-enviar {
+  align-self: flex-end;
+  background: #460669;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-enviar:hover {
+  background: #6b0ea0;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 980px) {
+  .comunicados-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .comunicados-form {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .comunicado-card {
+    padding: 18px;
+  }
+
+  .comunicado-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-editing-banner {
+    flex-direction: column;
+  }
+
+  .btn-cancelar-edicion,
+  .btn-enviar {
+    width: 100%;
+  }
+}

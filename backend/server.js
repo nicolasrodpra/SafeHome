@@ -1,13 +1,17 @@
 require("dotenv").config();
-
-const express = require("express");
 const cors = require("cors");
+const express = require("express");
 const admin = require("firebase-admin");
-
 const serviceAccount = require("./firebaseKey.json");
 
+const registroAdminRoutes = require("./routes/admin/registroAdminRoutes");
+const loginRoutes = require("./routes/general/loginRoutes");
+const registroResidenteRoutes = require("./routes/residente/registroResidenteRoutes");
+const registroVehiculosRoutes = require("./routes/vigilante/registroVehiculosRoutes");
+const registroVigilanteRoutes = require("./routes/vigilante/registroVigilanteRoutes");
+
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(serviceAccount),
 });
 
 const app = express();
@@ -15,13 +19,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const authRoutes = require("./routes/auth");
-
 app.get("/", (req, res) => {
   res.send("API SafeHome funcionando");
 });
 
-app.use("/api", authRoutes);
+app.use("/api", registroAdminRoutes);
+app.use("/api", loginRoutes);
+app.use("/api", registroResidenteRoutes);
+app.use("/api", registroVehiculosRoutes);
+app.use("/api", registroVigilanteRoutes);
 
 const PORT = process.env.PORT || 5000;
 

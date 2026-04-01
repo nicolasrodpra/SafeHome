@@ -1,61 +1,152 @@
-import ilustracionMenu from "../../assets/inicioHero.png";
-import asistenteVirtual from "../../assets/asistenteVirtual.png";
 import { Link, useNavigate } from "react-router-dom";
+import asistenteVirtual from "../../assets/asistenteVirtual.png";
+import ilustracionMenu from "../../assets/inicioHero.png";
 import { cerrarSesion } from "../../services/authService";
-import '../../styles/admin/adminMenu.css';
+import { getFechaActual } from "../../services/getDate";
+import "../../styles/admin/adminMenu.css";
+
+const sidebarItems = [
+  { icon: "ph-megaphone", label: "Quejas" },
+  { icon: "ph-calendar-blank", label: "Reservas" },
+  { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
+  { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
+  { icon: "ph-user", label: "Residentes" },
+  { icon: "ph-book-bookmark", label: "Manual Convivencia" },
+  { icon: "ph-pencil-simple", label: "Actualizar datos" },
+  { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroResidente" },
+];
+
+const dashboardCards = [
+  {
+    icon: "ph-megaphone",
+    title: "Quejas",
+    description: "Gestiona y da seguimiento a las quejas de los residentes.",
+  },
+  {
+    icon: "ph-calendar-blank",
+    title: "Reservas",
+    description: "Gestiona las reservas de zonas comunes y controla su disponibilidad.",
+  },
+  {
+    icon: "ph-bell",
+    title: "Comunicados",
+    description: "Publica y administra avisos importantes para los residentes.",
+    to: "/adminComunicados",
+  },
+  {
+    icon: "ph-security-camera",
+    title: "Vigilancia",
+    description: "Supervisa novedades de seguridad y registra eventos relevantes.",
+    to: "/registroVehiculos",
+  },
+  {
+    icon: "ph-user",
+    title: "Residentes",
+    description: "Administra la informacion de los residentes del conjunto.",
+  },
+  {
+    icon: "ph-book-bookmark",
+    title: "Manual Convivencia",
+    description: "Consulta y gestiona las normas del conjunto residencial.",
+  },
+  {
+    icon: "ph-pencil-simple",
+    title: "Actualizacion Datos",
+    description: "Modifica y mantiene actualizada tu informacion.",
+  },
+  {
+    icon: "ph-user-plus",
+    title: "Registrar Usuario",
+    description: "Crea nuevos usuarios y asigna sus datos de acceso al sistema.",
+    to: "/registroResidente",
+  },
+];
+
+function AdminSidebarItem({ item }) {
+  if (item.to) {
+    return (
+      <Link to={item.to}>
+        <i className={`ph-light ${item.icon}`}></i> {item.label}
+      </Link>
+    );
+  }
+
+  return (
+    <span className="sidebar-link-placeholder">
+      <i className={`ph-light ${item.icon}`}></i> {item.label}
+    </span>
+  );
+}
+
+function DashboardCard({ card }) {
+  const content = (
+    <>
+      <div className="card-top">
+        <h4>{card.title}</h4>
+        <p>{card.description}</p>
+      </div>
+      <div className="card-bottom">
+        <i className="ph-light ph-arrow-right card-arrow"></i>
+        <i className={`ph-light ${card.icon} card-icon`}></i>
+      </div>
+    </>
+  );
+
+  if (card.to) {
+    return (
+      <Link to={card.to} className="option-card">
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="option-card option-card-placeholder">{content}</div>;
+}
 
 function AdminMenu() {
-
   const navigate = useNavigate();
-  const fecha = new Date().toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
-  const fechaMayuscula = fecha.charAt(0).toUpperCase() + fecha.slice(1);
-
+  const fechaMayuscula = getFechaActual();
 
   return (
     <div className="app">
-
       <aside className="sidebar">
-        <div className="sidebar-logo">SafeHome</div>
+        <Link to="/adminMenu" className="sidebar-logo">
+          SafeHome
+        </Link>
 
         <ul className="nav-menu">
-          <button className="btn-create">
-            <span>Crear nuevo <br />comunicado</span>
-            <span className="plus">+</span>
-          </button>
-
-          <li><a href="#"><i className="ph-light ph-megaphone"></i> Quejas</a></li>
-          <li><a href="#"><i className="ph-light ph-calendar-blank"></i> Reservas</a></li>
-          <li><a href="#"><i className="ph-light ph-megaphone"></i> Comunicados</a></li>
-          <li><a href="#"><i className="ph-light ph-security-camera"></i> Vigilancia</a></li>
-          <li><a href="#"><i className="ph-light ph-user"></i> Residentes</a></li>
-          <li><a href="#"><i className="ph-light ph-book-bookmark"></i> Manual Convivencia</a></li>
-          <li><a href="#"><i className="ph-light ph-pencil-simple"></i> Actualizar datos</a></li>
-          <li><a href="#"><i className="ph-light ph-user-plus"></i> Registrar Usuario</a></li>
+          {sidebarItems.map((item) => (
+            <li key={item.label}>
+              <AdminSidebarItem item={item} />
+            </li>
+          ))}
 
           <div className="sidebar-assistant">
             <img src={asistenteVirtual} alt="asistenteVirtual" />
-            <p>Asistente<br />Virtual</p>
+            <p>
+              Asistente
+              <br />
+              Virtual
+            </p>
             <button className="btn-asst">Iniciar</button>
           </div>
         </ul>
       </aside>
 
       <div className="main">
-
         <div className="topbar">
           <div className="topbar-left">
             <h2>Abundara</h2>
             <span>{fechaMayuscula}</span>
           </div>
+
           <div className="topbar-right">
             <i className="ph-light ph-envelope-simple topbar-icon"></i>
             <i className="ph-light ph-bell topbar-icon"></i>
-            <i className="ph-light ph-sign-out topbar-icon" onClick={() => cerrarSesion(navigate)}></i>
+            <i
+              className="ph-light ph-sign-out topbar-icon"
+              onClick={() => cerrarSesion(navigate)}
+            ></i>
             <div className="user-pill">
               <div className="user-avatar">NR</div>
               <span className="user-name">Nicolas Rodriguez</span>
@@ -65,11 +156,16 @@ function AdminMenu() {
         </div>
 
         <div className="content">
-
           <div className="hero-banner">
             <div className="hero-banner-text">
-              <h1>Hola, <span>Nicolas</span></h1>
-              <p>Optimiza procesos, mejora la seguridad<br />y fortalece la convivencia.</p>
+              <h1>
+                Hola, <span>Nicolas</span>
+              </h1>
+              <p>
+                supervisa y mejora la seguridad de tu comunidad con
+                <br />
+                herramientas inteligentes.
+              </p>
             </div>
             <img src={ilustracionMenu} alt="ilustracionMenu" />
           </div>
@@ -77,95 +173,9 @@ function AdminMenu() {
           <p className="section-label">Opciones</p>
 
           <div className="cards-grid">
-
-            <a href="#" className="option-card">
-              <div className="card-top">
-                <h4>Quejas</h4>
-                <p>Gestiona y da seguimiento a las quejas de los residentes.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-megaphone card-icon"></i>
-              </div>
-            </a>
-
-            <a href="#" className="option-card">
-              <div className="card-top">
-                <h4>Reservas</h4>
-                <p>Gestiona las reservas de zonas comunes y controla su disponibilidad.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-calendar-blank card-icon"></i>
-              </div>
-            </a>
-
-            <a href="#" className="option-card">
-              <div className="card-top">
-                <h4>Comunicados</h4>
-                <p>Publica y administra avisos importantes para los residentes.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-bell card-icon"></i>
-              </div>
-            </a>
-
-            <Link to="/registroVehiculos" className="option-card">
-              <div className="card-top">
-                <h4>Vigilancia</h4>
-                <p>Supervisa novedades de seguridad y registra eventos relevantes.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-security-camera card-icon"></i>
-              </div>
-            </Link>
-
-            <a href="#" className="option-card">
-              <div className="card-top">
-                <h4>Residentes</h4>
-                <p>Administra la información de los residentes del conjunto.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-user card-icon"></i>
-              </div>
-            </a>
-
-            <a href="#" className="option-card">
-              <div className="card-top">
-                <h4>Manual Convivencia</h4>
-                <p>Consulta y gestiona las normas del conjunto residencial.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-book-bookmark card-icon"></i>
-              </div>
-            </a>
-
-            <a href="#" className="option-card">
-              <div className="card-top">
-                <h4>Actualización Datos</h4>
-                <p>Modifica y mantiene actualizada tu información.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-pencil-simple card-icon"></i>
-              </div>
-            </a>
-
-            <Link to="/registroResidente" className="option-card">
-              <div className="card-top">
-                <h4>Registrar Usuario</h4>
-                <p>Crea nuevos usuarios y asigna sus datos de acceso al sistema.</p>
-              </div>
-              <div className="card-bottom">
-                <i className="ph-light ph-arrow-right card-arrow"></i>
-                <i className="ph-light ph-user-plus card-icon"></i>
-              </div>
-            </Link>
-
+            {dashboardCards.map((card) => (
+              <DashboardCard key={card.title} card={card} />
+            ))}
           </div>
         </div>
       </div>

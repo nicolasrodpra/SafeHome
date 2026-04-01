@@ -1,99 +1,12 @@
-import { useState, useEffect } from "react";
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import asistenteVirtual from "../../assets/asistenteVirtual.png";
 import { db } from "../../firebase/firebase";
+import { cerrarSesion } from "../../services/authService";
+import { getFechaActual } from "../../services/getDate";
 import "../../styles/vigilante/registroVehiculos.css";
-
-const PQRIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-  </svg>
-);
-const ReservasIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="7" r="3" /><circle cx="16" cy="7" r="3" />
-    <path d="M2 20c0-3.3 3.1-6 7-6" /><path d="M22 20c0-3.3-3.1-6-7-6" />
-    <path d="M9 14c1-.3 2-.4 3-.4s2 .1 3 .4" />
-  </svg>
-);
-const ComunicadosIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-const ManualIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="4" y="2" width="12" height="20" rx="2" />
-    <path d="M8 6h4M8 10h4M8 14h2" />
-  </svg>
-);
-const ActualizarIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="7" width="20" height="14" rx="2" />
-    <path d="M16 3h-8l-2 4h12l-2-4z" />
-  </svg>
-);
-const PanicIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="10" r="4" />
-    <path d="M12 14v7" /><path d="M9 21h6" />
-    <path d="M9 3l3-2 3 2" />
-  </svg>
-);
-const MailIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <path d="M2 7l10 7 10-7" />
-  </svg>
-);
-const BellIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-const ChevronDown = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-);
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-);
-const DeleteIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="M9 6V4h6v2" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const CloseIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 6L6 18M6 6l12 12" />
-  </svg>
-);
-const CarIcon = () => (
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m20.77 9.16l-1.37-4.1a2.99 2.99 0 0 0-2.85-2.05H7.44a3 3 0 0 0-2.85 2.05l-1.37 4.1c-.72.3-1.23 1.02-1.23 1.84v5a2 2 0 0 0 1 1.72V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-2h12v2c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-2.28a2 2 0 0 0 1-1.72v-5c0-.83-.51-1.54-1.23-1.84ZM19 13.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5s1.5.67 1.5 1.5m-11 0c0 .83-.67 1.5-1.5 1.5S5 14.33 5 13.5S5.67 12 6.5 12s1.5.67 1.5 1.5M20 11v5zM7.44 5h9.12a1 1 0 0 1 .95.68L18.62 9H5.39L6.5 5.68A1 1 0 0 1 7.45 5Z"/></svg>);
-const MotoIcon = () => (
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="currentColor" d="M216 120a41 41 0 0 0-6.6.55l-5.82-15.14A55.6 55.6 0 0 1 216 104a8 8 0 0 0 0-16h-19.12l-13.41-34.87A8 8 0 0 0 176 48h-32a8 8 0 0 0 0 16h26.51l9.23 24H152c-18.5 0-33.5 4.31-43.37 12.46a16 16 0 0 1-16.76 2.07c-10.58-4.81-73.29-30.12-73.8-30.26a8 8 0 0 0-5 15.19s55.5 21.94 66.53 32.94A55.67 55.67 0 0 1 95.43 152H79.2a40 40 0 1 0 0 16h52.12a31.91 31.91 0 0 0 30.74-23.1a56 56 0 0 1 26.59-33.72l5.82 15.13A40 40 0 1 0 216 120M40 168h22.62a24 24 0 1 1 0-16H40a8 8 0 0 0 0 16m176 16a24 24 0 0 1-15.58-42.23l8.11 21.1a8 8 0 1 0 14.94-5.74L215.35 136h.65a24 24 0 0 1 0 48"/></svg>
-);
 
 const EMPTY_FORM = {
   propietario: "",
@@ -105,14 +18,32 @@ const EMPTY_FORM = {
   tipo: "",
 };
 
-const navItems = [
-  { label: "PQR", icon: <PQRIcon /> },
-  { label: "Reservas", icon: <ReservasIcon /> },
-  { label: "Comunicados", icon: <ComunicadosIcon /> },
-  { label: "Manual de convivencia", icon: <ManualIcon /> },
-  { label: "Actualizar datos", icon: <ActualizarIcon /> },
-  { label: "Botón Panico", icon: <PanicIcon /> },
+const sidebarItems = [
+  { icon: "ph-megaphone", label: "Quejas" },
+  { icon: "ph-calendar-blank", label: "Reservas" },
+  { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
+  { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
+  { icon: "ph-user", label: "Residentes" },
+  { icon: "ph-book-bookmark", label: "Manual Convivencia" },
+  { icon: "ph-pencil-simple", label: "Actualizar datos" },
+  { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroResidente" },
 ];
+
+function SidebarItem({ item }) {
+  if (item.to) {
+    return (
+      <Link to={item.to}>
+        <i className={`ph-light ${item.icon}`}></i> {item.label}
+      </Link>
+    );
+  }
+
+  return (
+    <span className="sidebar-link-placeholder">
+      <i className={`ph-light ${item.icon}`}></i> {item.label}
+    </span>
+  );
+}
 
 function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -132,26 +63,32 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
     } else {
       setForm(EMPTY_FORM);
     }
+
     setErrors({});
   }, [editingVehicle, isOpen]);
 
   const validate = () => {
-    const e = {};
-    if (!form.propietario.trim()) e.propietario = "Requerido";
-    if (!form.documento.trim()) e.documento = "Requerido";
-    if (!form.placa.trim()) e.placa = "Requerido";
-    if (!form.telefono.trim()) e.telefono = "Requerido";
-    if (!form.torre.trim()) e.torre = "Requerido";
-    if (!form.apartamento.trim()) e.apartamento = "Requerido";
-    if (!form.tipo) e.tipo = "Requerido";
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    const nextErrors = {};
+
+    if (!form.propietario.trim()) nextErrors.propietario = "Requerido";
+    if (!form.documento.trim()) nextErrors.documento = "Requerido";
+    if (!form.placa.trim()) nextErrors.placa = "Requerido";
+    if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
+    if (!form.torre.trim()) nextErrors.torre = "Requerido";
+    if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
+    if (!form.tipo) nextErrors.tipo = "Requerido";
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -165,27 +102,25 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-
         <div className="modal-stripe" />
-
         <div className="modal-header">
           <div className="modal-header-left">
             <div className="modal-icon">
-              <CarIcon />
+              <i className="ph-light ph-car"></i>
             </div>
             <div>
               <p className="modal-title">
-                {editingVehicle ? "Editar vehículo" : "Registrar vehículo"}
+                {editingVehicle ? "Editar vehiculo" : "Registrar vehiculo"}
               </p>
               <p className="modal-subtitle">
                 {editingVehicle
-                  ? "Modifica los datos del vehículo"
+                  ? "Modifica los datos del vehiculo"
                   : "Completa los datos del propietario"}
               </p>
             </div>
           </div>
-          <button className="modal-close" onClick={onClose} title="Cerrar">
-            <CloseIcon />
+          <button type="button" className="modal-close" onClick={onClose}>
+            <i className="ph-light ph-x"></i>
           </button>
         </div>
 
@@ -203,13 +138,14 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               />
               {errors.propietario && <span className="field-error">{errors.propietario}</span>}
             </div>
+
             <div className="form-group">
               <label>Documento</label>
               <input
                 name="documento"
                 value={form.documento}
                 onChange={handleChange}
-                placeholder="Número de documento"
+                placeholder="Numero de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
             </div>
@@ -223,19 +159,22 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
                 value={form.placa}
                 onChange={handleChange}
                 placeholder="ABC123"
+                className="input-placa"
               />
               {errors.placa && <span className="field-error">{errors.placa}</span>}
             </div>
+
             <div className="form-group">
-              <label>Teléfono</label>
+              <label>Telefono</label>
               <input
                 name="telefono"
                 value={form.telefono}
                 onChange={handleChange}
-                placeholder="Número de contacto"
+                placeholder="Numero de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
             </div>
+
             <div className="form-group">
               <label>Torre</label>
               <input
@@ -246,6 +185,7 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               />
               {errors.torre && <span className="field-error">{errors.torre}</span>}
             </div>
+
             <div className="form-group">
               <label>Apartamento</label>
               <input
@@ -260,12 +200,8 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Tipo de vehículo</label>
-              <select
-                name="tipo"
-                value={form.tipo}
-                onChange={handleChange}
-              >
+              <label>Tipo de vehiculo</label>
+              <select name="tipo" value={form.tipo} onChange={handleChange}>
                 <option value="">Seleccionar...</option>
                 <option value="Carro">Carro</option>
                 <option value="Moto">Moto</option>
@@ -279,8 +215,8 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               Cancelar
             </button>
             <button type="submit" className="btn-save" disabled={loading}>
-              <PlusIcon />
-              {loading ? "Guardando..." : editingVehicle ? "Actualizar" : "Registrar vehículo"}
+              <i className={`ph-light ${editingVehicle ? "ph-floppy-disk" : "ph-plus"}`}></i>
+              {loading ? "Guardando..." : editingVehicle ? "Actualizar" : "Registrar vehiculo"}
             </button>
           </div>
         </form>
@@ -290,40 +226,43 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 }
 
 export default function VehicleEntry() {
+  const navigate = useNavigate();
+  const fechaMayuscula = getFechaActual();
   const [vehicles, setVehicles] = useState([]);
-  const [activeNav, setActiveNav] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const totalCarros = vehicles.filter((v) => v.tipo === "Carro").length;
-  const totalMotos = vehicles.filter((v) => v.tipo === "Moto").length;
+  const totalCarros = vehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
+  const totalMotos = vehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
 
   useEffect(() => {
-    const unsub = onSnapshot(
+    const unsubscribe = onSnapshot(
       collection(db, "vehiculos"),
       (snapshot) => {
-        const data = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-          fecha: d.data().fecha?.toDate
-            ? d.data().fecha.toDate().toLocaleDateString("es-CO")
-            : d.data().fecha ?? "",
-          hora: d.data().fecha?.toDate
-            ? d.data().fecha.toDate().toLocaleTimeString("es-CO", {
+        const data = snapshot.docs.map((snapshotDoc) => ({
+          id: snapshotDoc.id,
+          ...snapshotDoc.data(),
+          fecha: snapshotDoc.data().fecha?.toDate
+            ? snapshotDoc.data().fecha.toDate().toLocaleDateString("es-CO")
+            : snapshotDoc.data().fecha ?? "",
+          hora: snapshotDoc.data().fecha?.toDate
+            ? snapshotDoc.data().fecha.toDate().toLocaleTimeString("es-CO", {
                 hour: "2-digit",
                 minute: "2-digit",
               })
             : "",
         }));
+
         setVehicles(data);
       },
       (error) => {
-        console.error("Error leyendo vehículos:", error);
+        console.error("Error cargando vehiculos:", error);
       }
     );
-    return () => unsub();
+
+    return () => unsubscribe();
   }, []);
 
   const handleOpenCreate = () => {
@@ -338,43 +277,89 @@ export default function VehicleEntry() {
 
   const handleSave = async (formData) => {
     setLoadingForm(true);
+
     try {
       if (editingVehicle) {
-        const ref = doc(db, "vehiculos", editingVehicle.id);
-        await updateDoc(ref, {
-          ...formData,
-          placa: formData.placa.toUpperCase(),
-          updatedAt: serverTimestamp(),
+        const res = await fetch(`http://localhost:5000/api/vehiculos/${editingVehicle.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
         });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.mensaje);
+
+        setVehicles((prev) =>
+          prev.map((vehicle) =>
+            vehicle.id === editingVehicle.id ? { ...vehicle, ...data.vehiculo } : vehicle
+          )
+        );
       } else {
-        await addDoc(collection(db, "vehiculos"), {
-          ...formData,
-          placa: formData.placa.toUpperCase(),
-          fecha: serverTimestamp(),
-          createdAt: serverTimestamp(),
+        const res = await fetch("http://localhost:5000/api/vehiculos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
         });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.mensaje);
+
+        setVehicles((prev) => [...prev, data.vehiculo]);
       }
+
+      setEditingVehicle(null);
       setModalOpen(false);
-    } catch (err) {
-      console.error("Error guardando vehículo:", err);
-      alert("Ocurrió un error al guardar. Revisa la consola.");
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "Ocurrio un error al guardar.",
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
     } finally {
       setLoadingForm(false);
     }
   };
 
   const handleDelete = async (vehicle) => {
-    const confirmar = window.confirm(
-      `¿Eliminar el vehículo de ${vehicle.propietario} (${vehicle.placa})?`
-    );
-    if (!confirmar) return;
+    const result = await Swal.fire({
+      title: "Eliminar vehiculo?",
+      text: `Se eliminara el vehiculo de ${vehicle.propietario} (${vehicle.placa}).`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Eliminar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#b42318",
+      cancelButtonColor: "#460669",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
 
     setDeletingId(vehicle.id);
+
     try {
-      await deleteDoc(doc(db, "vehiculos", vehicle.id));
-    } catch (err) {
-      console.error("Error eliminando vehículo:", err);
-      alert("No se pudo eliminar. Revisa la consola.");
+      const res = await fetch(`http://localhost:5000/api/vehiculos/${vehicle.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("No se pudo eliminar.");
+
+      setVehicles((prev) => prev.filter((currentVehicle) => currentVehicle.id !== vehicle.id));
+
+      Swal.fire({
+        title: "Vehiculo eliminado",
+        text: "El registro fue eliminado correctamente.",
+        icon: "success",
+        confirmButtonColor: "#460669",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message,
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
     } finally {
       setDeletingId(null);
     }
@@ -383,77 +368,85 @@ export default function VehicleEntry() {
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="sidebar-logo">SafeHome</div>
+        <Link to="/adminMenu" className="sidebar-logo">
+          SafeHome
+        </Link>
 
-        <button className="create-btn">
-          <span>Crear<br />nuevo correo</span>
-          <span className="plus-circle"><PlusIcon /></span>
-        </button>
-
-        <ul className="nav-list">
-          {navItems.map((item) => (
-            <li
-              key={item.label}
-              className="nav-item"
-              onClick={() => setActiveNav(item.label)}
-              style={activeNav === item.label ? { background: "#f3e8ff", color: "#7c3aed" } : {}}
-            >
-              {item.icon}
-              {item.label}
+        <ul className="nav-menu">
+          {sidebarItems.map((item) => (
+            <li key={item.label}>
+              <SidebarItem item={item} />
             </li>
           ))}
-        </ul>
 
-        <div className="asistente-box">
-          <span className="asistente-label">Asistente<br />virtual</span>
-          <button className="iniciar-btn">Iniciar</button>
-        </div>
+          <div className="sidebar-assistant">
+            <img src={asistenteVirtual} alt="asistenteVirtual" />
+            <p>
+              Asistente
+              <br />
+              Virtual
+            </p>
+            <button className="btn-asst">Iniciar</button>
+          </div>
+        </ul>
       </aside>
 
       <div className="main">
-        <header className="topbar">
+        <div className="topbar">
           <div className="topbar-left">
-            <div className="location">Abundara</div>
-            <div className="date">
-              Lunes, <span>2 Marzo 2026</span>
+            <h2>Abundara</h2>
+            <span>{fechaMayuscula}</span>
+          </div>
+
+          <div className="topbar-right">
+            <i className="ph-light ph-envelope-simple topbar-icon"></i>
+            <i className="ph-light ph-bell topbar-icon"></i>
+            <i
+              className="ph-light ph-sign-out topbar-icon"
+              onClick={() => cerrarSesion(navigate)}
+            ></i>
+            <div className="user-pill">
+              <div className="user-avatar">NR</div>
+              <span className="user-name">Nicolas Rodriguez</span>
+              <i className="ph-light ph-caret-down user-caret"></i>
             </div>
           </div>
-          <div className="topbar-right">
-            <button className="icon-btn"><MailIcon /></button>
-            <button className="icon-btn"><BellIcon /></button>
-            <div className="user-avatar">NR</div>
-            <span className="user-name">Nicolas Rodriguez <ChevronDown /></span>
-          </div>
-        </header>
+        </div>
 
         <main className="content">
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Ingreso de Vehículos</h2>
+              <h2 className="card-title">Ingreso de Vehiculos</h2>
+
               <div className="vehicle-counters">
-              <div className="counter-card">
-                <div className="counter-icon car">
-                  <CarIcon />
+                <div className="counter-card">
+                  <div className="counter-icon car">
+                    <i className="ph-light ph-car"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalCarros}</span>
+                  </div>
                 </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalCarros}</span>
+
+                <div className="counter-card">
+                  <div className="counter-icon moto">
+                    <i className="ph-light ph-motorcycle"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalMotos}</span>
+                  </div>
                 </div>
               </div>
-              <div className="counter-card">
-                <div className="counter-icon moto">
-                  <MotoIcon />
-                </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalMotos}</span>
-                </div>
-              </div>
-            </div>
-              <button className="register-btn" onClick={handleOpenCreate}>
-                <span>Registrar nuevo<br />vehículo</span>
-                <span className="plus-sq"><PlusIcon /></span>
+
+              <button type="button" className="register-btn" onClick={handleOpenCreate}>
+                <span>
+                  Registrar nuevo
+                  <br />
+                  vehiculo
+                </span>
+                <span className="plus-sq"></span>
               </button>
             </div>
-
 
             <table className="vehicle-table">
               <thead>
@@ -462,54 +455,57 @@ export default function VehicleEntry() {
                   <th>Propietario</th>
                   <th>Documento</th>
                   <th>Placa</th>
-                  <th>Teléfono</th>
+                  <th>Telefono</th>
                   <th>Torre</th>
                   <th>Apartamento</th>
                   <th>Fecha</th>
                   <th>Hora</th>
-                  <th>Acción</th>
+                  <th>Accion</th>
                 </tr>
               </thead>
               <tbody>
                 {vehicles.length === 0 ? (
                   <tr>
                     <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                      No hay vehículos registrados
+                      No hay vehiculos registrados
                     </td>
                   </tr>
                 ) : (
-                  vehicles.map((v) => (
-                    <tr key={v.id}>
-                      {/* Icono según tipo */}
+                  vehicles.map((vehicle) => (
+                    <tr key={vehicle.id}>
                       <td>
-                        <div className={`tipo-icon ${v.tipo === "Moto" ? "moto" : "car"}`}>
-                          {v.tipo === "Moto" ? <MotoIcon /> : <CarIcon />}
+                        <div className={`tipo-icon ${vehicle.tipo === "Moto" ? "moto" : "car"}`}>
+                          <i
+                            className={`ph-light ${
+                              vehicle.tipo === "Moto" ? "ph-motorcycle" : "ph-car"
+                            }`}
+                          ></i>
                         </div>
                       </td>
-                      <td>{v.propietario}</td>
-                      <td>{v.documento}</td>
-                      <td>{v.placa}</td>
-                      <td>{v.telefono}</td>
-                      <td>{v.torre}</td>
-                      <td>{v.apartamento}</td>
-                      <td>{v.fecha}</td>
-                      <td>{v.hora}</td>
+                      <td>{vehicle.propietario}</td>
+                      <td>{vehicle.documento}</td>
+                      <td>{vehicle.placa}</td>
+                      <td>{vehicle.telefono}</td>
+                      <td>{vehicle.torre}</td>
+                      <td>{vehicle.apartamento}</td>
+                      <td>{vehicle.fecha}</td>
+                      <td>{vehicle.hora}</td>
                       <td>
                         <div className="action-btns">
                           <button
+                            type="button"
                             className="action-icon-btn delete"
-                            title="Eliminar"
-                            disabled={deletingId === v.id}
-                            onClick={() => handleDelete(v)}
+                            disabled={deletingId === vehicle.id}
+                            onClick={() => handleDelete(vehicle)}
                           >
-                            {deletingId === v.id ? "..." : <DeleteIcon />}
+                            {deletingId === vehicle.id ? "..." : <i className="ph-light ph-trash"></i>}
                           </button>
                           <button
+                            type="button"
                             className="action-icon-btn"
-                            title="Editar"
-                            onClick={() => handleOpenEdit(v)}
+                            onClick={() => handleOpenEdit(vehicle)}
                           >
-                            <EditIcon />
+                            <i className="ph-light ph-pencil-simple"></i>
                           </button>
                         </div>
                       </td>

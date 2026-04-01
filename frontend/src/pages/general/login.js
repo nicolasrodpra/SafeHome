@@ -1,68 +1,57 @@
-import "../../styles/general/login.css";
-import illustration from "../../assets/login.png";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../../firebase/firebase";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import illustration from "../../assets/login.png";
+import { auth, db } from "../../firebase/firebase";
+import "../../styles/general/login.css";
 
 export default function Login() {
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate                = useNavigate();
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      Swal.fire({ title: "Error", text: "Completa todos los campos", icon: "error", confirmButtonColor: "#460669" });
-      return;
-    }
-
     try {
-
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      
-
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const credentials = await signInWithEmailAndPassword(auth, email, password);
+      const userDoc = await getDoc(doc(db, "users", credentials.user.uid));
 
       if (!userDoc.exists()) {
-        Swal.fire({ title: "Error", text: "No se encontró información del usuario.", icon: "error", confirmButtonColor: "#460669" });
-        return;
+        throw new Error("No se encontro la informacion del usuario.");
       }
 
-      const rol = userDoc.data().rol;
+      const { rol } = userDoc.data();
 
-      if (rol === "Vigilante") {
-        navigate("/vigilanteMenu");
-      } else if (rol === "Administrador") {
-        navigate("/adminMenu");
-      } else if (rol === "Residente") {
-        navigate("/residenteMenu");
-      } else {
-        Swal.fire({ title: "Error", text: "Rol no reconocido.", icon: "error", confirmButtonColor: "#460669" });
-      }
-
+      if (rol === "Vigilante") navigate("/vigilanteMenu");
+      else if (rol === "Administrador") navigate("/adminMenu");
+      else if (rol === "Residente") navigate("/residenteMenu");
+      else throw new Error("El rol del usuario no es valido.");
     } catch (error) {
-      let mensaje = error.message;
-      if (error.code === "auth/invalid-credential")     mensaje = "Correo o contraseña incorrectos.";
-      else if (error.code === "auth/user-not-found")    mensaje = "No existe una cuenta con este correo.";
-      else if (error.code === "auth/wrong-password")    mensaje = "Contraseña incorrecta.";
-      else if (error.code === "auth/too-many-requests") mensaje = "Demasiados intentos. Intenta más tarde.";
+      let message = error.message;
 
-      Swal.fire({ title: "Error", text: mensaje, icon: "error", confirmButtonColor: "#460669" });
+      if (error.code === "auth/invalid-credential") {
+        message = "Correo o contrasena incorrectos.";
+      } else if (error.code === "auth/too-many-requests") {
+        message = "Demasiados intentos. Intenta mas tarde.";
+      }
+
+      Swal.fire({
+        title: "Error",
+        text: message,
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
     }
   };
 
   return (
     <div className="register-wrapper">
-
       <div className="left-panel">
         <div className="circle"></div>
-        <img className="illustration" src={illustration} alt="ilustración" />
+        <img className="illustration" src={illustration} alt="ilustracion" />
         <Link to="/" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
         </Link>
@@ -71,7 +60,7 @@ export default function Login() {
       <div className="right-panel">
         <div className="form-box">
           <p className="welcome">Bienvenido</p>
-          <h1 className="title">Inicia sesión</h1>
+          <h1 className="title">Inicia sesion</h1>
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
@@ -87,19 +76,17 @@ export default function Login() {
             <i className="bi bi-lock"></i>
             <input
               type="password"
-              placeholder="Contraseña"
+              placeholder="Contrasena"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-
-          <button className="btn-register" onClick={handleLogin}>
-            Iniciar sesión
+          <button type="button" className="btn-register" onClick={handleLogin}>
+            Iniciar sesion
           </button>
         </div>
       </div>
-
     </div>
   );
 }
