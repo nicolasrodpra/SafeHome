@@ -10,18 +10,12 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import asistenteVirtual from "../../assets/asistenteVirtual.png";
-import { Link, useNavigate } from "react-router-dom";
-import { cerrarSesion } from "../../services/authService";
-import { getFechaActual } from "../../services/getDate";
-import { db } from "../FireBase/firebase";
 import Swal from "sweetalert2";
+import InternalLayout from "../../components/InternalLayout";
+import { db } from "../FireBase/firebase";
 import "../../styles/admin/adminComunicados.css";
 
 function Comunicados() {
-  const navigate = useNavigate();
-  const fechaMayuscula = getFechaActual();
-
   const [comunicados, setComunicados] = useState([]);
   const [form, setForm] = useState({ asunto: "", mensaje: "" });
   const [loading, setLoading] = useState(false);
@@ -38,13 +32,13 @@ function Comunicados() {
         ...snapshotDoc.data(),
         fechaStr: snapshotDoc.data().fecha?.toDate
           ? snapshotDoc.data().fecha.toDate().toLocaleString("es-CO", {
-            weekday: "short",
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+              weekday: "short",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
           : "",
       }));
 
@@ -164,189 +158,111 @@ function Comunicados() {
   };
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <Link to="/adminMenu" className="sidebar-logo">
-          SafeHome
-        </Link>
-        <ul className="nav-menu">
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-megaphone"></i> Quejas
-            </button>
-          </li>
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-calendar-blank"></i> Reservas
-            </button>
-          </li>
-          <li>
-            <Link to="/adminComunicados" className="active">
-              <i className="ph-light ph-bell"></i> Comunicados
-            </Link>
-          </li>
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-security-camera"></i> Vigilancia
-            </button>
-          </li>
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-user"></i> Residentes
-            </button>
-          </li>
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-book-bookmark"></i> Manual Convivencia
-            </button>
-          </li>
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-pencil-simple"></i> Actualizar datos
-            </button>
-          </li>
-          <li>
-            <button type="button" className="sidebar-link-placeholder">
-              <i className="ph-light ph-user-plus"></i> Registrar Usuario
-            </button>
-          </li>
-          <div className="sidebar-assistant">
-            <img src={asistenteVirtual} alt="asistenteVirtual" />
-            <p>
-              Asistente
-              <br />
-              Virtual
-            </p>
-            <button className="btn-asst">Iniciar</button>
-          </div>
-        </ul>
-      </aside>
+    <InternalLayout>
+      <div className="content">
+        <h1 className="page-title">Comunicados</h1>
 
-      <div className="main">
-        <div className="topbar">
-          <div className="topbar-left">
-            <h2>Abundara</h2>
-            <span>{fechaMayuscula}</span>
-          </div>
-          <div className="topbar-right">
-            <i className="ph-light ph-envelope-simple topbar-icon"></i>
-            <i className="ph-light ph-bell topbar-icon"></i>
-            <i
-              className="ph-light ph-sign-out topbar-icon"
-              onClick={() => cerrarSesion(navigate)}
-            ></i>
-            <div className="user-pill">
-              <div className="user-avatar">NR</div>
-              <span className="user-name">Nicolas Rodriguez</span>
-              <i className="ph-light ph-caret-down user-caret"></i>
-            </div>
-          </div>
-        </div>
-
-        <div className="content">
-          <h1 className="page-title">Comunicados</h1>
-
-          <div className="comunicados-layout">
-            <div className="comunicados-list">
-              {cargando ? (
-                <p className="estado-msg">Cargando comunicados...</p>
-              ) : comunicados.length === 0 ? (
-                <p className="estado-msg">No hay comunicados publicados aun.</p>
-              ) : (
-                comunicados.map((comunicado) => (
-                  <div
-                    className={`comunicado-card${editandoId === comunicado.id ? " is-editing" : ""
-                      }`}
-                    key={comunicado.id}
-                  >
-                    <div className="comunicado-header">
-                      <h4>{comunicado.asunto}</h4>
-                      <span className="comunicado-fecha">{comunicado.fechaStr}</span>
-                    </div>
-                    <p>{comunicado.mensaje}</p>
-
-                    <div className="comunicado-actions">
-                      <button
-                        type="button"
-                        className="comunicado-action"
-                        onClick={() => handleEditar(comunicado)}
-                        disabled={loading || accionandoId === comunicado.id}
-                        aria-label={`Editar comunicado ${comunicado.asunto}`}
-                        title="Editar comunicado"
-                      >
-                        <i className="ph-light ph-pencil-simple"></i>
-                      </button>
-
-                      <button
-                        type="button"
-                        className="comunicado-action danger"
-                        onClick={() => handleEliminar(comunicado)}
-                        disabled={loading || accionandoId === comunicado.id}
-                        aria-label={`Eliminar comunicado ${comunicado.asunto}`}
-                        title="Eliminar comunicado"
-                      >
-                        <i className="ph-light ph-trash"></i>
-                      </button>
-                    </div>
+        <div className="comunicados-layout">
+          <div className="comunicados-list">
+            {cargando ? (
+              <p className="estado-msg">Cargando comunicados...</p>
+            ) : comunicados.length === 0 ? (
+              <p className="estado-msg">No hay comunicados publicados aun.</p>
+            ) : (
+              comunicados.map((comunicado) => (
+                <div
+                  className={`comunicado-card${
+                    editandoId === comunicado.id ? " is-editing" : ""
+                  }`}
+                  key={comunicado.id}
+                >
+                  <div className="comunicado-header">
+                    <h4>{comunicado.asunto}</h4>
+                    <span className="comunicado-fecha">{comunicado.fechaStr}</span>
                   </div>
-                ))
-              )}
-            </div>
+                  <p>{comunicado.mensaje}</p>
 
-            <div className="comunicados-form">
-              {editandoId && (
-                <div className="form-editing-banner">
-                  <div>
-                    <span className="editing-badge">Editando</span>
-                    <p>Actualiza el contenido y guarda los cambios del comunicado.</p>
+                  <div className="comunicado-actions">
+                    <button
+                      type="button"
+                      className="comunicado-action"
+                      onClick={() => handleEditar(comunicado)}
+                      disabled={loading || accionandoId === comunicado.id}
+                      aria-label={`Editar comunicado ${comunicado.asunto}`}
+                      title="Editar comunicado"
+                    >
+                      <i className="ph-light ph-pencil-simple"></i>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="comunicado-action danger"
+                      onClick={() => handleEliminar(comunicado)}
+                      disabled={loading || accionandoId === comunicado.id}
+                      aria-label={`Eliminar comunicado ${comunicado.asunto}`}
+                      title="Eliminar comunicado"
+                    >
+                      <i className="ph-light ph-trash"></i>
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    className="btn-cancelar-edicion"
-                    onClick={handleCancelarEdicion}
-                    disabled={loading}
-                  >
-                    Cancelar
-                  </button>
                 </div>
-              )}
+              ))
+            )}
+          </div>
 
-              <div className="form-field">
-                <label>Asunto:</label>
-                <input
-                  type="text"
-                  name="asunto"
-                  value={form.asunto}
-                  onChange={handleChange}
-                  placeholder="Escribe el asunto..."
-                />
+          <div className="comunicados-form">
+            {editandoId && (
+              <div className="form-editing-banner">
+                <div>
+                  <span className="editing-badge">Editando</span>
+                  <p>Actualiza el contenido y guarda los cambios del comunicado.</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn-cancelar-edicion"
+                  onClick={handleCancelarEdicion}
+                  disabled={loading}
+                >
+                  Cancelar
+                </button>
               </div>
+            )}
 
-              <div className="form-field">
-                <label>Comunicado:</label>
-                <textarea
-                  name="mensaje"
-                  value={form.mensaje}
-                  onChange={handleChange}
-                  placeholder="Escribe el comunicado..."
-                />
-              </div>
-
-              <button className="btn-enviar" onClick={handleEnviar} disabled={loading}>
-                {loading
-                  ? editandoId
-                    ? "Guardando..."
-                    : "Enviando..."
-                  : editandoId
-                    ? "Guardar cambios"
-                    : "Enviar"}
-              </button>
+            <div className="form-field">
+              <label>Asunto:</label>
+              <input
+                type="text"
+                name="asunto"
+                value={form.asunto}
+                onChange={handleChange}
+                placeholder="Escribe el asunto..."
+              />
             </div>
+
+            <div className="form-field">
+              <label>Comunicado:</label>
+              <textarea
+                name="mensaje"
+                value={form.mensaje}
+                onChange={handleChange}
+                placeholder="Escribe el comunicado..."
+              />
+            </div>
+
+            <button className="btn-enviar" onClick={handleEnviar} disabled={loading}>
+              {loading
+                ? editandoId
+                  ? "Guardando..."
+                  : "Enviando..."
+                : editandoId
+                ? "Guardar cambios"
+                : "Enviar"}
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </InternalLayout>
   );
 }
 

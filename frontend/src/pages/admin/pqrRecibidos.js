@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import asistenteVirtual from "../../assets/asistenteVirtual.png";
+import InternalLayout from "../../components/InternalLayout";
 import "../../styles/admin/pqrRecibidos.css";
-import { cerrarSesion } from "../../services/authService";
 
 const MailIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -98,19 +96,10 @@ function StatusBadge({ status }) {
 }
 
 export default function PQRRecibidosAdmin() {
-  const navigate = useNavigate();
   const [sortOpen, setSortOpen] = useState(false);
   const [sortValue, setSortValue] = useState("Fecha de creacion");
   const [selectedPqr, setSelectedPqr] = useState(null);
   const dropdownRef = useRef(null);
-
-  const fecha = new Date().toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const fechaMayuscula = fecha.charAt(0).toUpperCase() + fecha.slice(1);
 
   useEffect(() => {
     const handler = (e) => {
@@ -135,132 +124,92 @@ export default function PQRRecibidosAdmin() {
   }, []);
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <Link to="/adminMenu" className="sidebar-logo">
-          SafeHome
-        </Link>
-        <ul className="nav-menu">
-          <li><a href="#"><i className="ph-light ph-megaphone"></i> Quejas</a></li>
-          <li><a href="#"><i className="ph-light ph-calendar-blank"></i> Reservas</a></li>
-          <li><a href="#"><i className="ph-light ph-bell"></i> Comunicados</a></li>
-          <li><a href="#"><i className="ph-light ph-security-camera"></i> Vigilancia</a></li>
-          <li><a href="#"><i className="ph-light ph-user"></i> Residentes</a></li>
-          <li><a href="#"><i className="ph-light ph-book-bookmark"></i> Manual Convivencia</a></li>
-          <li><a href="#"><i className="ph-light ph-pencil-simple"></i> Actualizar datos</a></li>
-          <li><a href="#"><i className="ph-light ph-user-plus"></i> Registrar Usuario</a></li>
-        </ul>
-        <div className="sidebar-assistant">
-          <img src={asistenteVirtual} alt="Asistente Virtual" />
-          <p>Asistente<br />Virtual</p>
-          <button className="btn-asst">Iniciar</button>
-        </div>
-      </aside>
+    <InternalLayout>
+      <div className="content">
+        <div className="card">
+          <div className="toolbar">
+            <h1 className="card-title">PQR</h1>
 
-      <div className="main">
-        <div className="topbar">
-          <div className="topbar-left">
-            <h2>Abundara</h2>
-            <span>{fechaMayuscula}</span>
-          </div>
-          <div className="topbar-right">
-            <i className="ph-light ph-envelope-simple topbar-icon"></i>
-            <i className="ph-light ph-bell topbar-icon"></i>
-            <i className="ph-light ph-sign-out topbar-icon" onClick={() => cerrarSesion(navigate)}></i>
-            <div className="user-pill">
-              <div className="user-avatar">NR</div>
-              <span className="user-name">Nicolas Rodriguez</span>
-              <i className="ph-light ph-caret-down user-caret"></i>
-            </div>
-          </div>
-        </div>
+            <div className="sort-block" ref={dropdownRef}>
+              <span className="sort-label">Ordenar por:</span>
+              <button
+                className="sort-trigger"
+                onClick={() => setSortOpen((v) => !v)}
+              >
+                <span>{sortValue}</span>
+                <ChevronDown />
+              </button>
 
-        <main className="content">
-          <div className="card">
-            <div className="toolbar">
-              <h1 className="card-title">PQR</h1>
-
-              <div className="sort-block" ref={dropdownRef}>
-                <span className="sort-label">Ordenar por:</span>
-                <button
-                  className="sort-trigger"
-                  onClick={() => setSortOpen((v) => !v)}
-                >
-                  <span>{sortValue}</span>
-                  <ChevronDown />
-                </button>
-
-                <div className={`sort-dropdown${sortOpen ? " open" : ""}`}>
-                  {SORT_OPTIONS.map((opt) => (
-                    <div
-                      key={opt}
-                      className={`sort-dropdown-item${sortValue === opt ? " active" : ""}`}
-                      onClick={() => {
-                        setSortValue(opt);
-                        setSortOpen(false);
-                      }}
-                    >
-                      <span className="sort-dot"></span>
-                      {opt}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="toolbar-spacer" />
-
-              <div className="filter-actions">
-                <button className="list-btn" title="Listado">
-                  <ListIcon />
-                </button>
-                <button className="filter-btn">
-                  Filtrar <FilterIcon />
-                </button>
+              <div className={`sort-dropdown${sortOpen ? " open" : ""}`}>
+                {SORT_OPTIONS.map((opt) => (
+                  <div
+                    key={opt}
+                    className={`sort-dropdown-item${sortValue === opt ? " active" : ""}`}
+                    onClick={() => {
+                      setSortValue(opt);
+                      setSortOpen(false);
+                    }}
+                  >
+                    <span className="sort-dot"></span>
+                    {opt}
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="table-wrap">
-              <table className="pqr-table">
-                <thead>
-                  <tr>
-                    <th>Estado</th>
-                    <th>Informacion</th>
-                    <th>Tipo</th>
-                    <th>Asunto</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Accion</th>
+            <div className="toolbar-spacer" />
+
+            <div className="filter-actions">
+              <button className="list-btn" title="Listado">
+                <ListIcon />
+              </button>
+              <button className="filter-btn">
+                Filtrar <FilterIcon />
+              </button>
+            </div>
+          </div>
+
+          <div className="table-wrap">
+            <table className="pqr-table">
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>Informacion</th>
+                  <th>Tipo</th>
+                  <th>Asunto</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pqrData.map((item) => (
+                  <tr key={item.id}>
+                    <td><StatusBadge status={item.status} /></td>
+                    <td>
+                      <div className="info-cell">
+                        <span className="info-name">{item.name}</span>
+                        <span className="info-detail">{item.info}</span>
+                      </div>
+                    </td>
+                    <td className="type-badge">{item.type}</td>
+                    <td className="asunto-cell">{item.subject}</td>
+                    <td>{item.date}</td>
+                    <td>{item.time}</td>
+                    <td className="action-cell">
+                      <button
+                        title="Ver detalle"
+                        onClick={() => setSelectedPqr(item)}
+                      >
+                        <MailIcon />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {pqrData.map((item) => (
-                    <tr key={item.id}>
-                      <td><StatusBadge status={item.status} /></td>
-                      <td>
-                        <div className="info-cell">
-                          <span className="info-name">{item.name}</span>
-                          <span className="info-detail">{item.info}</span>
-                        </div>
-                      </td>
-                      <td className="type-badge">{item.type}</td>
-                      <td className="asunto-cell">{item.subject}</td>
-                      <td>{item.date}</td>
-                      <td>{item.time}</td>
-                      <td className="action-cell">
-                        <button
-                          title="Ver detalle"
-                          onClick={() => setSelectedPqr(item)}
-                        >
-                          <MailIcon />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </main>
+        </div>
       </div>
 
       {selectedPqr && (
@@ -322,6 +271,6 @@ export default function PQRRecibidosAdmin() {
           </div>
         </div>
       )}
-    </div>
+    </InternalLayout>
   );
 }

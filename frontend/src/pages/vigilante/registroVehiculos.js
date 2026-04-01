@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import asistenteVirtual from "../../assets/asistenteVirtual.png";
+import InternalLayout from "../../components/InternalLayout";
 import { db } from "../FireBase/firebase";
-import { cerrarSesion } from "../../services/authService";
-import { getFechaActual } from "../../services/getDate";
 import "../../styles/vigilante/registroVehiculos.css";
 
 const EMPTY_FORM = {
@@ -17,33 +14,6 @@ const EMPTY_FORM = {
   apartamento: "",
   tipo: "",
 };
-
-const sidebarItems = [
-  { icon: "ph-megaphone", label: "Quejas" },
-  { icon: "ph-calendar-blank", label: "Reservas" },
-  { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
-  { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
-  { icon: "ph-user", label: "Residentes" },
-  { icon: "ph-book-bookmark", label: "Manual Convivencia" },
-  { icon: "ph-pencil-simple", label: "Actualizar datos" },
-  { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroResidente" },
-];
-
-function SidebarItem({ item }) {
-  if (item.to) {
-    return (
-      <Link to={item.to}>
-        <i className={`ph-light ${item.icon}`}></i> {item.label}
-      </Link>
-    );
-  }
-
-  return (
-    <span className="sidebar-link-placeholder">
-      <i className={`ph-light ${item.icon}`}></i> {item.label}
-    </span>
-  );
-}
 
 function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -226,8 +196,6 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 }
 
 export default function VehicleEntry() {
-  const navigate = useNavigate();
-  const fechaMayuscula = getFechaActual();
   const [vehicles, setVehicles] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
@@ -366,157 +334,110 @@ export default function VehicleEntry() {
   };
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <Link to="/adminMenu" className="sidebar-logo">
-          SafeHome
-        </Link>
+    <InternalLayout>
+      <main className="content">
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Ingreso de Vehiculos</h2>
 
-        <ul className="nav-menu">
-          {sidebarItems.map((item) => (
-            <li key={item.label}>
-              <SidebarItem item={item} />
-            </li>
-          ))}
-
-          <div className="sidebar-assistant">
-            <img src={asistenteVirtual} alt="asistenteVirtual" />
-            <p>
-              Asistente
-              <br />
-              Virtual
-            </p>
-            <button className="btn-asst">Iniciar</button>
-          </div>
-        </ul>
-      </aside>
-
-      <div className="main">
-        <div className="topbar">
-          <div className="topbar-left">
-            <h2>Abundara</h2>
-            <span>{fechaMayuscula}</span>
-          </div>
-
-          <div className="topbar-right">
-            <i className="ph-light ph-envelope-simple topbar-icon"></i>
-            <i className="ph-light ph-bell topbar-icon"></i>
-            <i
-              className="ph-light ph-sign-out topbar-icon"
-              onClick={() => cerrarSesion(navigate)}
-            ></i>
-            <div className="user-pill">
-              <div className="user-avatar">NR</div>
-              <span className="user-name">Nicolas Rodriguez</span>
-              <i className="ph-light ph-caret-down user-caret"></i>
-            </div>
-          </div>
-        </div>
-
-        <main className="content">
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Ingreso de Vehiculos</h2>
-
-              <div className="vehicle-counters">
-                <div className="counter-card">
-                  <div className="counter-icon car">
-                    <i className="ph-light ph-car"></i>
-                  </div>
-                  <div className="counter-info">
-                    <span className="counter-number">{totalCarros}</span>
-                  </div>
+            <div className="vehicle-counters">
+              <div className="counter-card">
+                <div className="counter-icon car">
+                  <i className="ph-light ph-car"></i>
                 </div>
-
-                <div className="counter-card">
-                  <div className="counter-icon moto">
-                    <i className="ph-light ph-motorcycle"></i>
-                  </div>
-                  <div className="counter-info">
-                    <span className="counter-number">{totalMotos}</span>
-                  </div>
+                <div className="counter-info">
+                  <span className="counter-number">{totalCarros}</span>
                 </div>
               </div>
 
-              <button type="button" className="register-btn" onClick={handleOpenCreate}>
-                <span>
-                  Registrar nuevo
-                  <br />
-                  vehiculo
-                </span>
-                <span className="plus-sq"></span>
-              </button>
+              <div className="counter-card">
+                <div className="counter-icon moto">
+                  <i className="ph-light ph-motorcycle"></i>
+                </div>
+                <div className="counter-info">
+                  <span className="counter-number">{totalMotos}</span>
+                </div>
+              </div>
             </div>
 
-            <table className="vehicle-table">
-              <thead>
+            <button type="button" className="register-btn" onClick={handleOpenCreate}>
+              <span>
+                Registrar nuevo
+                <br />
+                vehiculo
+              </span>
+              <span className="plus-sq"></span>
+            </button>
+          </div>
+
+          <table className="vehicle-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Propietario</th>
+                <th>Documento</th>
+                <th>Placa</th>
+                <th>Telefono</th>
+                <th>Torre</th>
+                <th>Apartamento</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vehicles.length === 0 ? (
                 <tr>
-                  <th>Tipo</th>
-                  <th>Propietario</th>
-                  <th>Documento</th>
-                  <th>Placa</th>
-                  <th>Telefono</th>
-                  <th>Torre</th>
-                  <th>Apartamento</th>
-                  <th>Fecha</th>
-                  <th>Hora</th>
-                  <th>Accion</th>
+                  <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
+                    No hay vehiculos registrados
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {vehicles.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                      No hay vehiculos registrados
+              ) : (
+                vehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>
+                      <div className={`tipo-icon ${vehicle.tipo === "Moto" ? "moto" : "car"}`}>
+                        <i
+                          className={`ph-light ${
+                            vehicle.tipo === "Moto" ? "ph-motorcycle" : "ph-car"
+                          }`}
+                        ></i>
+                      </div>
+                    </td>
+                    <td>{vehicle.propietario}</td>
+                    <td>{vehicle.documento}</td>
+                    <td>{vehicle.placa}</td>
+                    <td>{vehicle.telefono}</td>
+                    <td>{vehicle.torre}</td>
+                    <td>{vehicle.apartamento}</td>
+                    <td>{vehicle.fecha}</td>
+                    <td>{vehicle.hora}</td>
+                    <td>
+                      <div className="action-btns">
+                        <button
+                          type="button"
+                          className="action-icon-btn delete"
+                          disabled={deletingId === vehicle.id}
+                          onClick={() => handleDelete(vehicle)}
+                        >
+                          {deletingId === vehicle.id ? "..." : <i className="ph-light ph-trash"></i>}
+                        </button>
+                        <button
+                          type="button"
+                          className="action-icon-btn"
+                          onClick={() => handleOpenEdit(vehicle)}
+                        >
+                          <i className="ph-light ph-pencil-simple"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ) : (
-                  vehicles.map((vehicle) => (
-                    <tr key={vehicle.id}>
-                      <td>
-                        <div className={`tipo-icon ${vehicle.tipo === "Moto" ? "moto" : "car"}`}>
-                          <i
-                            className={`ph-light ${
-                              vehicle.tipo === "Moto" ? "ph-motorcycle" : "ph-car"
-                            }`}
-                          ></i>
-                        </div>
-                      </td>
-                      <td>{vehicle.propietario}</td>
-                      <td>{vehicle.documento}</td>
-                      <td>{vehicle.placa}</td>
-                      <td>{vehicle.telefono}</td>
-                      <td>{vehicle.torre}</td>
-                      <td>{vehicle.apartamento}</td>
-                      <td>{vehicle.fecha}</td>
-                      <td>{vehicle.hora}</td>
-                      <td>
-                        <div className="action-btns">
-                          <button
-                            type="button"
-                            className="action-icon-btn delete"
-                            disabled={deletingId === vehicle.id}
-                            onClick={() => handleDelete(vehicle)}
-                          >
-                            {deletingId === vehicle.id ? "..." : <i className="ph-light ph-trash"></i>}
-                          </button>
-                          <button
-                            type="button"
-                            className="action-icon-btn"
-                            onClick={() => handleOpenEdit(vehicle)}
-                          >
-                            <i className="ph-light ph-pencil-simple"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </main>
-      </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </main>
 
       <VehicleModal
         isOpen={modalOpen}
@@ -525,6 +446,6 @@ export default function VehicleEntry() {
         editingVehicle={editingVehicle}
         loading={loadingForm}
       />
-    </div>
+    </InternalLayout>
   );
 }

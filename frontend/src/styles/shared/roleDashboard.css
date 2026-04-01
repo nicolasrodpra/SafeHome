@@ -1,0 +1,50 @@
+.role-dashboard {
+  flex: 1;
+  padding: 10px 36px 36px;
+}
+
+.role-dashboard-card {
+  background: linear-gradient(135deg, #ffffff 0%, #fbf7ff 100%);
+  border: 1px solid #eee4f7;
+  border-radius: 24px;
+  padding: 36px;
+  box-shadow: 0 18px 45px rgba(70, 6, 105, 0.08);
+}
+
+.role-dashboard-kicker {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8f6aa7;
+  margin-bottom: 16px;
+}
+
+.role-dashboard-title {
+  font-size: 38px;
+  font-weight: 700;
+  color: #311144;
+  margin-bottom: 12px;
+}
+
+.role-dashboard-copy {
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #62586f;
+}
+
+@media (max-width: 780px) {
+  .role-dashboard {
+    padding: 16px 20px 24px;
+  }
+
+  .role-dashboard-card {
+    padding: 24px;
+  }
+
+  .role-dashboard-title {
+    font-size: 30px;
+  }
+}

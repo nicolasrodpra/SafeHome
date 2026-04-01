@@ -1,20 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
-import asistenteVirtual from "../../assets/asistenteVirtual.png";
+import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/inicioHero.png";
-import { cerrarSesion } from "../../services/authService";
-import { getFechaActual } from "../../services/getDate";
+import InternalLayout from "../../components/InternalLayout";
 import "../../styles/admin/adminMenu.css";
-
-const sidebarItems = [
-  { icon: "ph-megaphone", label: "Quejas" },
-  { icon: "ph-calendar-blank", label: "Reservas" },
-  { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
-  { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
-  { icon: "ph-user", label: "Residentes" },
-  { icon: "ph-book-bookmark", label: "Manual Convivencia" },
-  { icon: "ph-pencil-simple", label: "Actualizar datos" },
-  { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroResidente" },
-];
 
 const dashboardCards = [
   {
@@ -59,25 +46,9 @@ const dashboardCards = [
     icon: "ph-user-plus",
     title: "Registrar Usuario",
     description: "Crea nuevos usuarios y asigna sus datos de acceso al sistema.",
-    to: "/registroResidente",
+    to: "/registroUsuario",
   },
 ];
-
-function AdminSidebarItem({ item }) {
-  if (item.to) {
-    return (
-      <Link to={item.to}>
-        <i className={`ph-light ${item.icon}`}></i> {item.label}
-      </Link>
-    );
-  }
-
-  return (
-    <span className="sidebar-link-placeholder">
-      <i className={`ph-light ${item.icon}`}></i> {item.label}
-    </span>
-  );
-}
 
 function DashboardCard({ card }) {
   const content = (
@@ -105,62 +76,14 @@ function DashboardCard({ card }) {
 }
 
 function AdminMenu() {
-  const navigate = useNavigate();
-  const fechaMayuscula = getFechaActual();
-
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <Link to="/adminMenu" className="sidebar-logo">
-          SafeHome
-        </Link>
-
-        <ul className="nav-menu">
-          {sidebarItems.map((item) => (
-            <li key={item.label}>
-              <AdminSidebarItem item={item} />
-            </li>
-          ))}
-
-          <div className="sidebar-assistant">
-            <img src={asistenteVirtual} alt="asistenteVirtual" />
-            <p>
-              Asistente
-              <br />
-              Virtual
-            </p>
-            <button className="btn-asst">Iniciar</button>
-          </div>
-        </ul>
-      </aside>
-
-      <div className="main">
-        <div className="topbar">
-          <div className="topbar-left">
-            <h2>Abundara</h2>
-            <span>{fechaMayuscula}</span>
-          </div>
-
-          <div className="topbar-right">
-            <i className="ph-light ph-envelope-simple topbar-icon"></i>
-            <i className="ph-light ph-bell topbar-icon"></i>
-            <i
-              className="ph-light ph-sign-out topbar-icon"
-              onClick={() => cerrarSesion(navigate)}
-            ></i>
-            <div className="user-pill">
-              <div className="user-avatar">NR</div>
-              <span className="user-name">Nicolas Rodriguez</span>
-              <i className="ph-light ph-caret-down user-caret"></i>
-            </div>
-          </div>
-        </div>
-
+    <InternalLayout>
+      {({ profileName }) => (
         <div className="content">
           <div className="hero-banner">
             <div className="hero-banner-text">
               <h1>
-                Hola, <span>Nicolas</span>
+                Hola, <span>{profileName}</span>
               </h1>
               <p>
                 supervisa y mejora la seguridad de tu comunidad con
@@ -179,8 +102,8 @@ function AdminMenu() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </InternalLayout>
   );
 }
 
