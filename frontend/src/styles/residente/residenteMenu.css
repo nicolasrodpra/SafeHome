@@ -1,0 +1,191 @@
+:root {
+    --purple: #460669;
+    --purple-mid: #6b0ea0;
+    --purple-soft: #f0e8fa;
+    --purple-hero: #eae3f5;
+    --bg: #f4f3f7;
+    --white: #ffffff;
+    --gray-text: rgba(70, 70, 70, 0.65);
+    --black: #111111;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    overflow-x: hidden;
+}
+
+.app {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.residente-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden; 
+    padding: 24px 32px 32px;
+}
+
+.residente-content::-webkit-scrollbar {
+    display: none;
+}
+
+.residente-hero-banner {
+    background: var(--purple-hero);
+    border-radius: 18px;
+    padding: 24px 40px;
+    top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    min-height: 200px;
+    overflow: visible;
+    position: relative;
+    max-width: 100%; 
+}
+
+.residente-hero-banner-text h1 {
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 8px;
+    line-height: 1.15;
+    padding-left: 50px;
+}
+
+.residente-hero-banner-text h1 span {
+    color: var(--purple);
+}
+
+.residente-hero-banner-text p {
+    font-size: 0.83rem;
+    font-weight: 300;
+    color: var(--gray-text);
+    line-height: 1.6;
+    padding-left: 50px; 
+}
+
+.residente-hero-banner img {
+    width: 820px;
+    height: 300px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 8px 24px rgba(70, 6, 105, 0.18));
+    position: absolute;
+    right: -90px;
+    top: 40%;
+    transform: translateY(-40%);
+}
+
+.residente-section-label {
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: #888;
+    margin-top: 40px;  
+    margin-bottom: 14px;
+}
+
+.residente-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    flex: 1;
+}
+
+.residente-option-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 24px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.residente-option-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 26px rgba(70, 6, 105, 0.11);
+}
+
+.residente-option-card-placeholder {
+    cursor: default;
+}
+
+.residente-option-card-placeholder:hover {
+    transform: none;
+    /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); */
+}
+
+.residente-option-card-placeholder:hover .residente-card-arrow {
+    transform: none;
+}
+
+.residente-card-top h4 {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--purple);
+    margin-bottom: 6px;
+}
+
+.residente-card-top p {
+    font-size: 0.7rem;
+    font-weight: 300;
+    color: var(--gray-text);
+    line-height: 1.55;
+}
+
+.residente-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+}
+
+.residente-card-arrow {
+    font-size: 1.5rem;
+    color: var(--purple);
+    transition: transform 0.18s;
+}
+
+.residente-option-card:hover .residente-card-arrow {
+    transform: translateX(3px);
+}
+
+.residente-card-icon {
+    font-size: 3.4rem;
+    color: var(--purple);
+}
+
+@media (max-width: 1100px) {
+    .residente-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .residente-content {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .residente-cards-grid {
+        grid-template-columns: 1fr;
+    }
+}

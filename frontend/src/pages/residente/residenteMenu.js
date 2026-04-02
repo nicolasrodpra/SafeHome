@@ -1,21 +1,98 @@
-import InternalLayout from "../../layouts/InternalLayout";
-import "../../styles/shared/roleDashboard.css";
+import { Link } from "react-router-dom";
+import ilustracionMenu from "../../assets/inicioHeroResidente.png";
+import InternalLayout from "../../layouts/InternalLayoutResidente";
+import "../../styles/residente/residenteMenu.css";
 
-export default function ResidenteMenu() {
+const dashboardCards = [
+  {
+    icon: "ph-megaphone",
+    title: "PQR",
+    description: "Envía tus peticiones, quejas o reclamos y haz seguimiento a tu solicitud.",
+    to: "/pqrResidente",
+  },
+  {
+    icon: "ph-calendar-blank",
+    title: "Reservas",
+    description: "Agenda espacios comunes como el salón social o la zona BBQ fácilmente desde aquí.",
+  },
+  {
+    icon: "ph-bell",
+    title: "Comunicados",
+    description: "Entérate de los avisos y novedades del conjunto en tiempo real.",
+    to: "/comunicadosResidente",
+  },
+  {
+    icon: "ph-book-bookmark",
+    title: "Manual de convivencia",
+    description: "Consulta las normas y recomendaciones de convivencia en el conjunto.",
+  },
+  {
+    icon: "ph-pencil-simple",
+    title: "Actualizar Datos",
+    description: "Mantén tu información personal actualizada para una mejor comunicación.",
+  },
+  {
+    icon: "ph-hand",
+    title: "Botón de pánico",
+    description: "Usa este botón en caso de emergencia para alertar al personal de seguridad.",
+  },
+];
+
+function DashboardCard({ card }) {
+  const content = (
+    <>
+      <div className="residente-card-top">
+        <h4>{card.title}</h4>
+        <p>{card.description}</p>
+      </div>
+      <div className="residente-card-bottom">
+        <i className="ph-light ph-arrow-right residente-card-arrow"></i>
+        <i className={`ph-light ${card.icon} residente-card-icon`}></i>
+      </div>
+    </>
+  );
+
+  if (card.to) {
+    return (
+      <Link to={card.to} className="residente-option-card">
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="residente-option-card residente-option-card-placeholder">{content}</div>;
+}
+
+function ResidenteMenu() {
   return (
     <InternalLayout>
       {({ profileName }) => (
-        <section className="role-dashboard">
-          <div className="role-dashboard-card">
-            <span className="role-dashboard-kicker">Panel residente</span>
-            <h1 className="role-dashboard-title">Bienvenido {profileName}</h1>
-            <p className="role-dashboard-copy">
-              Desde aqui podras consultar novedades del conjunto, revisar tus solicitudes
-              y navegar por los modulos disponibles con la misma barra lateral del sistema.
-            </p>
+        <div className="residente-content">
+          <div className="residente-hero-banner">
+            <div className="residente-hero-banner-text">
+              <h1>
+                Hola, <span>{profileName}</span>
+              </h1>
+              <p>
+                Tu hogar, más seguro y conectado: recibe avisos
+                <br />
+                y participa en tu comunidad.
+              </p>
+            </div>
+            <img src={ilustracionMenu} alt="ilustracionMenu" />
           </div>
-        </section>
+
+          <p className="residente-section-label">Opciones</p>
+
+          <div className="residente-cards-grid">
+            {dashboardCards.map((card) => (
+              <DashboardCard key={card.title} card={card} />
+            ))}
+          </div>
+        </div>
       )}
     </InternalLayout>
   );
 }
+
+export default ResidenteMenu;

@@ -1,3 +1,4 @@
+
 *,
 *::before,
 *::after {
@@ -24,6 +25,12 @@ body {
     color: #333;
     overflow-x: clip;
     overflow-y: scroll !important;
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+    display: none;                /* Chrome, Safari */
 }
 
 #root {
