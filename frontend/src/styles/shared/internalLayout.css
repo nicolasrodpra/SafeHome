@@ -198,7 +198,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: 14px;
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.internal-user-pill:hover {
+  background: #f3e8ff;
+}
+
+.internal-user-menu {
+  position: relative;
 }
 
 .internal-user-avatar {
@@ -223,6 +236,45 @@
 .internal-user-caret {
   font-size: 0.8rem;
   color: #888;
+}
+
+.internal-user-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 210px;
+  padding: 10px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(70, 6, 105, 0.08);
+  box-shadow: 0 20px 38px rgba(24, 16, 40, 0.12);
+  z-index: 30;
+}
+
+.internal-user-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #312942;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.93rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.internal-user-dropdown-item:hover {
+  background: #f3e8ff;
+  color: #460669;
+}
+
+.internal-user-dropdown-item i {
+  font-size: 1rem;
 }
 
 .internal-page-title {

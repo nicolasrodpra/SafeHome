@@ -4,50 +4,50 @@ import Swal from "sweetalert2";
 import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
 import { readApiResponse } from "../../utils/readApiResponse";
-import "../../styles/vigilante/registroVehiculos.css";
+import "../../styles/vigilante/registroVisitantes.css";
 
 const EMPTY_FORM = {
-  propietario: "",
+  nombre: "",
   documento: "",
-  placa: "",
-  telefono: "",
+  residente: "",
   torre: "",
   apartamento: "",
-  tipo: "",
+  motivo: "",
+  telefono: "",
 };
 
-function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
+function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (editingVehicle) {
+    if (editingVisitor) {
       setForm({
-        propietario: editingVehicle.propietario,
-        documento: editingVehicle.documento,
-        placa: editingVehicle.placa,
-        telefono: editingVehicle.telefono,
-        torre: editingVehicle.torre,
-        apartamento: editingVehicle.apartamento,
-        tipo: editingVehicle.tipo,
+        nombre: editingVisitor.nombre,
+        documento: editingVisitor.documento,
+        residente: editingVisitor.residente,
+        torre: editingVisitor.torre,
+        apartamento: editingVisitor.apartamento,
+        motivo: editingVisitor.motivo,
+        telefono: editingVisitor.telefono,
       });
     } else {
       setForm(EMPTY_FORM);
     }
 
     setErrors({});
-  }, [editingVehicle, isOpen]);
+  }, [editingVisitor, isOpen]);
 
   const validate = () => {
     const nextErrors = {};
 
-    if (!form.propietario.trim()) nextErrors.propietario = "Requerido";
+    if (!form.nombre.trim()) nextErrors.nombre = "Requerido";
     if (!form.documento.trim()) nextErrors.documento = "Requerido";
-    if (!form.placa.trim()) nextErrors.placa = "Requerido";
-    if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
+    if (!form.residente.trim()) nextErrors.residente = "Requerido";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
-    if (!form.tipo) nextErrors.tipo = "Requerido";
+    if (!form.motivo.trim()) nextErrors.motivo = "Requerido";
+    if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -77,16 +77,16 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
         <div className="modal-header">
           <div className="modal-header-left">
             <div className="modal-icon">
-              <i className="ph-light ph-car"></i>
+              <i className="ph-light ph-users-three"></i>
             </div>
             <div>
               <p className="modal-title">
-                {editingVehicle ? "Editar vehiculo" : "Registrar vehiculo"}
+                {editingVisitor ? "Editar visitante" : "Registrar visitante"}
               </p>
               <p className="modal-subtitle">
-                {editingVehicle
-                  ? "Modifica los datos del vehiculo"
-                  : "Completa los datos del propietario"}
+                {editingVisitor
+                  ? "Actualiza el ingreso del visitante"
+                  : "Completa los datos del visitante autorizado"}
               </p>
             </div>
           </div>
@@ -100,14 +100,14 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row">
             <div className="form-group">
-              <label>Propietario</label>
+              <label>Visitante</label>
               <input
-                name="propietario"
-                value={form.propietario}
+                name="nombre"
+                value={form.nombre}
                 onChange={handleChange}
                 placeholder="Nombre completo"
               />
-              {errors.propietario && <span className="field-error">{errors.propietario}</span>}
+              {errors.nombre && <span className="field-error">{errors.nombre}</span>}
             </div>
 
             <div className="form-group">
@@ -124,15 +124,14 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Placa</label>
+              <label>Residente que autoriza</label>
               <input
-                name="placa"
-                value={form.placa}
+                name="residente"
+                value={form.residente}
                 onChange={handleChange}
-                placeholder="ABC123"
-                className="input-placa"
+                placeholder="Nombre del residente"
               />
-              {errors.placa && <span className="field-error">{errors.placa}</span>}
+              {errors.residente && <span className="field-error">{errors.residente}</span>}
             </div>
 
             <div className="form-group">
@@ -145,7 +144,9 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
             </div>
+          </div>
 
+          <div className="form-row">
             <div className="form-group">
               <label>Torre</label>
               <input
@@ -169,15 +170,16 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="form-row form-row-single">
             <div className="form-group">
-              <label>Tipo de vehiculo</label>
-              <select name="tipo" value={form.tipo} onChange={handleChange}>
-                <option value="">Seleccionar...</option>
-                <option value="Carro">Carro</option>
-                <option value="Moto">Moto</option>
-              </select>
-              {errors.tipo && <span className="field-error">{errors.tipo}</span>}
+              <label>Motivo de visita</label>
+              <input
+                name="motivo"
+                value={form.motivo}
+                onChange={handleChange}
+                placeholder="Ej. visita familiar, mantenimiento"
+              />
+              {errors.motivo && <span className="field-error">{errors.motivo}</span>}
             </div>
           </div>
 
@@ -186,7 +188,7 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               Cancelar
             </button>
             <button type="submit" className="btn-save" disabled={loading}>
-              {loading ? "Guardando..." : editingVehicle ? "Actualizar" : "Registrar"}
+              {loading ? "Guardando..." : editingVisitor ? "Actualizar" : "Registrar"}
             </button>
           </div>
         </form>
@@ -195,19 +197,17 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   );
 }
 
-export default function RegistroVehiculos() {
-  const [vehicles, setVehicles] = useState([]);
+export default function RegistroVisitantes() {
+  const [visitors, setVisitors] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingVisitor, setEditingVisitor] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-
-  const totalCarros = vehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
-  const totalMotos = vehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
+  const totalVisitas = visitors.length;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      collection(db, "vehiculos"),
+      collection(db, "visitantes"),
       (snapshot) => {
         const data = snapshot.docs.map((snapshotDoc) => ({
           id: snapshotDoc.id,
@@ -223,10 +223,10 @@ export default function RegistroVehiculos() {
             : "",
         }));
 
-        setVehicles(data);
+        setVisitors(data);
       },
       (error) => {
-        console.error("Error cargando vehiculos:", error);
+        console.error("Error cargando visitantes:", error);
       }
     );
 
@@ -234,12 +234,12 @@ export default function RegistroVehiculos() {
   }, []);
 
   const handleOpenCreate = () => {
-    setEditingVehicle(null);
+    setEditingVisitor(null);
     setModalOpen(true);
   };
 
-  const handleOpenEdit = (vehicle) => {
-    setEditingVehicle(vehicle);
+  const handleOpenEdit = (visitor) => {
+    setEditingVisitor(visitor);
     setModalOpen(true);
   };
 
@@ -247,31 +247,31 @@ export default function RegistroVehiculos() {
     setLoadingForm(true);
 
     try {
-      if (editingVehicle) {
-        const res = await fetch(`http://localhost:5000/api/vehiculos/${editingVehicle.id}`, {
+      if (editingVisitor) {
+        const res = await fetch(`http://localhost:5000/api/visitantes/${editingVisitor.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        const data = await readApiResponse(res, "No se pudo actualizar el vehiculo.");
+        const data = await readApiResponse(res, "No se pudo actualizar el visitante.");
 
-        setVehicles((prev) =>
-          prev.map((vehicle) =>
-            vehicle.id === editingVehicle.id ? { ...vehicle, ...data.vehiculo } : vehicle
+        setVisitors((prev) =>
+          prev.map((visitor) =>
+            visitor.id === editingVisitor.id ? { ...visitor, ...data.visitante } : visitor
           )
         );
       } else {
-        const res = await fetch("http://localhost:5000/api/vehiculos", {
+        const res = await fetch("http://localhost:5000/api/visitantes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        const data = await readApiResponse(res, "No se pudo registrar el vehiculo.");
+        const data = await readApiResponse(res, "No se pudo registrar el visitante.");
 
-        setVehicles((prev) => [...prev, data.vehiculo]);
+        setVisitors((prev) => [...prev, data.visitante]);
       }
 
-      setEditingVehicle(null);
+      setEditingVisitor(null);
       setModalOpen(false);
     } catch (error) {
       Swal.fire({
@@ -285,10 +285,10 @@ export default function RegistroVehiculos() {
     }
   };
 
-  const handleDelete = async (vehicle) => {
+  const handleDelete = async (visitor) => {
     const result = await Swal.fire({
-      title: "Eliminar vehiculo?",
-      text: `Se eliminara el vehiculo de ${vehicle.propietario} (${vehicle.placa}).`,
+      title: "Eliminar visitante?",
+      text: `Se eliminara el ingreso registrado para ${visitor.nombre}.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -300,19 +300,19 @@ export default function RegistroVehiculos() {
 
     if (!result.isConfirmed) return;
 
-    setDeletingId(vehicle.id);
+    setDeletingId(visitor.id);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/vehiculos/${vehicle.id}`, {
+      const res = await fetch(`http://localhost:5000/api/visitantes/${visitor.id}`, {
         method: "DELETE",
       });
 
       if (!res.ok) throw new Error("No se pudo eliminar.");
 
-      setVehicles((prev) => prev.filter((currentVehicle) => currentVehicle.id !== vehicle.id));
+      setVisitors((prev) => prev.filter((currentVisitor) => currentVisitor.id !== visitor.id));
 
       Swal.fire({
-        title: "Vehiculo eliminado",
+        title: "Visitante eliminado",
         text: "El registro fue eliminado correctamente.",
         icon: "success",
         confirmButtonColor: "#460669",
@@ -334,24 +334,16 @@ export default function RegistroVehiculos() {
       <main className="content">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Ingreso de Vehiculos</h2>
+            <h2 className="card-title">Registro de Visitantes</h2>
 
             <div className="vehicle-counters">
               <div className="counter-card">
                 <div className="counter-icon car">
-                  <i className="ph-light ph-car"></i>
+                  <i className="ph-light ph-users-three"></i>
                 </div>
                 <div className="counter-info">
-                  <span className="counter-number">{totalCarros}</span>
-                </div>
-              </div>
-
-              <div className="counter-card">
-                <div className="counter-icon moto">
-                  <i className="ph-light ph-motorcycle"></i>
-                </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalMotos}</span>
+                  <span className="counter-number">{totalVisitas}</span>
+                  <span className="counter-label">Visitantes registrados</span>
                 </div>
               </div>
             </div>
@@ -360,7 +352,7 @@ export default function RegistroVehiculos() {
               <span>
                 Registrar nuevo
                 <br />
-                vehiculo
+                visitante
               </span>
               <span className="plus-sq"></span>
             </button>
@@ -370,58 +362,66 @@ export default function RegistroVehiculos() {
             <thead>
               <tr>
                 <th>Tipo</th>
-                <th>Propietario</th>
+                <th>Visitante</th>
                 <th>Documento</th>
-                <th>Placa</th>
+                <th>Residente</th>
                 <th>Telefono</th>
                 <th>Torre</th>
                 <th>Apartamento</th>
+                <th>Motivo</th>
                 <th>Fecha</th>
                 <th>Hora</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody>
-              {vehicles.length === 0 ? (
+              {visitors.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                    No hay vehiculos registrados
+                  <td colSpan={11} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
+                    No hay visitantes registrados
                   </td>
                 </tr>
               ) : (
-                vehicles.map((vehicle) => (
-                  <tr key={vehicle.id}>
+                visitors.map((visitor) => (
+                  <tr key={visitor.id}>
                     <td>
-                      <div className={`tipo-icon ${vehicle.tipo === "Moto" ? "moto" : "car"}`}>
+                      <div
+                        className={`tipo-icon ${
+                          visitor.motivo?.toLowerCase().includes("familiar") ? "moto" : "car"
+                        }`}
+                      >
                         <i
                           className={`ph-light ${
-                            vehicle.tipo === "Moto" ? "ph-motorcycle" : "ph-car"
+                            visitor.motivo?.toLowerCase().includes("familiar")
+                              ? "ph-hand-heart"
+                              : "ph-user"
                           }`}
                         ></i>
                       </div>
                     </td>
-                    <td>{vehicle.propietario}</td>
-                    <td>{vehicle.documento}</td>
-                    <td>{vehicle.placa}</td>
-                    <td>{vehicle.telefono}</td>
-                    <td>{vehicle.torre}</td>
-                    <td>{vehicle.apartamento}</td>
-                    <td>{vehicle.fecha}</td>
-                    <td>{vehicle.hora}</td>
+                    <td>{visitor.nombre}</td>
+                    <td>{visitor.documento}</td>
+                    <td>{visitor.residente}</td>
+                    <td>{visitor.telefono}</td>
+                    <td>{visitor.torre}</td>
+                    <td>{visitor.apartamento}</td>
+                    <td>{visitor.motivo}</td>
+                    <td>{visitor.fecha}</td>
+                    <td>{visitor.hora}</td>
                     <td>
                       <div className="action-btns">
                         <button
                           type="button"
                           className="action-icon-btn delete"
-                          disabled={deletingId === vehicle.id}
-                          onClick={() => handleDelete(vehicle)}
+                          disabled={deletingId === visitor.id}
+                          onClick={() => handleDelete(visitor)}
                         >
-                          {deletingId === vehicle.id ? "..." : <i className="ph-light ph-trash"></i>}
+                          {deletingId === visitor.id ? "..." : <i className="ph-light ph-trash"></i>}
                         </button>
                         <button
                           type="button"
                           className="action-icon-btn"
-                          onClick={() => handleOpenEdit(vehicle)}
+                          onClick={() => handleOpenEdit(visitor)}
                         >
                           <i className="ph-light ph-pencil-simple"></i>
                         </button>
@@ -435,11 +435,11 @@ export default function RegistroVehiculos() {
         </div>
       </main>
 
-      <VehicleModal
+      <VisitanteModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
-        editingVehicle={editingVehicle}
+        editingVisitor={editingVisitor}
         loading={loadingForm}
       />
     </InternalLayout>

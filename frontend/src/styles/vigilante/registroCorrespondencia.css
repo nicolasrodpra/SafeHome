@@ -1,0 +1,5 @@
+@import "./registroVehiculos.css";
+
+.form-row-single {
+  grid-template-columns: 1fr;
+}

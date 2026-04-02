@@ -4,50 +4,50 @@ import Swal from "sweetalert2";
 import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
 import { readApiResponse } from "../../utils/readApiResponse";
-import "../../styles/vigilante/registroVehiculos.css";
+import "../../styles/vigilante/registroCorrespondencia.css";
 
 const EMPTY_FORM = {
-  propietario: "",
+  residente: "",
   documento: "",
-  placa: "",
-  telefono: "",
   torre: "",
   apartamento: "",
-  tipo: "",
+  tipoEntrega: "",
+  remitente: "",
+  observacion: "",
 };
 
-function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
+function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (editingVehicle) {
+    if (editingItem) {
       setForm({
-        propietario: editingVehicle.propietario,
-        documento: editingVehicle.documento,
-        placa: editingVehicle.placa,
-        telefono: editingVehicle.telefono,
-        torre: editingVehicle.torre,
-        apartamento: editingVehicle.apartamento,
-        tipo: editingVehicle.tipo,
+        residente: editingItem.residente,
+        documento: editingItem.documento,
+        torre: editingItem.torre,
+        apartamento: editingItem.apartamento,
+        tipoEntrega: editingItem.tipoEntrega,
+        remitente: editingItem.remitente,
+        observacion: editingItem.observacion,
       });
     } else {
       setForm(EMPTY_FORM);
     }
 
     setErrors({});
-  }, [editingVehicle, isOpen]);
+  }, [editingItem, isOpen]);
 
   const validate = () => {
     const nextErrors = {};
 
-    if (!form.propietario.trim()) nextErrors.propietario = "Requerido";
+    if (!form.residente.trim()) nextErrors.residente = "Requerido";
     if (!form.documento.trim()) nextErrors.documento = "Requerido";
-    if (!form.placa.trim()) nextErrors.placa = "Requerido";
-    if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
-    if (!form.tipo) nextErrors.tipo = "Requerido";
+    if (!form.tipoEntrega) nextErrors.tipoEntrega = "Requerido";
+    if (!form.remitente.trim()) nextErrors.remitente = "Requerido";
+    if (!form.observacion.trim()) nextErrors.observacion = "Requerido";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -77,16 +77,16 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
         <div className="modal-header">
           <div className="modal-header-left">
             <div className="modal-icon">
-              <i className="ph-light ph-car"></i>
+              <i className="ph-light ph-package"></i>
             </div>
             <div>
               <p className="modal-title">
-                {editingVehicle ? "Editar vehiculo" : "Registrar vehiculo"}
+                {editingItem ? "Editar correspondencia" : "Registrar correspondencia"}
               </p>
               <p className="modal-subtitle">
-                {editingVehicle
-                  ? "Modifica los datos del vehiculo"
-                  : "Completa los datos del propietario"}
+                {editingItem
+                  ? "Actualiza la entrega registrada"
+                  : "Guarda el paquete o documento recibido"}
               </p>
             </div>
           </div>
@@ -100,14 +100,14 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row">
             <div className="form-group">
-              <label>Propietario</label>
+              <label>Residente</label>
               <input
-                name="propietario"
-                value={form.propietario}
+                name="residente"
+                value={form.residente}
                 onChange={handleChange}
                 placeholder="Nombre completo"
               />
-              {errors.propietario && <span className="field-error">{errors.propietario}</span>}
+              {errors.residente && <span className="field-error">{errors.residente}</span>}
             </div>
 
             <div className="form-group">
@@ -123,29 +123,6 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label>Placa</label>
-              <input
-                name="placa"
-                value={form.placa}
-                onChange={handleChange}
-                placeholder="ABC123"
-                className="input-placa"
-              />
-              {errors.placa && <span className="field-error">{errors.placa}</span>}
-            </div>
-
-            <div className="form-group">
-              <label>Telefono</label>
-              <input
-                name="telefono"
-                value={form.telefono}
-                onChange={handleChange}
-                placeholder="Numero de contacto"
-              />
-              {errors.telefono && <span className="field-error">{errors.telefono}</span>}
-            </div>
-
             <div className="form-group">
               <label>Torre</label>
               <input
@@ -171,13 +148,38 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Tipo de vehiculo</label>
-              <select name="tipo" value={form.tipo} onChange={handleChange}>
+              <label>Tipo de entrega</label>
+              <select name="tipoEntrega" value={form.tipoEntrega} onChange={handleChange}>
                 <option value="">Seleccionar...</option>
-                <option value="Carro">Carro</option>
-                <option value="Moto">Moto</option>
+                <option value="Paquete">Paquete</option>
+                <option value="Sobre">Sobre</option>
+                <option value="Documento">Documento</option>
               </select>
-              {errors.tipo && <span className="field-error">{errors.tipo}</span>}
+              {errors.tipoEntrega && <span className="field-error">{errors.tipoEntrega}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>Remitente</label>
+              <input
+                name="remitente"
+                value={form.remitente}
+                onChange={handleChange}
+                placeholder="Empresa o persona"
+              />
+              {errors.remitente && <span className="field-error">{errors.remitente}</span>}
+            </div>
+          </div>
+
+          <div className="form-row form-row-single">
+            <div className="form-group">
+              <label>Observacion</label>
+              <input
+                name="observacion"
+                value={form.observacion}
+                onChange={handleChange}
+                placeholder="Detalles de la entrega"
+              />
+              {errors.observacion && <span className="field-error">{errors.observacion}</span>}
             </div>
           </div>
 
@@ -186,7 +188,7 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               Cancelar
             </button>
             <button type="submit" className="btn-save" disabled={loading}>
-              {loading ? "Guardando..." : editingVehicle ? "Actualizar" : "Registrar"}
+              {loading ? "Guardando..." : editingItem ? "Actualizar" : "Registrar"}
             </button>
           </div>
         </form>
@@ -195,19 +197,20 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   );
 }
 
-export default function RegistroVehiculos() {
-  const [vehicles, setVehicles] = useState([]);
+export default function RegistroCorrespondencia() {
+  const [items, setItems] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const totalCarros = vehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
-  const totalMotos = vehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
+  const totalPaquetes = items.filter((item) => item.tipoEntrega === "Paquete").length;
+  const totalSobres = items.filter((item) => item.tipoEntrega === "Sobre").length;
+  const totalDocumentos = items.filter((item) => item.tipoEntrega === "Documento").length;
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      collection(db, "vehiculos"),
+      collection(db, "correspondencia"),
       (snapshot) => {
         const data = snapshot.docs.map((snapshotDoc) => ({
           id: snapshotDoc.id,
@@ -223,10 +226,10 @@ export default function RegistroVehiculos() {
             : "",
         }));
 
-        setVehicles(data);
+        setItems(data);
       },
       (error) => {
-        console.error("Error cargando vehiculos:", error);
+        console.error("Error cargando correspondencia:", error);
       }
     );
 
@@ -234,12 +237,12 @@ export default function RegistroVehiculos() {
   }, []);
 
   const handleOpenCreate = () => {
-    setEditingVehicle(null);
+    setEditingItem(null);
     setModalOpen(true);
   };
 
-  const handleOpenEdit = (vehicle) => {
-    setEditingVehicle(vehicle);
+  const handleOpenEdit = (item) => {
+    setEditingItem(item);
     setModalOpen(true);
   };
 
@@ -247,31 +250,31 @@ export default function RegistroVehiculos() {
     setLoadingForm(true);
 
     try {
-      if (editingVehicle) {
-        const res = await fetch(`http://localhost:5000/api/vehiculos/${editingVehicle.id}`, {
+      if (editingItem) {
+        const res = await fetch(`http://localhost:5000/api/correspondencia/${editingItem.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        const data = await readApiResponse(res, "No se pudo actualizar el vehiculo.");
+        const data = await readApiResponse(res, "No se pudo actualizar la correspondencia.");
 
-        setVehicles((prev) =>
-          prev.map((vehicle) =>
-            vehicle.id === editingVehicle.id ? { ...vehicle, ...data.vehiculo } : vehicle
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === editingItem.id ? { ...item, ...data.correspondencia } : item
           )
         );
       } else {
-        const res = await fetch("http://localhost:5000/api/vehiculos", {
+        const res = await fetch("http://localhost:5000/api/correspondencia", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         });
-        const data = await readApiResponse(res, "No se pudo registrar el vehiculo.");
+        const data = await readApiResponse(res, "No se pudo registrar la correspondencia.");
 
-        setVehicles((prev) => [...prev, data.vehiculo]);
+        setItems((prev) => [...prev, data.correspondencia]);
       }
 
-      setEditingVehicle(null);
+      setEditingItem(null);
       setModalOpen(false);
     } catch (error) {
       Swal.fire({
@@ -285,10 +288,10 @@ export default function RegistroVehiculos() {
     }
   };
 
-  const handleDelete = async (vehicle) => {
+  const handleDelete = async (item) => {
     const result = await Swal.fire({
-      title: "Eliminar vehiculo?",
-      text: `Se eliminara el vehiculo de ${vehicle.propietario} (${vehicle.placa}).`,
+      title: "Eliminar correspondencia?",
+      text: `Se eliminara la entrega registrada para ${item.residente}.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -300,19 +303,19 @@ export default function RegistroVehiculos() {
 
     if (!result.isConfirmed) return;
 
-    setDeletingId(vehicle.id);
+    setDeletingId(item.id);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/vehiculos/${vehicle.id}`, {
+      const res = await fetch(`http://localhost:5000/api/correspondencia/${item.id}`, {
         method: "DELETE",
       });
 
       if (!res.ok) throw new Error("No se pudo eliminar.");
 
-      setVehicles((prev) => prev.filter((currentVehicle) => currentVehicle.id !== vehicle.id));
+      setItems((prev) => prev.filter((currentItem) => currentItem.id !== item.id));
 
       Swal.fire({
-        title: "Vehiculo eliminado",
+        title: "Correspondencia eliminada",
         text: "El registro fue eliminado correctamente.",
         icon: "success",
         confirmButtonColor: "#460669",
@@ -334,33 +337,45 @@ export default function RegistroVehiculos() {
       <main className="content">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Ingreso de Vehiculos</h2>
+            <h2 className="card-title">Registro de Correspondencia</h2>
 
             <div className="vehicle-counters">
               <div className="counter-card">
                 <div className="counter-icon car">
-                  <i className="ph-light ph-car"></i>
+                  <i className="ph-light ph-package"></i>
                 </div>
                 <div className="counter-info">
-                  <span className="counter-number">{totalCarros}</span>
+                  <span className="counter-number">{totalPaquetes}</span>
+                  <span className="counter-label">Paquetes</span>
                 </div>
               </div>
 
               <div className="counter-card">
                 <div className="counter-icon moto">
-                  <i className="ph-light ph-motorcycle"></i>
+                  <i className="ph-light ph-envelope-simple"></i>
                 </div>
                 <div className="counter-info">
-                  <span className="counter-number">{totalMotos}</span>
+                  <span className="counter-number">{totalSobres}</span>
+                  <span className="counter-label">Sobres</span>
+                </div>
+              </div>
+
+              <div className="counter-card">
+                <div className="counter-icon moto">
+                  <i className="ph-light ph-file-text"></i>
+                </div>
+                <div className="counter-info">
+                  <span className="counter-number">{totalDocumentos}</span>
+                  <span className="counter-label">Documentos</span>
                 </div>
               </div>
             </div>
 
             <button type="button" className="register-btn" onClick={handleOpenCreate}>
               <span>
-                Registrar nuevo
+                Registrar nueva
                 <br />
-                vehiculo
+                correspondencia
               </span>
               <span className="plus-sq"></span>
             </button>
@@ -370,58 +385,64 @@ export default function RegistroVehiculos() {
             <thead>
               <tr>
                 <th>Tipo</th>
-                <th>Propietario</th>
+                <th>Residente</th>
                 <th>Documento</th>
-                <th>Placa</th>
-                <th>Telefono</th>
+                <th>Remitente</th>
                 <th>Torre</th>
                 <th>Apartamento</th>
+                <th>Observacion</th>
                 <th>Fecha</th>
                 <th>Hora</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody>
-              {vehicles.length === 0 ? (
+              {items.length === 0 ? (
                 <tr>
                   <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                    No hay vehiculos registrados
+                    No hay correspondencia registrada
                   </td>
                 </tr>
               ) : (
-                vehicles.map((vehicle) => (
-                  <tr key={vehicle.id}>
+                items.map((item) => (
+                  <tr key={item.id}>
                     <td>
-                      <div className={`tipo-icon ${vehicle.tipo === "Moto" ? "moto" : "car"}`}>
+                      <div
+                        className={`tipo-icon ${
+                          item.tipoEntrega === "Paquete" ? "car" : "moto"
+                        }`}
+                      >
                         <i
                           className={`ph-light ${
-                            vehicle.tipo === "Moto" ? "ph-motorcycle" : "ph-car"
+                            item.tipoEntrega === "Paquete"
+                              ? "ph-package"
+                              : "ph-file-text"
                           }`}
                         ></i>
                       </div>
                     </td>
-                    <td>{vehicle.propietario}</td>
-                    <td>{vehicle.documento}</td>
-                    <td>{vehicle.placa}</td>
-                    <td>{vehicle.telefono}</td>
-                    <td>{vehicle.torre}</td>
-                    <td>{vehicle.apartamento}</td>
-                    <td>{vehicle.fecha}</td>
-                    <td>{vehicle.hora}</td>
+                    <td>{item.residente}</td>
+                    <td>{item.documento}</td>
+                    <td>{item.remitente}</td>
+                    <td>{item.torre}</td>
+                    <td>{item.apartamento}</td>
+                    <td>{item.observacion}</td>
+                    <td>{item.fecha}</td>
+                    <td>{item.hora}</td>
                     <td>
                       <div className="action-btns">
                         <button
                           type="button"
                           className="action-icon-btn delete"
-                          disabled={deletingId === vehicle.id}
-                          onClick={() => handleDelete(vehicle)}
+                          disabled={deletingId === item.id}
+                          onClick={() => handleDelete(item)}
                         >
-                          {deletingId === vehicle.id ? "..." : <i className="ph-light ph-trash"></i>}
+                          {deletingId === item.id ? "..." : <i className="ph-light ph-trash"></i>}
                         </button>
                         <button
                           type="button"
                           className="action-icon-btn"
-                          onClick={() => handleOpenEdit(vehicle)}
+                          onClick={() => handleOpenEdit(item)}
                         >
                           <i className="ph-light ph-pencil-simple"></i>
                         </button>
@@ -435,11 +456,11 @@ export default function RegistroVehiculos() {
         </div>
       </main>
 
-      <VehicleModal
+      <CorrespondenciaModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
-        editingVehicle={editingVehicle}
+        editingItem={editingItem}
         loading={loadingForm}
       />
     </InternalLayout>

@@ -222,6 +222,7 @@ export default function RegistroAdminPage() {
     }
 
     const payload = {
+      nombre: `${currentForm.nombres.trim()} ${currentForm.apellidos.trim()}`.trim(),
       nombres: currentForm.nombres.trim(),
       apellidos: currentForm.apellidos.trim(),
       cedula: currentForm.cedula.trim(),

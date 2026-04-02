@@ -7,7 +7,10 @@ import PqrRecibidosAdmin from "./pages/admin/pqrRecibidos.js";
 import AdminRegister from "./pages/admin/registroAdmin.js";
 import Home from "./pages/general/home.js";
 import Login from "./pages/general/login.js";
+import PerfilUsuarioPage from "./pages/general/perfilUsuario.js";
 import ResidenteMenu from "./pages/residente/residenteMenu.js";
+import RegistroCorrespondencia from "./pages/vigilante/registroCorrespondencia.js";
+import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import RegistroVehiculos from "./pages/vigilante/registroVehiculos.js";
 import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
 
@@ -19,6 +22,9 @@ const privateRoutes = [
   { path: "/residenteMenu", element: <ResidenteMenu /> },
   { path: "/vigilanteMenu", element: <VigilanteMenu /> },
   { path: "/adminMenu", element: <AdminMenu /> },
+  { path: "/perfil", element: <PerfilUsuarioPage /> },
+  { path: "/registroCorrespondencia", element: <RegistroCorrespondencia /> },
+  { path: "/registroVisitantes", element: <RegistroVisitantes /> },
   { path: "/registroVehiculos", element: <RegistroVehiculos /> },
 ];
 

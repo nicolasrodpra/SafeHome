@@ -42,6 +42,7 @@ const dashboardCards = [
     icon: "ph-pencil-simple",
     title: "Actualizacion Datos",
     description: "Modifica y mantiene actualizada tu informacion.",
+    to: "/perfil",
   },
   {
     icon: "ph-user-plus",
