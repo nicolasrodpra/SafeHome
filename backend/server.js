@@ -1,8 +1,7 @@
 require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
-const admin = require("firebase-admin");
-const serviceAccount = require("./firebaseKey.json");
+require("./config/firebaseAdmin");
 
 const registroAdminRoutes = require("./routes/admin/registroAdminRoutes");
 const loginRoutes = require("./routes/general/loginRoutes");
@@ -12,12 +11,16 @@ const registroVehiculosRoutes = require("./routes/vigilante/registroVehiculosRou
 const registroVisitantesRoutes = require("./routes/vigilante/registroVisitantesRoutes");
 const registroVigilanteRoutes = require("./routes/vigilante/registroVigilanteRoutes");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
 const app = express();
+const apiRoutes = [
+  registroAdminRoutes,
+  loginRoutes,
+  registroResidenteRoutes,
+  registroVehiculosRoutes,
+  registroVigilanteRoutes,
+];
 
+app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
 

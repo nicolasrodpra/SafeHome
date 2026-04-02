@@ -7,18 +7,19 @@ const dashboardCards = [
   {
     icon: "ph-megaphone",
     title: "PQR",
-    description: "Envía tus peticiones, quejas o reclamos y haz seguimiento a tu solicitud.",
+    description: "Envia tus peticiones, quejas o reclamos y haz seguimiento a tu solicitud.",
     to: "/pqrResidente",
   },
   {
     icon: "ph-calendar-blank",
     title: "Reservas",
-    description: "Agenda espacios comunes como el salón social o la zona BBQ fácilmente desde aquí.",
+    description: "Agenda espacios comunes como el salon social o la zona BBQ facilmente desde aqui.",
+    to: "/residentesReservas",
   },
   {
     icon: "ph-bell",
     title: "Comunicados",
-    description: "Entérate de los avisos y novedades del conjunto en tiempo real.",
+    description: "Enterate de los avisos y novedades del conjunto en tiempo real.",
     to: "/comunicadosResidente",
   },
   {
@@ -29,12 +30,13 @@ const dashboardCards = [
   {
     icon: "ph-pencil-simple",
     title: "Actualizar Datos",
-    description: "Mantén tu información personal actualizada para una mejor comunicación.",
+    description: "Manten tu informacion personal actualizada para una mejor comunicacion.",
+    to: "/perfil",
   },
   {
     icon: "ph-hand",
-    title: "Botón de pánico",
-    description: "Usa este botón en caso de emergencia para alertar al personal de seguridad.",
+    title: "Boton de panico",
+    description: "Usa este boton en caso de emergencia para alertar al personal de seguridad.",
   },
 ];
 
@@ -74,7 +76,7 @@ function ResidenteMenu() {
                 Hola, <span>{profileName}</span>
               </h1>
               <p>
-                Tu hogar, más seguro y conectado: recibe avisos
+                Tu hogar, mas seguro y conectado: recibe avisos
                 <br />
                 y participa en tu comunidad.
               </p>

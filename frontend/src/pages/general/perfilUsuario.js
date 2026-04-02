@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";
+import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
 import { auth, db } from "../../config/firebase";
 import "../../styles/general/perfilUsuario.css";
 
@@ -14,6 +15,13 @@ const roleDescriptions = {
 };
 
 const getFieldValue = (value) => (value ? value : "No disponible");
+const getCachedRole = () => {
+  try {
+    return localStorage.getItem("safehome_profile_role");
+  } catch (error) {
+    return null;
+  }
+};
 
 const emptyForm = {
   nombres: "",
@@ -34,6 +42,9 @@ export default function PerfilUsuarioPage() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const layoutRole = profile?.rol || getCachedRole();
+  const LayoutComponent =
+    layoutRole === "Residente" ? InternalLayoutResidente : InternalLayout;
 
   useEffect(() => {
     let isMounted = true;
@@ -234,7 +245,7 @@ export default function PerfilUsuarioPage() {
   const isVigilante = profile?.rol === "Vigilante";
 
   return (
-    <InternalLayout>
+    <LayoutComponent>
       <div className="content">
         <section className="profile-page">
           <header className="profile-page-header">
@@ -402,6 +413,6 @@ export default function PerfilUsuarioPage() {
           </div>
         </section>
       </div>
-    </InternalLayout>
+    </LayoutComponent>
   );
 }

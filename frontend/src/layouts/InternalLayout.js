@@ -10,7 +10,7 @@ import "../styles/shared/internalLayout.css";
 
 const ADMIN_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Quejas", to: "/pqrRecibidosAdmin" },
-  { icon: "ph-calendar-blank", label: "Reservas" },
+  { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
   { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
   { icon: "ph-user", label: "Residentes", to: "/adminResidentes" },

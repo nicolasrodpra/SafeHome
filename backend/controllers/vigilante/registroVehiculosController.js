@@ -1,6 +1,22 @@
-const admin = require("firebase-admin");
+const admin = require("../../config/firebaseAdmin");
 
 const vehiculosCollection = () => admin.firestore().collection("vehiculos");
+const limpiarTexto = (value) => (typeof value === "string" ? value.trim() : "");
+
+const normalizarVehiculo = (payload) => ({
+  propietario: limpiarTexto(payload.propietario),
+  documento: limpiarTexto(payload.documento),
+  placa: limpiarTexto(payload.placa).toUpperCase(),
+  telefono: limpiarTexto(payload.telefono),
+  torre: limpiarTexto(payload.torre),
+  apartamento: limpiarTexto(payload.apartamento),
+  tipo: limpiarTexto(payload.tipo),
+});
+
+const obtenerCamposFaltantes = (vehiculo) =>
+  Object.entries(vehiculo)
+    .filter(([, value]) => !value)
+    .map(([field]) => field);
 
 const mapVehiculo = (snapshotDoc) => {
   const data = snapshotDoc.data();
@@ -30,23 +46,16 @@ const obtenerVehiculos = async (req, res) => {
 };
 
 const crearVehiculo = async (req, res) => {
-  const { propietario, documento, placa, telefono, torre, apartamento, tipo } = req.body;
+  const vehiculo = normalizarVehiculo(req.body);
+  const camposFaltantes = obtenerCamposFaltantes(vehiculo);
 
-  if (!propietario || !documento || !placa || !telefono || !torre || !apartamento || !tipo) {
-    return res.status(400).json({ mensaje: "Completa todos los campos" });
+  if (camposFaltantes.length > 0) {
+    return res.status(400).json({
+      mensaje: `Completa estos campos: ${camposFaltantes.join(", ")}.`,
+    });
   }
 
   try {
-    const vehiculo = {
-      propietario,
-      documento,
-      placa: placa.toUpperCase(),
-      telefono,
-      torre,
-      apartamento,
-      tipo,
-    };
-
     const ref = await vehiculosCollection().add({
       ...vehiculo,
       fecha: admin.firestore.FieldValue.serverTimestamp(),
@@ -64,23 +73,16 @@ const crearVehiculo = async (req, res) => {
 
 const actualizarVehiculo = async (req, res) => {
   const { id } = req.params;
-  const { propietario, documento, placa, telefono, torre, apartamento, tipo } = req.body;
+  const vehiculo = normalizarVehiculo(req.body);
+  const camposFaltantes = obtenerCamposFaltantes(vehiculo);
 
-  if (!propietario || !documento || !placa || !telefono || !torre || !apartamento || !tipo) {
-    return res.status(400).json({ mensaje: "Completa todos los campos" });
+  if (camposFaltantes.length > 0) {
+    return res.status(400).json({
+      mensaje: `Completa estos campos: ${camposFaltantes.join(", ")}.`,
+    });
   }
 
   try {
-    const vehiculo = {
-      propietario,
-      documento,
-      placa: placa.toUpperCase(),
-      telefono,
-      torre,
-      apartamento,
-      tipo,
-    };
-
     await vehiculosCollection().doc(id).update({
       ...vehiculo,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),

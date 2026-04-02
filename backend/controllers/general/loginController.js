@@ -1,10 +1,13 @@
-const admin = require("firebase-admin");
+const admin = require("../../config/firebaseAdmin");
+
+const limpiarTexto = (value) => (typeof value === "string" ? value.trim() : "");
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const email = limpiarTexto(req.body.email).toLowerCase();
+  const password = req.body.password;
 
   if (!email || !password) {
-    return res.status(400).json({ mensaje: "Completa todos los campos" });
+    return res.status(400).json({ mensaje: "Completa correo y contrasena." });
   }
 
   try {

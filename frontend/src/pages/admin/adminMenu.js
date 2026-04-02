@@ -14,6 +14,7 @@ const dashboardCards = [
     icon: "ph-calendar-blank",
     title: "Reservas",
     description: "Gestiona las reservas de zonas comunes y controla su disponibilidad.",
+    to: "/adminReservas",
   },
   {
     icon: "ph-bell",
