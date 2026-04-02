@@ -1,275 +1,361 @@
-@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;900&display=swap');
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.register-wrapper {
-  font-family: 'Poppins', sans-serif;
+.admin-register-page {
   display: flex;
-  width: 100vw;
-  min-height: 100vh;
-  overflow: hidden;
-  background: #fff;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.left-panel {
-  width: 52%;
-  position: relative;
-  overflow: hidden;
-  background: #460669;
+.admin-register-header {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
 }
 
-.circle {
-  position: absolute;
-  width: 150vh;
-  height: 180vh;
-  border-top-left-radius: 0%;
-  border-bottom-left-radius: 0%;
-  border-top-right-radius: 50%;
-  border-bottom-right-radius: 50%;
-  background: #460669;
-  top: 50%;
+.admin-register-copy {
+  max-width: 760px;
+  margin-top: 12px;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: #6d6980;
 }
 
-.illustration {
-  position: absolute;
-  width: 60vw;
-  max-width: none;
-  top: 50%;
-  left: 50%;
-  transform: translate(-46%, -50%);
-  z-index: 1;
+.admin-register-role-badge {
+  min-width: 210px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%);
+  border: 1px solid rgba(70, 6, 105, 0.08);
+  box-shadow: 0 16px 38px rgba(70, 6, 105, 0.08);
 }
 
-.btn-back {
-  position: absolute;
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-30%);
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  color: #fff;
-  background: transparent;
-  padding: 10px 36px;
-  border-radius: 50px;
-  font-family: 'Poppins', sans-serif;
+.admin-register-role-badge span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
   font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  z-index: 2;
-  white-space: nowrap;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8c83a9;
 }
 
-.btn-back:hover {
-  background: rgba(255, 255, 255, 0.12);
+.admin-register-role-badge strong {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #34114a;
 }
 
-.right-panel {
-  width: 48%;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 64px;
-}
-
-.form-box {
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-
-.form-box .welcome {
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: #222;
-}
-
-.form-box .title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #111;
-  margin-bottom: 32px;
-}
-
-.input-wrap {
-  position: relative;
-  margin-bottom: 18px;
-  text-align: left;
-}
-
-.input-wrap > i {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
+.admin-register-role-badge.is-administrador strong {
   color: #460669;
-  font-size: 1.1rem;
 }
 
-.input-wrap input {
-  width: 100%;
-  padding: 14px 20px 14px 48px;
-  border: 1.8px solid #e0d8f0;
-  border-radius: 50px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 1rem;
-  color: #444;
-  background: #faf9fd;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+.admin-register-role-badge.is-residente strong {
+  color: #245c39;
 }
 
-.input-wrap input:hover {
-  border-color: #460669;
-  box-shadow: 0 0 0 3px rgba(70, 6, 105, 0.08);
-  background: #fff;
+.admin-register-role-badge.is-vigilante strong {
+  color: #8c2c1d;
 }
 
-.input-wrap input::placeholder {
-  color: #b0a8c8;
-}
-
-.input-wrap input:focus {
-  border-color: #460669;
-  box-shadow: 0 0 0 3px rgba(70, 6, 105, 0.1);
-  background: #fff;
-}
-
-.input-wrap-role {
-  z-index: 4;
-  position: relative;
-}
-
-.role-trigger {
-  width: 100%;
-  min-height: 56px;
-  border: 1.8px solid #dccbf0;
-  border-radius: 50px;
-  background: linear-gradient(180deg, #fdfbff 0%, #f7f1fd 100%);
+.admin-register-layout {
   display: grid;
-  grid-template-columns: 1fr 36px;
-  align-items: center;
-  column-gap: 12px;
-  padding: 10px 14px 10px 20px;
-  font-family: 'Poppins', sans-serif;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  position: relative;
-  z-index: 2;
+  grid-template-columns: minmax(0, 1.5fr) 320px;
+  gap: 24px;
+  align-items: start;
 }
 
-.role-trigger:hover,
-.role-trigger.open {
-  border-color: #460669;
-  box-shadow: 0 0 0 3px rgba(70, 6, 105, 0.08);
-  background: #fff;
+.admin-register-form-card,
+.admin-register-side-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow: 0 18px 45px rgba(24, 16, 40, 0.06);
+  border: 1px solid rgba(70, 6, 105, 0.05);
 }
 
-.role-trigger-value {
-  font-size: 1rem;
-  font-weight: 400;
-  color: #444;
-  text-align: left;
-  min-width: 0;
+.admin-register-card-head {
+  margin-bottom: 28px;
 }
 
-.role-trigger-value.placeholder {
-  color: #b0a8c8;
-}
-
-.select-chevron {
-  width: 36px;
-  height: 36px;
-  border-radius: 18px;
-  background: #f3e8ff;
-  color: #460669;
+.admin-register-kicker {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.2s, color 0.2s;
-  box-shadow: inset 0 0 0 1px rgba(70, 6, 105, 0.08);
-  justify-self: end;
-}
-
-.select-chevron-symbol {
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg) translateY(-1px);
-  display: inline-block;
-}
-
-.role-trigger.open .select-chevron {
-  background: #460669;
-  color: #fff;
-}
-
-.role-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: #fff;
-  border: 1px solid #e8ddf5;
-  border-radius: 22px;
-  padding: 10px;
-  box-shadow: 0 22px 44px rgba(70, 6, 105, 0.14);
-  z-index: 5;
-}
-
-.role-option {
-  width: 100%;
-  border: none;
-  background: transparent;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  padding: 13px 14px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.98rem;
-  color: #4b4b63;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.18s, color 0.18s;
-}
-
-.role-option:hover {
+  padding: 6px 12px;
+  border-radius: 999px;
   background: #f3e8ff;
   color: #460669;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
-.role-option.active {
-  background: #eadbfb;
+.admin-register-card-head h2,
+.admin-register-side-copy h2 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #1a1527;
+  margin-bottom: 10px;
+}
+
+.admin-register-card-head p,
+.admin-register-side-copy p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #706a84;
+}
+
+.admin-register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.admin-register-group {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(70, 6, 105, 0.08);
+}
+
+.admin-register-group:first-of-type {
+  padding-top: 0;
+  border-top: none;
+}
+
+.admin-register-group-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-register-group-head h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #201a2f;
+}
+
+.admin-register-group-head p {
+  font-size: 0.9rem;
+  color: #8b85a3;
+  line-height: 1.6;
+}
+
+.admin-register-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-register-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-register-field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #312942;
+}
+
+.admin-register-field label span {
   color: #460669;
 }
 
-
-.btn-register {
+.admin-register-field input,
+.admin-register-field select {
   width: 100%;
-  padding: 14px;
-  background: #460669;
-  color: #fff;
-  border: none;
-  border-radius: 50px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-top: 8px;
-  cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 18px rgba(70, 6, 105, 0.3);
+  min-height: 54px;
+  border: 1px solid #e5def0;
+  border-radius: 16px;
+  background: #fcfbfe;
+  padding: 0 16px;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.95rem;
+  color: #271f35;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.btn-register:hover {
-  background: #5a0882;
+.admin-register-field input::placeholder,
+.admin-register-field select:invalid {
+  color: #a59dbd;
+}
+
+.admin-register-field input:focus,
+.admin-register-field select:focus {
+  border-color: #460669;
+  box-shadow: 0 0 0 4px rgba(70, 6, 105, 0.1);
+  background: #ffffff;
+}
+
+.admin-register-field input:disabled,
+.admin-register-field select:disabled,
+.admin-register-primary:disabled,
+.admin-register-secondary:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.admin-register-select-wrap {
+  position: relative;
+}
+
+.admin-register-select-wrap select {
+  appearance: none;
+  padding-right: 48px;
+}
+
+.admin-register-select-wrap i {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: #6d6980;
+  pointer-events: none;
+}
+
+.admin-register-empty-state {
+  grid-column: 1 / -1;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
+  border: 1px dashed rgba(70, 6, 105, 0.18);
+}
+
+.admin-register-empty-state strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.96rem;
+  color: #34114a;
+}
+
+.admin-register-empty-state p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #756f89;
+}
+
+.admin-register-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.admin-register-primary,
+.admin-register-secondary {
+  min-height: 48px;
+  border-radius: 14px;
+  padding: 0 18px;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.admin-register-primary {
+  border: none;
+  background: #460669;
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(70, 6, 105, 0.18);
+}
+
+.admin-register-primary:hover:not(:disabled) {
+  background: #5b0a87;
+  transform: translateY(-1px);
+}
+
+.admin-register-secondary {
+  border: 1px solid rgba(70, 6, 105, 0.14);
+  background: #ffffff;
+  color: #460669;
+}
+
+.admin-register-secondary:hover:not(:disabled) {
+  background: #faf7fc;
+  transform: translateY(-1px);
+}
+
+.admin-register-side-card {
+  position: sticky;
+  top: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.admin-register-side-copy {
+  margin-bottom: 22px;
+}
+
+.admin-register-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+.admin-register-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.admin-register-check-dot {
+  width: 11px;
+  height: 11px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: #460669;
+  box-shadow: 0 0 0 4px rgba(70, 6, 105, 0.12);
+  flex-shrink: 0;
+}
+
+.admin-register-check-item p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #5f5874;
+}
+
+@media (max-width: 1180px) {
+  .admin-register-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-register-side-card {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-register-header {
+    flex-direction: column;
+  }
+
+  .admin-register-role-badge {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .admin-register-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-register-form-card,
+  .admin-register-side-card {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+
+  .admin-register-actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-register-primary,
+  .admin-register-secondary {
+    width: 100%;
+  }
 }

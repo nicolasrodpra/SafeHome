@@ -1,14 +1,26 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import RutaProtegida from "./components/rutaProtegida.js";
+import ProtectedRoute from "./routes/ProtectedRoute.js";
 import AdminComunicados from "./pages/admin/adminComunicados.js";
 import AdminMenu from "./pages/admin/adminMenu.js";
+import AdminResidentes from "./pages/admin/adminResidentes.js";
 import PqrRecibidosAdmin from "./pages/admin/pqrRecibidos.js";
 import AdminRegister from "./pages/admin/registroAdmin.js";
 import Home from "./pages/general/home.js";
 import Login from "./pages/general/login.js";
 import ResidenteMenu from "./pages/residente/residenteMenu.js";
 import RegistroVehiculos from "./pages/vigilante/registroVehiculos.js";
-import VigilantMenu from "./pages/vigilante/vigilanteMenu.js";
+import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
+
+const privateRoutes = [
+  { path: "/registroUsuario", element: <AdminRegister /> },
+  { path: "/adminComunicados", element: <AdminComunicados /> },
+  { path: "/pqrRecibidosAdmin", element: <PqrRecibidosAdmin /> },
+  { path: "/adminResidentes", element: <AdminResidentes /> },
+  { path: "/residenteMenu", element: <ResidenteMenu /> },
+  { path: "/vigilanteMenu", element: <VigilanteMenu /> },
+  { path: "/adminMenu", element: <AdminMenu /> },
+  { path: "/registroVehiculos", element: <RegistroVehiculos /> },
+];
 
 function App() {
   return (
@@ -16,41 +28,13 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/registroUsuario" element={<AdminRegister />} />
-        <Route path="/adminComunicados" element={<AdminComunicados />} />
-        <Route path="/pqrRecibidosAdmin" element={<PqrRecibidosAdmin />} />
-        <Route
-          path="/residenteMenu"
-          element={
-            <RutaProtegida>
-              <ResidenteMenu />
-            </RutaProtegida>
-          }
-        />
-        <Route
-          path="/vigilanteMenu"
-          element={
-            <RutaProtegida>
-              <VigilantMenu />
-            </RutaProtegida>
-          }
-        />
-        <Route
-          path="/adminMenu"
-          element={
-            <RutaProtegida>
-              <AdminMenu />
-            </RutaProtegida>
-          }
-        />
-        <Route
-          path="/registroVehiculos"
-          element={
-            <RutaProtegida>
-              <RegistroVehiculos />
-            </RutaProtegida>
-          }
-        />
+        {privateRoutes.map((route) => (
+          <Route
+            key={route.path}
+            path={route.path}
+            element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+          />
+        ))}
       </Routes>
     </BrowserRouter>
   );

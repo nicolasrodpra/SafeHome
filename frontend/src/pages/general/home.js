@@ -1,18 +1,127 @@
-import "../../styles/general/home.css";
 import { Link } from "react-router-dom";
+import "../../styles/general/home.css";
+
+const brochureImage = `${process.env.PUBLIC_URL}/_Brochure.png`;
+
+const navLinks = [
+  { href: "#features", label: "Objetivos" },
+  { href: "#roles", label: "Roles" },
+  { href: "#nosotros", label: "Nosotros" },
+  { href: "#servicios", label: "Servicios" },
+];
+
+const featureCards = [
+  {
+    icon: "ph-lock",
+    title: "Mayor seguridad",
+    copy:
+      "Ofrecemos un control mas rigido de ingresos y salidas para fortalecer la seguridad del conjunto residencial.",
+  },
+  {
+    icon: "ph-chat-dots",
+    title: "Mejor comunicacion",
+    copy:
+      "Conectamos residentes, porteria y administracion en una sola plataforma para que la informacion fluya mejor.",
+  },
+  {
+    icon: "ph-clock",
+    title: "Mayor agilidad",
+    copy:
+      "Automatizamos procesos como ingresos, autorizaciones y reportes para ahorrar tiempo en la operacion diaria.",
+  },
+];
+
+const roleCards = [
+  {
+    icon: "ph-user",
+    title: "Administrador",
+    copy:
+      "Gestiona el sistema, organiza documentos, responde solicitudes y supervisa el funcionamiento general del conjunto.",
+  },
+  {
+    icon: "ph-house",
+    title: "Residente",
+    copy:
+      "Consulta informacion, realiza solicitudes, reserva espacios y recibe novedades importantes del conjunto.",
+  },
+  {
+    icon: "ph-eye",
+    title: "Vigilante",
+    copy:
+      "Controla accesos, registra visitas y apoya el orden y la seguridad en porteria.",
+  },
+];
+
+const aboutColumns = [
+  {
+    title: "Mision",
+    copy:
+      "Brindar una solucion digital que mejore la organizacion, la seguridad y la agilidad en conjuntos residenciales.",
+  },
+  {
+    title: "Vision",
+    copy:
+      "Ser una aplicacion reconocida por modernizar la gestion residencial con seguridad, claridad y facilidad de uso.",
+  },
+  {
+    title: "Quienes somos",
+    copy:
+      "Somos un equipo comprometido con mejorar la administracion de conjuntos residenciales mediante tecnologia util y cercana.",
+  },
+];
+
+const serviceCards = [
+  {
+    icon: "ph-door-open",
+    title: "Gestion de accesos",
+    copy:
+      "Control de entradas y salidas de residentes y visitantes para reforzar la seguridad del conjunto.",
+  },
+  {
+    icon: "ph-paper-plane-tilt",
+    title: "Solicitudes y PQRS",
+    copy:
+      "Los residentes pueden enviar solicitudes o reportes y recibir respuesta de forma mas agil.",
+  },
+  {
+    icon: "ph-calendar",
+    title: "Reservas de zonas comunes",
+    copy:
+      "Permite apartar espacios como salones, canchas o piscinas con un proceso mas rapido.",
+  },
+  {
+    icon: "ph-chats",
+    title: "Comunicacion interna",
+    copy:
+      "Canal directo entre residentes y administracion para resolver dudas y compartir informacion relevante.",
+  },
+  {
+    icon: "ph-suitcase-simple",
+    title: "Panel administrativo",
+    copy:
+      "Espacio para gestionar usuarios, informacion y procesos clave del conjunto desde un solo lugar.",
+  },
+  {
+    icon: "ph-security-camera",
+    title: "Control para vigilantes",
+    copy:
+      "Herramientas para registrar visitas y mantener mejor control de novedades en porteria.",
+  },
+];
+
 function Home() {
   return (
     <>
       <section className="hero">
-
         <nav>
           <div className="nav-logo">SAFEHOME</div>
 
           <ul className="nav-links">
-            <li><a href="#features">Objetivos</a></li>
-            <li><a href="#roles">Roles</a></li>
-            <li><a href="#nosotros">Nosotros</a></li>
-            <li><a href="#servicios">Servicios</a></li>
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
           </ul>
         </nav>
 
@@ -24,253 +133,109 @@ function Home() {
 
             <p>
               Gestiona visitantes, residentes, comunicaciones y seguridad
-              desde una sola plataforma moderna, rápida y confiable
+              desde una sola plataforma moderna, rapida y confiable.
             </p>
 
             <Link to="/login" className="btn-primary">
-              Iniciar Sesión
+              Iniciar sesion
             </Link>
           </div>
         </div>
 
         <div className="hero-right">
           <div className="hero-img-wrapper">
-            <img src="/_Brochure.png" alt="SafeHome" />
+            <img src={brochureImage} alt="Ilustracion principal de SafeHome" />
           </div>
         </div>
-
       </section>
 
-
       <section className="features" id="features">
-
         <div className="section-heading centered">
-          <h2>Nuestros Objetivos</h2>
+          <h2>Nuestros objetivos</h2>
           <div className="title-line"></div>
         </div>
 
         <div className="features-grid">
-
-          <div className="feature-card">
-            <i className="ph-thin ph-lock feat-icon"></i>
-            <h3>Mayor Seguridad</h3>
-            <p>
-              Ofrecemos una mayor seguridad llevando un control rígido
-              de los ingresos y salidas dentro del conjunto residencial.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <i className="ph-thin ph-chat-dots feat-icon"></i>
-            <h3>Mejor Comunicación</h3>
-            <p>
-              Conectamos residentes, portería y administración mediante
-              un aplicativo centralizado para una comunicación fluida.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <i className="ph-thin ph-clock feat-icon"></i>
-            <h3>Mayor Agilidad</h3>
-            <p>
-              Automatizamos procesos como ingresos, autorizaciones y
-              reportes para reducir tiempos de espera.
-            </p>
-          </div>
-
+          {featureCards.map((feature) => (
+            <div className="feature-card" key={feature.title}>
+              <i className={`ph-thin ${feature.icon} feat-icon`}></i>
+              <h3>{feature.title}</h3>
+              <p>{feature.copy}</p>
+            </div>
+          ))}
         </div>
       </section>
-
 
       <section className="roles" id="roles">
-
         <div className="roles-inner">
-
           <div className="roles-text">
-            <h2>Gestión de Roles</h2>
-
+            <h2>Gestion de roles</h2>
             <p>
-              La gestión de roles permite organizar a los usuarios según
-              sus responsabilidades dentro del conjunto residencial.
+              La gestion de roles organiza a cada usuario segun sus responsabilidades
+              dentro del conjunto residencial.
             </p>
-
             <p>
-              Define permisos según su rol, asegurando que cada uno
-              acceda solo a las funciones necesarias. Esto mejora la
-              seguridad, el orden y la agilidad en los procesos.
+              Asi cada persona accede solo a las funciones que necesita y el sistema
+              se mantiene mas seguro, ordenado y facil de usar.
             </p>
           </div>
-
 
           <div className="roles-cards-wrap">
-
             <div className="roles-cards">
-
-              <div className="role-card">
-                <div className="role-icon-box">
-                  <i className="ph-thin ph-user role-icon-bare"></i>
+              {roleCards.map((role) => (
+                <div className="role-card" key={role.title}>
+                  <div className="role-icon-box">
+                    <i className={`ph-thin ${role.icon} role-icon-bare`}></i>
+                  </div>
+                  <h4>{role.title}</h4>
+                  <p>{role.copy}</p>
                 </div>
-
-                <h4>Administrador</h4>
-
-                <p>
-                  Encargado de gestionar el sistema, organizar documentos,
-                  responder solicitudes y supervisar el funcionamiento
-                  general del conjunto.
-                </p>
-              </div>
-
-
-              <div className="role-card">
-                <div className="role-icon-box">
-                  <i className="ph-thin ph-house role-icon-bare"></i>
-                </div>
-
-                <h4>Residente</h4>
-
-                <p>
-                  Usuario que vive en el conjunto y puede hacer solicitudes,
-                  reservas, consultar información y recibir notificaciones.
-                </p>
-              </div>
-
-
-              <div className="role-card">
-                <div className="role-icon-box">
-                  <i className="ph-thin ph-eye role-icon-bare"></i>
-                </div>
-
-                <h4>Vigilante</h4>
-
-                <p>
-                  Responsable del control de accesos y la seguridad,
-                  registrando visitas y apoyando al orden dentro del
-                  conjunto residencial.
-                </p>
-              </div>
-
+              ))}
             </div>
-
           </div>
-
         </div>
-
       </section>
 
-
       <section className="nosotros" id="nosotros">
-
         <div className="section-heading centered">
           <h2>Nosotros</h2>
           <div className="title-line"></div>
         </div>
 
-
         <div className="nosotros-box">
-
-          <div className="nosotros-col">
-            <h3>MISIÓN</h3>
-            <p>
-              Brindar una solución digital que mejore la organización,
-              seguridad y agilidad en los conjuntos residenciales.
-            </p>
-          </div>
-
-          <div className="nosotros-col">
-            <h3>VISIÓN</h3>
-            <p>
-              Ser una aplicación reconocida por modernizar la gestión
-              de conjuntos residenciales, destacándose por su seguridad
-              y facilidad de uso.
-            </p>
-          </div>
-
-          <div className="nosotros-col">
-            <h3>¿QUIÉNES SOMOS?</h3>
-            <p>
-              Somos un equipo comprometido con mejorar la administración
-              de conjuntos residenciales mediante el uso de tecnología.
-            </p>
-          </div>
-
+          {aboutColumns.map((column) => (
+            <div className="nosotros-col" key={column.title}>
+              <h3>{column.title}</h3>
+              <p>{column.copy}</p>
+            </div>
+          ))}
         </div>
-
       </section>
-
 
       <section className="servicios" id="servicios">
-
         <div className="servicios-title">
-          <h2>Nuestros<br />Servicios</h2>
+          <h2>
+            Nuestros
+            <br />
+            servicios
+          </h2>
         </div>
-
 
         <div className="servicios-grid">
-
-          <div className="servicio-item">
-            <i className="ph-thin ph-door-open svc-icon-bare"></i>
-            <h4>Gestión de accesos</h4>
-            <p>
-              Control de entradas y salidas de residentes y visitantes
-              para mejorar la seguridad del conjunto.
-            </p>
-          </div>
-
-          <div className="servicio-item">
-            <i className="ph-thin ph-paper-plane-tilt svc-icon-bare"></i>
-            <h4>Gestión de solicitudes y PQRS</h4>
-            <p>
-              Los residentes pueden enviar solicitudes o reportes y
-              recibir respuesta de manera ágil.
-            </p>
-          </div>
-
-          <div className="servicio-item">
-            <i className="ph-thin ph-calendar svc-icon-bare"></i>
-            <h4>Reservas de zonas comunes</h4>
-            <p>
-              Permite apartar espacios como salones, canchas o piscinas
-              de forma rápida.
-            </p>
-          </div>
-
-          <div className="servicio-item">
-            <i className="ph-thin ph-chats svc-icon-bare"></i>
-            <h4>Comunicación interna</h4>
-            <p>
-              Canal directo entre residentes y administración para
-              resolver dudas.
-            </p>
-          </div>
-
-          <div className="servicio-item">
-            <i className="ph-thin ph-suitcase-simple svc-icon-bare"></i>
-            <h4>Panel Administrativo</h4>
-            <p>
-              Espacio para que el administrador gestione usuarios, información y procesos del conjunto.
-            </p>
-          </div>
-
-          <div className="servicio-item">
-            <i className="ph-thin ph-security-camera svc-icon-bare"></i>
-            <h4>Control para vigilantes</h4>
-            <p>
-              Herramientas para registrar visitas y mejorar el control y orden en portería.
-            </p>
-          </div>
-
+          {serviceCards.map((service) => (
+            <div className="servicio-item" key={service.title}>
+              <i className={`ph-thin ${service.icon} svc-icon-bare`}></i>
+              <h4>{service.title}</h4>
+              <p>{service.copy}</p>
+            </div>
+          ))}
         </div>
-
       </section>
 
-
       <footer>
-
         <div className="footer-brand">
           <span className="logo-text">SAFEHOME</span>
-          <span className="copy">
-            Copyright © 2026 SafeHome
-          </span>
+          <span className="copy">Copyright 2026 SafeHome</span>
         </div>
 
         <div className="footer-contact">
@@ -282,12 +247,9 @@ function Home() {
             <li>Cra 24 #2 - 297, Madrid</li>
           </ul>
         </div>
-
       </footer>
-
     </>
   );
 }
+
 export default Home;
-
-

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/inicioHero.png";
-import InternalLayout from "../../components/InternalLayout";
+import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminMenu.css";
 
 const dashboardCards = [
@@ -31,6 +31,7 @@ const dashboardCards = [
     icon: "ph-user",
     title: "Residentes",
     description: "Administra la informacion de los residentes del conjunto.",
+    to: "/adminResidentes",
   },
   {
     icon: "ph-book-bookmark",
@@ -75,7 +76,7 @@ function DashboardCard({ card }) {
   return <div className="option-card option-card-placeholder">{content}</div>;
 }
 
-function AdminMenu() {
+function AdminMenuPage() {
   return (
     <InternalLayout>
       {({ profileName }) => (
@@ -107,4 +108,4 @@ function AdminMenu() {
   );
 }
 
-export default AdminMenu;
+export default AdminMenuPage;

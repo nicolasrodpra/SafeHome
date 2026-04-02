@@ -3,7 +3,8 @@ export function getFechaActual() {
     weekday: "long",
     day: "numeric",
     month: "long",
-    year: "numeric"
+    year: "numeric",
   });
+
   return fecha.charAt(0).toUpperCase() + fecha.slice(1);
 }

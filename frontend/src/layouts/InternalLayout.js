@@ -3,17 +3,17 @@ import { doc, getDoc } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
-import { auth, db } from "../pages/FireBase/firebase";
+import { auth, db } from "../config/firebase";
 import { cerrarSesion } from "../services/authService";
-import { getFechaActual } from "../services/getDate";
+import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/internalLayout.css";
 
-const navItems = [
+const ADMIN_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Quejas", to: "/pqrRecibidosAdmin" },
   { icon: "ph-calendar-blank", label: "Reservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
   { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
-  { icon: "ph-user", label: "Residentes" },
+  { icon: "ph-user", label: "Residentes", to: "/adminResidentes" },
   { icon: "ph-book-bookmark", label: "Manual Convivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos" },
   { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroUsuario" },
@@ -28,15 +28,19 @@ function SidebarItem({ item, pathname }) {
         to={item.to}
         className={isActive ? "internal-nav-link active" : "internal-nav-link"}
       >
-        <i className={`ph-light ${item.icon}`}></i>
+        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </Link>
     );
   }
 
   return (
-    <button type="button" className="internal-nav-link internal-nav-placeholder">
-      <i className={`ph-light ${item.icon}`}></i>
+    <button
+      type="button"
+      className="internal-nav-link internal-nav-placeholder"
+      disabled
+    >
+      <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
       <span>{item.label}</span>
     </button>
   );
@@ -47,20 +51,25 @@ export default function InternalLayout({ children }) {
   const { pathname } = useLocation();
   const [user] = useAuthState(auth);
   const [profileName, setProfileName] = useState("Usuario");
-  const fechaMayuscula = getFechaActual();
+  const fechaActual = getFechaActual();
 
   useEffect(() => {
     let isMounted = true;
 
     const cargarPerfil = async () => {
       if (!user) {
-        if (isMounted) setProfileName("Usuario");
+        if (isMounted) {
+          setProfileName("Usuario");
+        }
         return;
       }
 
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        const nombreGuardado = userDoc.exists() ? userDoc.data().nombre : "";
+        const profileData = userDoc.exists() ? userDoc.data() : {};
+        const nombreGuardado =
+          profileData.nombre ||
+          [profileData.nombres, profileData.apellidos].filter(Boolean).join(" ");
         const fallbackName =
           user.displayName || user.email?.split("@")[0] || "Usuario";
 
@@ -97,7 +106,7 @@ export default function InternalLayout({ children }) {
         </Link>
 
         <ul className="internal-nav-menu">
-          {navItems.map((item) => (
+          {ADMIN_NAV_ITEMS.map((item) => (
             <li key={item.label}>
               <SidebarItem item={item} pathname={pathname} />
             </li>
@@ -105,7 +114,7 @@ export default function InternalLayout({ children }) {
         </ul>
 
         <div className="internal-sidebar-assistant">
-          <img src={asistenteVirtual} alt="Asistente Virtual" />
+          <img src={asistenteVirtual} alt="Asistente virtual" />
           <p>
             Asistente
             <br />
@@ -121,16 +130,24 @@ export default function InternalLayout({ children }) {
         <div className="internal-topbar">
           <div className="internal-topbar-left">
             <h2>Abundara</h2>
-            <span>{fechaMayuscula}</span>
+            <span>{fechaActual}</span>
           </div>
 
           <div className="internal-topbar-right">
-            <i className="ph-light ph-envelope-simple internal-topbar-icon"></i>
-            <i className="ph-light ph-bell internal-topbar-icon"></i>
             <i
-              className="ph-light ph-sign-out internal-topbar-icon"
-              onClick={() => cerrarSesion(navigate)}
+              className="ph-light ph-envelope-simple internal-topbar-icon"
+              aria-hidden="true"
             ></i>
+            <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
+            <button
+              type="button"
+              className="internal-icon-button"
+              onClick={() => cerrarSesion(navigate)}
+              aria-label="Cerrar sesion"
+              title="Cerrar sesion"
+            >
+              <i className="ph-light ph-sign-out internal-topbar-icon"></i>
+            </button>
             <div className="internal-user-pill">
               <div className="internal-user-avatar">{userInitials}</div>
               <span className="internal-user-name">{profileName}</span>

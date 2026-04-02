@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import InternalLayout from "../../components/InternalLayout";
+import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/pqrRecibidos.css";
 
 const MailIcon = () => (
@@ -95,7 +95,7 @@ function StatusBadge({ status }) {
   return <span className={`status-chip ${cls}`}>{status}</span>;
 }
 
-export default function PQRRecibidosAdmin() {
+export default function PqrRecibidosAdmin() {
   const [sortOpen, setSortOpen] = useState(false);
   const [sortValue, setSortValue] = useState("Fecha de creacion");
   const [selectedPqr, setSelectedPqr] = useState(null);
@@ -126,10 +126,10 @@ export default function PQRRecibidosAdmin() {
   return (
     <InternalLayout>
       <div className="content">
+        <h1 className="internal-page-title pqr-page-title">Quejas</h1>
+
         <div className="card">
           <div className="toolbar">
-            <h1 className="card-title">PQR</h1>
-
             <div className="sort-block" ref={dropdownRef}>
               <span className="sort-label">Ordenar por:</span>
               <button

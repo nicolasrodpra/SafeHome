@@ -1,6 +1,6 @@
 import { signOut } from "firebase/auth";
 import Swal from "sweetalert2";
-import { auth } from "../pages/FireBase/firebase";
+import { auth } from "../config/firebase";
 
 export const cerrarSesion = async (navigate) => {
   const resultado = await Swal.fire({
@@ -18,7 +18,7 @@ export const cerrarSesion = async (navigate) => {
 
   try {
     await signOut(auth);
-    navigate("/login");
+    navigate("/login", { replace: true });
   } catch (error) {
     console.error("Error al cerrar sesion:", error);
   }

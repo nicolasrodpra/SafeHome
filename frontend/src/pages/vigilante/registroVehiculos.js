@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
-import InternalLayout from "../../components/InternalLayout";
-import { db } from "../FireBase/firebase";
+import { db } from "../../config/firebase";
+import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/vigilante/registroVehiculos.css";
 
 const EMPTY_FORM = {
@@ -195,7 +195,7 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
   );
 }
 
-export default function VehicleEntry() {
+export default function RegistroVehiculos() {
   const [vehicles, setVehicles] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);

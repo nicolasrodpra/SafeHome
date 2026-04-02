@@ -11,11 +11,11 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import Swal from "sweetalert2";
-import InternalLayout from "../../components/InternalLayout";
-import { db } from "../FireBase/firebase";
+import { db } from "../../config/firebase";
+import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminComunicados.css";
 
-function Comunicados() {
+function AdminComunicados() {
   const [comunicados, setComunicados] = useState([]);
   const [form, setForm] = useState({ asunto: "", mensaje: "" });
   const [loading, setLoading] = useState(false);
@@ -160,7 +160,7 @@ function Comunicados() {
   return (
     <InternalLayout>
       <div className="content">
-        <h1 className="page-title">Comunicados</h1>
+        <h1 className="internal-page-title page-title">Comunicados</h1>
 
         <div className="comunicados-layout">
           <div className="comunicados-list">
@@ -266,4 +266,4 @@ function Comunicados() {
   );
 }
 
-export default Comunicados;
+export default AdminComunicados;

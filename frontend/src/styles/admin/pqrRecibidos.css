@@ -178,6 +178,10 @@ body { font-family: 'Poppins', sans-serif; }
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
 }
 
+.pqr-page-title {
+  margin-bottom: 28px;
+}
+
 /* ── TOOLBAR — una sola fila ── */
 .toolbar {
   display: flex;
@@ -185,13 +189,6 @@ body { font-family: 'Poppins', sans-serif; }
   gap: 16px;
   margin-bottom: 24px;
   position: relative;
-}
-
-.card-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #460669;
-  flex-shrink: 0;
 }
 
 .sort-block {

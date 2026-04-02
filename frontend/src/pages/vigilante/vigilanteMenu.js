@@ -1,7 +1,7 @@
-import InternalLayout from "../../components/InternalLayout";
+import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/shared/roleDashboard.css";
 
-export default function VigilantMenu() {
+export default function VigilanteMenu() {
   return (
     <InternalLayout>
       {({ profileName }) => (
