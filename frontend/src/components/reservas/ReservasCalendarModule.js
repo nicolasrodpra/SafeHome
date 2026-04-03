@@ -206,6 +206,12 @@ export default function ReservasCalendarModule({ mode }) {
     [currentMonth, reservas]
   );
 
+  const totalMonthReservations = monthReservations.length;
+  const occupiedDaysCount = useMemo(
+    () => new Set(monthReservations.map((reservation) => reservation.dateKey)).size,
+    [monthReservations]
+  );
+
   const reservationsByDate = useMemo(() => {
     const groupedReservations = {};
 
@@ -437,13 +443,28 @@ export default function ReservasCalendarModule({ mode }) {
   return (
     <div className="reservas-page">
       <header className="reservas-page-header">
-        <div>
+        <div className="reservas-page-header-copy">
           <h1 className="internal-page-title">Reservas Zonas Comunes</h1>
           <p className="reservas-page-copy">
             {isResidentMode
               ? "Reserva piscina, gimnasio, salon comunal, cancha o zona BBQ con validaciones de horario, cruces y limite de horas por zona."
               : "Consulta en tiempo real las reservas registradas por los residentes sin posibilidad de crear ni editar eventos."}
           </p>
+        </div>
+
+        <div className="reservas-hero-stats">
+          <article className="reservas-hero-stat">
+            <span>Reservas del mes</span>
+            <strong>{totalMonthReservations}</strong>
+          </article>
+          <article className="reservas-hero-stat">
+            <span>Dias ocupados</span>
+            <strong>{occupiedDaysCount}</strong>
+          </article>
+          <article className="reservas-hero-stat">
+            <span>Seleccionado</span>
+            <strong>{selectedDayReservations.length}</strong>
+          </article>
         </div>
       </header>
 
@@ -463,6 +484,20 @@ export default function ReservasCalendarModule({ mode }) {
                 <i className="ph-light ph-caret-right"></i>
               </button>
             </div>
+          </div>
+
+          <div className="reservas-active-date">
+            <span>Fecha activa:</span>
+            <strong>{getFullDateLabel(selectedDateKey)}</strong>
+          </div>
+
+          <div className="reservas-zone-legend">
+            {RESERVA_ZONAS.map((zone) => (
+              <div key={zone.key} className={`reservas-legend-item is-${zone.colorToken}`}>
+                <span className="reservas-legend-dot"></span>
+                <small>{zone.label}</small>
+              </div>
+            ))}
           </div>
 
           <div className="reservas-calendar-grid">

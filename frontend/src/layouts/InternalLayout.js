@@ -3,6 +3,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
+import AdminVigilanciaModal from "../components/admin/AdminVigilanciaModal";
 import { auth, db } from "../config/firebase";
 import { cerrarSesion } from "../services/authService";
 import { getFechaActual } from "../utils/getDate";
@@ -12,9 +13,9 @@ const ADMIN_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Quejas", to: "/pqrRecibidosAdmin" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
-  { icon: "ph-security-camera", label: "Vigilancia", to: "/registroVehiculos" },
+  { icon: "ph-security-camera", label: "Vigilancia", modal: "vigilancia" },
   { icon: "ph-user", label: "Residentes", to: "/adminResidentes" },
-  { icon: "ph-book-bookmark", label: "Manual Convivencia" },
+  { icon: "ph-book-bookmark", label: "Manual Convivencia", to: "/adminManualConvivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
   { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroUsuario" },
 ];
@@ -37,7 +38,7 @@ const getCachedProfile = () => {
   }
 };
 
-function SidebarItem({ item, pathname }) {
+function SidebarItem({ item, pathname, onOpenModal }) {
   if (item.to) {
     const isActive = pathname === item.to;
 
@@ -49,6 +50,19 @@ function SidebarItem({ item, pathname }) {
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </Link>
+    );
+  }
+
+  if (item.modal === "vigilancia") {
+    return (
+      <button
+        type="button"
+        className="internal-nav-link internal-nav-button"
+        onClick={onOpenModal}
+      >
+        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
+        <span>{item.label}</span>
+      </button>
     );
   }
 
@@ -73,6 +87,7 @@ export default function InternalLayout({ children }) {
   const [profileRole, setProfileRole] = useState(cachedProfile.role);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isVigilanciaOpen, setIsVigilanciaOpen] = useState(false);
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
 
@@ -187,13 +202,17 @@ export default function InternalLayout({ children }) {
           SafeHome
         </Link>
 
-        <ul className="internal-nav-menu">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <SidebarItem item={item} pathname={pathname} />
-            </li>
-          ))}
-        </ul>
+          <ul className="internal-nav-menu">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <SidebarItem
+                  item={item}
+                  pathname={pathname}
+                  onOpenModal={() => setIsVigilanciaOpen(true)}
+                />
+              </li>
+            ))}
+          </ul>
 
         <div className="internal-sidebar-assistant">
           <img src={asistenteVirtual} alt="Asistente virtual" />
@@ -262,6 +281,11 @@ export default function InternalLayout({ children }) {
         {typeof children === "function"
           ? children({ profileName, profileRole })
           : children}
+
+        <AdminVigilanciaModal
+          isOpen={isVigilanciaOpen}
+          onClose={() => setIsVigilanciaOpen(false)}
+        />
       </div>
     </div>
   );

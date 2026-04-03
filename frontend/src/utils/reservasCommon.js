@@ -106,7 +106,7 @@ export const buildMonthCells = (monthDate) => {
   const month = monthDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = getDaysInMonth(year, month);
-  const totalCells = 42;
+  const totalCells = Math.ceil((firstDayOfMonth + daysInMonth) / 7) * 7;
 
   return Array.from({ length: totalCells }, (_, index) => {
     const dayNumber = index - firstDayOfMonth + 1;

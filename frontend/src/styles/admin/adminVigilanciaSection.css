@@ -1,0 +1,57 @@
+.admin-readonly-card-header {
+  align-items: flex-start;
+}
+
+.admin-readonly-card-copy {
+  margin-top: 8px;
+  color: #7a6f92;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.admin-readonly-eye-btn {
+  width: 34px;
+  height: 34px;
+  justify-content: center;
+  background: #f3e8ff;
+  border-radius: 10px;
+}
+
+.admin-readonly-detail-modal {
+  max-width: 760px;
+}
+
+.admin-readonly-detail-grid {
+  padding: 22px 30px 30px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-readonly-detail-item {
+  border: 1px solid #efe6fb;
+  border-radius: 18px;
+  background: #fff;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-readonly-detail-item span {
+  color: #8f84a1;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.admin-readonly-detail-item strong {
+  color: #261638;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .admin-readonly-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

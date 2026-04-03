@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import ilustracionMenu from "../../assets/inicioHero.png";
+import AdminVigilanciaModal from "../../components/admin/AdminVigilanciaModal";
 import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminMenu.css";
 
@@ -26,7 +28,7 @@ const dashboardCards = [
     icon: "ph-security-camera",
     title: "Vigilancia",
     description: "Supervisa novedades de seguridad y registra eventos relevantes.",
-    to: "/registroVehiculos",
+    modal: "vigilancia",
   },
   {
     icon: "ph-user",
@@ -38,6 +40,7 @@ const dashboardCards = [
     icon: "ph-book-bookmark",
     title: "Manual Convivencia",
     description: "Consulta y gestiona las normas del conjunto residencial.",
+    to: "/adminManualConvivencia",
   },
   {
     icon: "ph-pencil-simple",
@@ -53,7 +56,7 @@ const dashboardCards = [
   },
 ];
 
-function DashboardCard({ card }) {
+function DashboardCard({ card, onOpenModal }) {
   const content = (
     <>
       <div className="card-top">
@@ -75,36 +78,56 @@ function DashboardCard({ card }) {
     );
   }
 
+  if (card.modal === "vigilancia") {
+    return (
+      <button type="button" className="option-card option-card-button" onClick={onOpenModal}>
+        {content}
+      </button>
+    );
+  }
+
   return <div className="option-card option-card-placeholder">{content}</div>;
 }
 
 function AdminMenuPage() {
+  const [isVigilanciaOpen, setIsVigilanciaOpen] = useState(false);
+
   return (
     <InternalLayout>
       {({ profileName }) => (
-        <div className="content">
-          <div className="hero-banner">
-            <div className="hero-banner-text">
-              <h1>
-                Hola, <span>{profileName}</span>
-              </h1>
-              <p>
-                supervisa y mejora la seguridad de tu comunidad con
-                <br />
-                herramientas inteligentes.
-              </p>
+        <>
+          <div className="content">
+            <div className="hero-banner">
+              <div className="hero-banner-text">
+                <h1>
+                  Hola, <span>{profileName}</span>
+                </h1>
+                <p>
+                  supervisa y mejora la seguridad de tu comunidad con
+                  <br />
+                  herramientas inteligentes.
+                </p>
+              </div>
+              <img src={ilustracionMenu} alt="ilustracionMenu" />
             </div>
-            <img src={ilustracionMenu} alt="ilustracionMenu" />
-          </div>
 
-          <p className="section-label">Opciones</p>
+            <p className="section-label">Opciones</p>
 
-          <div className="cards-grid">
-            {dashboardCards.map((card) => (
-              <DashboardCard key={card.title} card={card} />
-            ))}
+            <div className="cards-grid">
+              {dashboardCards.map((card) => (
+                <DashboardCard
+                  key={card.title}
+                  card={card}
+                  onOpenModal={() => setIsVigilanciaOpen(true)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+          <AdminVigilanciaModal
+            isOpen={isVigilanciaOpen}
+            onClose={() => setIsVigilanciaOpen(false)}
+          />
+        </>
       )}
     </InternalLayout>
   );

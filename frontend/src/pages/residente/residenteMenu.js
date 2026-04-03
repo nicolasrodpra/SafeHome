@@ -26,6 +26,7 @@ const dashboardCards = [
     icon: "ph-book-bookmark",
     title: "Manual de convivencia",
     description: "Consulta las normas y recomendaciones de convivencia en el conjunto.",
+    to: "/residenteManualConvivencia",
   },
   {
     icon: "ph-pencil-simple",

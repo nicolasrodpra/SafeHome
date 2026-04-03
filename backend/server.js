@@ -1,8 +1,10 @@
 require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
+const path = require("path");
 require("./config/firebaseAdmin");
 
+const manualConvivenciaRoutes = require("./routes/admin/manualConvivenciaRoutes");
 const registroAdminRoutes = require("./routes/admin/registroAdminRoutes");
 const loginRoutes = require("./routes/general/loginRoutes");
 const registroResidenteRoutes = require("./routes/residente/registroResidenteRoutes");
@@ -22,13 +24,15 @@ const apiRoutes = [
 
 app.disable("x-powered-by");
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
   res.send("API SafeHome funcionando");
 });
 
 app.use("/api", registroAdminRoutes);
+app.use("/api", manualConvivenciaRoutes);
 app.use("/api", loginRoutes);
 app.use("/api", registroResidenteRoutes);
 app.use("/api", registroCorrespondenciaRoutes);
