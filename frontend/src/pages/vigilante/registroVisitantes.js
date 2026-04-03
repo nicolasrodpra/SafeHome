@@ -71,8 +71,8 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+    <div className="guard-modal-overlay" onClick={onClose}>
+      <div className="guard-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-stripe" />
         <div className="modal-header">
           <div className="modal-header-left">
@@ -331,108 +331,133 @@ export default function RegistroVisitantes() {
 
   return (
     <InternalLayout>
-      <main className="content">
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Registro de Visitantes</h2>
-
-            <div className="vehicle-counters">
-              <div className="counter-card">
-                <div className="counter-icon car">
-                  <i className="ph-light ph-users-three"></i>
-                </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalVisitas}</span>
-                  <span className="counter-label">Visitantes registrados</span>
-                </div>
-              </div>
-            </div>
-
-            <button type="button" className="register-btn" onClick={handleOpenCreate}>
-              <span>
-                Registrar nuevo
-                <br />
-                visitante
-              </span>
-              <span className="plus-sq"></span>
-            </button>
+      <main className="content guard-module-page">
+        <header className="guard-module-page-header">
+          <div>
+            <h1 className="internal-page-title">Registro de visitantes</h1>
+            <p className="guard-module-page-copy">
+              Gestiona los ingresos autorizados con una vista mas ordenada para registrar,
+              editar y consultar visitantes del conjunto.
+            </p>
           </div>
 
-          <table className="vehicle-table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Visitante</th>
-                <th>Documento</th>
-                <th>Residente</th>
-                <th>Telefono</th>
-                <th>Torre</th>
-                <th>Apartamento</th>
-                <th>Motivo</th>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Accion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visitors.length === 0 ? (
+          <div className="guard-module-summary">
+            <span>Total registros</span>
+            <strong>{visitors.length}</strong>
+          </div>
+        </header>
+
+        <section className="card guard-module-surface">
+          <div className="card-header guard-module-card-header">
+            <div className="guard-module-head-copy">
+              <h2 className="card-title">Resumen operativo</h2>
+              <p className="guard-module-card-copy">
+                Mantiene trazabilidad de los ingresos del dia desde una interfaz mas limpia y
+                facil de revisar.
+              </p>
+            </div>
+
+            <div className="guard-module-header-tools">
+              <div className="vehicle-counters">
+                <div className="counter-card">
+                  <div className="counter-icon car">
+                    <i className="ph-light ph-users-three"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalVisitas}</span>
+                    <span className="counter-label">Visitantes</span>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" className="register-btn" onClick={handleOpenCreate}>
+                <span>
+                  Registrar nuevo
+                  <br />
+                  visitante
+                </span>
+                <span className="plus-sq"></span>
+              </button>
+            </div>
+          </div>
+
+          <div className="guard-module-table-wrap">
+            <table className="vehicle-table">
+              <thead>
                 <tr>
-                  <td colSpan={11} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                    No hay visitantes registrados
-                  </td>
+                  <th>Tipo</th>
+                  <th>Visitante</th>
+                  <th>Documento</th>
+                  <th>Residente</th>
+                  <th>Telefono</th>
+                  <th>Torre</th>
+                  <th>Apartamento</th>
+                  <th>Motivo</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Accion</th>
                 </tr>
-              ) : (
-                visitors.map((visitor) => (
-                  <tr key={visitor.id}>
-                    <td>
-                      <div
-                        className={`tipo-icon ${
-                          visitor.motivo?.toLowerCase().includes("familiar") ? "moto" : "car"
-                        }`}
-                      >
-                        <i
-                          className={`ph-light ${
-                            visitor.motivo?.toLowerCase().includes("familiar")
-                              ? "ph-hand-heart"
-                              : "ph-user"
-                          }`}
-                        ></i>
-                      </div>
-                    </td>
-                    <td>{visitor.nombre}</td>
-                    <td>{visitor.documento}</td>
-                    <td>{visitor.residente}</td>
-                    <td>{visitor.telefono}</td>
-                    <td>{visitor.torre}</td>
-                    <td>{visitor.apartamento}</td>
-                    <td>{visitor.motivo}</td>
-                    <td>{visitor.fecha}</td>
-                    <td>{visitor.hora}</td>
-                    <td>
-                      <div className="action-btns">
-                        <button
-                          type="button"
-                          className="action-icon-btn delete"
-                          disabled={deletingId === visitor.id}
-                          onClick={() => handleDelete(visitor)}
-                        >
-                          {deletingId === visitor.id ? "..." : <i className="ph-light ph-trash"></i>}
-                        </button>
-                        <button
-                          type="button"
-                          className="action-icon-btn"
-                          onClick={() => handleOpenEdit(visitor)}
-                        >
-                          <i className="ph-light ph-pencil-simple"></i>
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {visitors.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="guard-module-empty-row">
+                      No hay visitantes registrados
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  visitors.map((visitor) => (
+                    <tr key={visitor.id}>
+                      <td>
+                        <div
+                          className={`tipo-icon ${
+                            visitor.motivo?.toLowerCase().includes("familiar") ? "moto" : "car"
+                          }`}
+                        >
+                          <i
+                            className={`ph-light ${
+                              visitor.motivo?.toLowerCase().includes("familiar")
+                                ? "ph-hand-heart"
+                                : "ph-user"
+                            }`}
+                          ></i>
+                        </div>
+                      </td>
+                      <td>{visitor.nombre}</td>
+                      <td>{visitor.documento}</td>
+                      <td>{visitor.residente}</td>
+                      <td>{visitor.telefono}</td>
+                      <td>{visitor.torre}</td>
+                      <td>{visitor.apartamento}</td>
+                      <td>{visitor.motivo}</td>
+                      <td>{visitor.fecha}</td>
+                      <td>{visitor.hora}</td>
+                      <td>
+                        <div className="action-btns">
+                          <button
+                            type="button"
+                            className="action-icon-btn delete"
+                            disabled={deletingId === visitor.id}
+                            onClick={() => handleDelete(visitor)}
+                          >
+                            {deletingId === visitor.id ? "..." : <i className="ph-light ph-trash"></i>}
+                          </button>
+                          <button
+                            type="button"
+                            className="action-icon-btn"
+                            onClick={() => handleOpenEdit(visitor)}
+                          >
+                            <i className="ph-light ph-pencil-simple"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
 
       <VisitanteModal

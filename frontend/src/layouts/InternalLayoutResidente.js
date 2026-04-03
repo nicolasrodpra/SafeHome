@@ -11,7 +11,7 @@ import "../styles/shared/InternalLayoutResidente.css";
 const RESIDENTE_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "PQR" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/residentesReservas" },
-  { icon: "ph-bell", label: "Comunicados" },
+  { icon: "ph-bell", label: "Comunicados", to: "/residenteComunicados" },
   { icon: "ph-book-bookmark", label: "Manual Convivencia", to: "/residenteManualConvivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
   { icon: "ph-hand", label: "Boton de panico" },

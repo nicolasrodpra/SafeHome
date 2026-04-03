@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import InternalLayout from "../../layouts/InternalLayout";
 import { db } from "../../config/firebase";
-import "../../styles/vigilante/registroVehiculos.css";
 import "../../styles/admin/adminVigilanciaSection.css";
 
 function formatDateFields(snapshotDoc) {
@@ -26,25 +25,28 @@ function DetailModal({ isOpen, item, config, onClose }) {
   if (!isOpen || !item) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box admin-readonly-detail-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-stripe" />
-        <div className="modal-header">
-          <div className="modal-header-left">
-            <div className="modal-icon">
+    <div className="admin-readonly-modal-overlay" onClick={onClose}>
+      <div
+        className="admin-readonly-modal-box admin-readonly-detail-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="admin-readonly-modal-stripe" />
+        <div className="admin-readonly-modal-header">
+          <div className="admin-readonly-modal-header-left">
+            <div className="admin-readonly-modal-icon">
               <i className={`ph-light ${config.icon}`}></i>
             </div>
             <div>
-              <p className="modal-title">Detalle del registro</p>
-              <p className="modal-subtitle">{config.title}</p>
+              <p className="admin-readonly-modal-title">Detalle del registro</p>
+              <p className="admin-readonly-modal-subtitle">{config.title}</p>
             </div>
           </div>
-          <button type="button" className="modal-close" onClick={onClose}>
+          <button type="button" className="admin-readonly-modal-close" onClick={onClose}>
             <i className="ph-light ph-x"></i>
           </button>
         </div>
 
-        <hr className="modal-divider" />
+        <hr className="admin-readonly-modal-divider" />
 
         <div className="admin-readonly-detail-grid">
           {config.detailFields.map((field) => (
@@ -81,11 +83,26 @@ export default function AdminVigilanciaSectionPage({ config }) {
 
   return (
     <InternalLayout>
-      <main className="content">
-        <div className="card">
-          <div className="card-header admin-readonly-card-header">
+      <main className="content admin-vigilancia-page">
+        <header className="admin-vigilancia-page-header">
+          <div>
+            <h1 className="internal-page-title">{config.title}</h1>
+            <p className="admin-vigilancia-page-copy">
+              Consulta el registro completo en modo solo lectura desde una vista mas clara y
+              consistente para administracion.
+            </p>
+          </div>
+
+          <div className="admin-vigilancia-page-summary">
+            <span>Total registros</span>
+            <strong>{items.length}</strong>
+          </div>
+        </header>
+
+        <section className="admin-vigilancia-surface">
+          <div className="admin-vigilancia-card-header">
             <div>
-              <h2 className="card-title">{config.title}</h2>
+              <h2 className="admin-vigilancia-card-title">Resumen del modulo</h2>
               <p className="admin-readonly-card-copy">
                 Vista solo lectura para administracion. Desde aqui solo puedes observar el
                 registro completo.
@@ -107,47 +124,54 @@ export default function AdminVigilanciaSectionPage({ config }) {
             </div>
           </div>
 
-          <table className="vehicle-table">
-            <thead>
-              <tr>
-                {config.columns.map((column) => (
-                  <th key={column.key}>{column.label}</th>
-                ))}
-                <th>Accion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
+          <div className="admin-vigilancia-table-wrap">
+            <table className="admin-vigilancia-table">
+              <thead>
                 <tr>
-                  <td colSpan={config.columns.length + 1} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                    {config.emptyMessage}
-                  </td>
+                  {config.columns.map((column) => (
+                    <th key={column.key}>{column.label}</th>
+                  ))}
+                  <th>Accion</th>
                 </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id}>
-                    {config.columns.map((column) => (
-                      <td key={`${item.id}-${column.key}`}>{column.render ? column.render(item) : item[column.key]}</td>
-                    ))}
-                    <td>
-                      <div className="action-btns">
-                        <button
-                          type="button"
-                          className="action-icon-btn admin-readonly-eye-btn"
-                          onClick={() => setSelectedItem(item)}
-                          title="Ver registro completo"
-                          aria-label="Ver registro completo"
-                        >
-                          <i className="ph-light ph-eye"></i>
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={config.columns.length + 1}
+                      className="admin-vigilancia-empty-row"
+                    >
+                      {config.emptyMessage}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  items.map((item) => (
+                    <tr key={item.id}>
+                      {config.columns.map((column) => (
+                        <td key={`${item.id}-${column.key}`}>
+                          {column.render ? column.render(item) : item[column.key]}
+                        </td>
+                      ))}
+                      <td>
+                        <div className="action-btns">
+                          <button
+                            type="button"
+                            className="action-icon-btn admin-readonly-eye-btn"
+                            onClick={() => setSelectedItem(item)}
+                            title="Ver registro completo"
+                            aria-label="Ver registro completo"
+                          >
+                            <i className="ph-light ph-eye"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
 
       <DetailModal

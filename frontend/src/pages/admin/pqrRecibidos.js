@@ -127,6 +127,10 @@ export default function PqrRecibidosAdmin() {
     <InternalLayout>
       <div className="content">
         <h1 className="internal-page-title pqr-page-title">Quejas</h1>
+        <p className="pqr-page-copy">
+          Revisa las solicitudes recibidas desde una vista mas clara y responde cada caso con
+          un flujo administrativo mas ordenado.
+        </p>
 
         <div className="card">
           <div className="toolbar">

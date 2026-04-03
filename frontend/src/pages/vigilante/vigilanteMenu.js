@@ -47,7 +47,7 @@ const dashboardCards = [
     icon: "ph-users-three",
     title: "Registro de visitantes",
     to: "/registroVisitantes",
-    description: "Registra visitantes y mantén trazabilidad de los ingresos al conjunto residencial.",
+    description: "Registra visitantes y manten trazabilidad de los ingresos al conjunto residencial.",
   },
   {
     icon: "ph-bell",
@@ -62,7 +62,7 @@ function VigilanteStatCard({ card, value }) {
     <article className={`vigilante-stat-card is-${card.variant}`}>
       <div className="vigilante-stat-top">
         <span className="vigilante-stat-icon">
-          <i className={`ph-fill ${card.icon}`}></i>
+          <i className={`ph-thin ${card.icon}`}></i>
         </span>
         <span className="vigilante-stat-label">{card.label}</span>
       </div>
@@ -81,8 +81,8 @@ function DashboardCard({ card }) {
         <p>{card.description}</p>
       </div>
       <div className="card-bottom">
-        <i className="ph-light ph-arrow-right card-arrow"></i>
-        <i className={`ph-light ${card.icon} card-icon`}></i>
+        <i className="ph-thin ph-arrow-right card-arrow"></i>
+        <i className={`ph-thin ${card.icon} card-icon`}></i>
       </div>
     </>
   );
@@ -128,7 +128,7 @@ function VigilanteMenu() {
                 Hola, <span>{profileName}</span>
               </h1>
               <p>
-                monitorea ingresos, visitantes y novedades de seguridad en
+                Monitorea ingresos, visitantes y novedades de seguridad en
                 <br />
                 conjuntos residenciales con un control claro y organizado.
               </p>

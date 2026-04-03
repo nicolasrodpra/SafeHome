@@ -71,8 +71,8 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+    <div className="guard-modal-overlay" onClick={onClose}>
+      <div className="guard-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-stripe" />
         <div className="modal-header">
           <div className="modal-header-left">
@@ -334,126 +334,151 @@ export default function RegistroCorrespondencia() {
 
   return (
     <InternalLayout>
-      <main className="content">
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Registro de Correspondencia</h2>
-
-            <div className="vehicle-counters">
-              <div className="counter-card">
-                <div className="counter-icon car">
-                  <i className="ph-light ph-package"></i>
-                </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalPaquetes}</span>
-                  <span className="counter-label">Paquetes</span>
-                </div>
-              </div>
-
-              <div className="counter-card">
-                <div className="counter-icon moto">
-                  <i className="ph-light ph-envelope-simple"></i>
-                </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalSobres}</span>
-                  <span className="counter-label">Sobres</span>
-                </div>
-              </div>
-
-              <div className="counter-card">
-                <div className="counter-icon moto">
-                  <i className="ph-light ph-file-text"></i>
-                </div>
-                <div className="counter-info">
-                  <span className="counter-number">{totalDocumentos}</span>
-                  <span className="counter-label">Documentos</span>
-                </div>
-              </div>
-            </div>
-
-            <button type="button" className="register-btn" onClick={handleOpenCreate}>
-              <span>
-                Registrar nueva
-                <br />
-                correspondencia
-              </span>
-              <span className="plus-sq"></span>
-            </button>
+      <main className="content guard-module-page">
+        <header className="guard-module-page-header">
+          <div>
+            <h1 className="internal-page-title">Registro de correspondencia</h1>
+            <p className="guard-module-page-copy">
+              Lleva el control de paquetes, sobres y documentos con una vista mas limpia y
+              operativa para vigilancia.
+            </p>
           </div>
 
-          <table className="vehicle-table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Residente</th>
-                <th>Documento</th>
-                <th>Remitente</th>
-                <th>Torre</th>
-                <th>Apartamento</th>
-                <th>Observacion</th>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Accion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
+          <div className="guard-module-summary">
+            <span>Total registros</span>
+            <strong>{items.length}</strong>
+          </div>
+        </header>
+
+        <section className="card guard-module-surface">
+          <div className="card-header guard-module-card-header">
+            <div className="guard-module-head-copy">
+              <h2 className="card-title">Resumen operativo</h2>
+              <p className="guard-module-card-copy">
+                Organiza las entregas registradas y actualiza rapidamente cualquier novedad del
+                modulo.
+              </p>
+            </div>
+
+            <div className="guard-module-header-tools">
+              <div className="vehicle-counters">
+                <div className="counter-card">
+                  <div className="counter-icon car">
+                    <i className="ph-light ph-package"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalPaquetes}</span>
+                    <span className="counter-label">Paquetes</span>
+                  </div>
+                </div>
+
+                <div className="counter-card">
+                  <div className="counter-icon moto">
+                    <i className="ph-light ph-envelope-simple"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalSobres}</span>
+                    <span className="counter-label">Sobres</span>
+                  </div>
+                </div>
+
+                <div className="counter-card">
+                  <div className="counter-icon moto">
+                    <i className="ph-light ph-file-text"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalDocumentos}</span>
+                    <span className="counter-label">Documentos</span>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" className="register-btn" onClick={handleOpenCreate}>
+                <span>
+                  Registrar nueva
+                  <br />
+                  correspondencia
+                </span>
+                <span className="plus-sq"></span>
+              </button>
+            </div>
+          </div>
+
+          <div className="guard-module-table-wrap">
+            <table className="vehicle-table">
+              <thead>
                 <tr>
-                  <td colSpan={10} style={{ textAlign: "center", padding: "24px", color: "#999" }}>
-                    No hay correspondencia registrada
-                  </td>
+                  <th>Tipo</th>
+                  <th>Residente</th>
+                  <th>Documento</th>
+                  <th>Remitente</th>
+                  <th>Torre</th>
+                  <th>Apartamento</th>
+                  <th>Observacion</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Accion</th>
                 </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <div
-                        className={`tipo-icon ${
-                          item.tipoEntrega === "Paquete" ? "car" : "moto"
-                        }`}
-                      >
-                        <i
-                          className={`ph-light ${
-                            item.tipoEntrega === "Paquete"
-                              ? "ph-package"
-                              : "ph-file-text"
-                          }`}
-                        ></i>
-                      </div>
-                    </td>
-                    <td>{item.residente}</td>
-                    <td>{item.documento}</td>
-                    <td>{item.remitente}</td>
-                    <td>{item.torre}</td>
-                    <td>{item.apartamento}</td>
-                    <td>{item.observacion}</td>
-                    <td>{item.fecha}</td>
-                    <td>{item.hora}</td>
-                    <td>
-                      <div className="action-btns">
-                        <button
-                          type="button"
-                          className="action-icon-btn delete"
-                          disabled={deletingId === item.id}
-                          onClick={() => handleDelete(item)}
-                        >
-                          {deletingId === item.id ? "..." : <i className="ph-light ph-trash"></i>}
-                        </button>
-                        <button
-                          type="button"
-                          className="action-icon-btn"
-                          onClick={() => handleOpenEdit(item)}
-                        >
-                          <i className="ph-light ph-pencil-simple"></i>
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="guard-module-empty-row">
+                      No hay correspondencia registrada
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  items.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <div
+                          className={`tipo-icon ${
+                            item.tipoEntrega === "Paquete" ? "car" : "moto"
+                          }`}
+                        >
+                          <i
+                            className={`ph-light ${
+                              item.tipoEntrega === "Paquete"
+                                ? "ph-package"
+                                : "ph-file-text"
+                            }`}
+                          ></i>
+                        </div>
+                      </td>
+                      <td>{item.residente}</td>
+                      <td>{item.documento}</td>
+                      <td>{item.remitente}</td>
+                      <td>{item.torre}</td>
+                      <td>{item.apartamento}</td>
+                      <td>{item.observacion}</td>
+                      <td>{item.fecha}</td>
+                      <td>{item.hora}</td>
+                      <td>
+                        <div className="action-btns">
+                          <button
+                            type="button"
+                            className="action-icon-btn delete"
+                            disabled={deletingId === item.id}
+                            onClick={() => handleDelete(item)}
+                          >
+                            {deletingId === item.id ? "..." : <i className="ph-light ph-trash"></i>}
+                          </button>
+                          <button
+                            type="button"
+                            className="action-icon-btn"
+                            onClick={() => handleOpenEdit(item)}
+                          >
+                            <i className="ph-light ph-pencil-simple"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
 
       <CorrespondenciaModal

@@ -64,8 +64,8 @@ function DashboardCard({ card, onOpenModal }) {
         <p>{card.description}</p>
       </div>
       <div className="card-bottom">
-        <i className="ph-light ph-arrow-right card-arrow"></i>
-        <i className={`ph-light ${card.icon} card-icon`}></i>
+        <i className="ph-thin ph-arrow-right card-arrow"></i>
+        <i className={`ph-thin ${card.icon} card-icon`}></i>
       </div>
     </>
   );
@@ -103,7 +103,7 @@ function AdminMenuPage() {
                   Hola, <span>{profileName}</span>
                 </h1>
                 <p>
-                  supervisa y mejora la seguridad de tu comunidad con
+                  Supervisa y mejora la seguridad de tu comunidad con
                   <br />
                   herramientas inteligentes.
                 </p>

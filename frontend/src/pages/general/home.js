@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
+import homeHeroFamily from "../../assets/homeHeroFamily.jpg";
 import "../../styles/general/home.css";
-
-const brochureImage = `${process.env.PUBLIC_URL}/_Brochure.png`;
 
 const navLinks = [
   { href: "#features", label: "Objetivos" },
@@ -111,7 +110,7 @@ const serviceCards = [
 
 function Home() {
   return (
-    <>
+    <div className="home-page">
       <section className="hero">
         <nav>
           <div className="nav-logo">SAFEHOME</div>
@@ -144,7 +143,7 @@ function Home() {
 
         <div className="hero-right">
           <div className="hero-img-wrapper">
-            <img src={brochureImage} alt="Ilustracion principal de SafeHome" />
+            <img src={homeHeroFamily} alt="Familia en el home de SafeHome" />
           </div>
         </div>
       </section>
@@ -248,7 +247,7 @@ function Home() {
           </ul>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 

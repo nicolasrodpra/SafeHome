@@ -1,8 +1,7 @@
 .admin-vigilancia-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.34);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,17 +11,16 @@
 
 .admin-vigilancia-modal,
 .admin-vigilancia-detail-modal {
-  width: min(1120px, 100%);
+  width: min(1040px, 100%);
   max-height: 90vh;
   overflow: auto;
-  background: linear-gradient(180deg, #ffffff 0%, #fbf8ff 100%);
-  border-radius: 28px;
-  box-shadow: 0 28px 60px rgba(70, 6, 105, 0.18);
-  border: 1px solid rgba(70, 6, 105, 0.08);
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .admin-vigilancia-detail-modal {
-  width: min(760px, 100%);
+  width: min(720px, 100%);
 }
 
 .admin-vigilancia-header,
@@ -31,223 +29,109 @@
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-  padding: 28px 30px 18px;
+  padding: 24px 24px 18px;
 }
 
 .admin-vigilancia-kicker {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #7c3aed;
+  letter-spacing: 0.08em;
+  color: #8a839a;
   font-weight: 700;
   margin-bottom: 8px;
 }
 
 .admin-vigilancia-header h2,
 .admin-vigilancia-detail-header h3 {
-  font-size: 1.7rem;
-  color: #221433;
+  font-size: 1.45rem;
+  color: #20182f;
   margin-bottom: 6px;
 }
 
 .admin-vigilancia-subtitle {
-  color: #6f6282;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  color: #6f6980;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 .admin-vigilancia-close {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  border: 1px solid #eadcff;
-  background: #fff;
-  color: #6f6282;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: #ffffff;
+  color: #6f6980;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
+.admin-vigilancia-close:hover {
+  background: #f8f7fb;
+}
+
 .admin-vigilancia-card-grid {
-  padding: 0 30px 30px;
+  padding: 0 24px 24px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 .admin-vigilancia-card {
   text-align: left;
-  border: 1px solid #eee4fb;
-  background: linear-gradient(180deg, #fff 0%, #f8f2ff 100%);
-  border-radius: 22px;
-  padding: 22px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .admin-vigilancia-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 32px rgba(124, 58, 237, 0.12);
+  background: #fcfbfe;
 }
 
 .admin-vigilancia-card-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 18px;
-  background: #f3e8ff;
-  color: #460669;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #f3eff8;
+  color: #4b365f;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .admin-vigilancia-card h3 {
-  color: #2d1d3d;
-  margin-bottom: 8px;
+  color: #241b33;
+  margin-bottom: 6px;
+  font-size: 1rem;
 }
 
 .admin-vigilancia-card p {
-  color: #726482;
-  font-size: 0.92rem;
-  line-height: 1.5;
+  color: #6f6980;
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
 .admin-vigilancia-card-meta {
   margin-top: auto;
   display: inline-flex;
   align-self: flex-start;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
-  background: #fff;
-  color: #460669;
-  font-size: 0.8rem;
+  background: #f5f3f8;
+  color: #4b365f;
+  font-size: 0.76rem;
   font-weight: 700;
-}
-
-.admin-vigilancia-table-shell {
-  padding: 0 30px 30px;
-}
-
-.admin-vigilancia-table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.admin-vigilancia-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  border-radius: 999px;
-  background: #f3e8ff;
-  color: #460669;
-  padding: 10px 16px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.admin-vigilancia-readonly-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: #f6f0ff;
-  color: #7c3aed;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.admin-vigilancia-table-wrap {
-  overflow: auto;
-  border: 1px solid #f0e8fb;
-  border-radius: 22px;
-  background: #fff;
-}
-
-.admin-vigilancia-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 880px;
-}
-
-.admin-vigilancia-table th,
-.admin-vigilancia-table td {
-  padding: 14px 16px;
-  text-align: left;
-  border-bottom: 1px solid #f4effa;
-  font-size: 0.9rem;
-}
-
-.admin-vigilancia-table th {
-  color: #8f84a1;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.admin-vigilancia-table tbody tr:hover td {
-  background: #fcf9ff;
-}
-
-.admin-vigilancia-empty {
-  text-align: center;
-  color: #8f84a1;
-  padding: 28px 16px;
-}
-
-.admin-vigilancia-eye-btn {
-  width: 38px;
-  height: 38px;
-  border: none;
-  border-radius: 12px;
-  background: #f3e8ff;
-  cursor: pointer;
-  font-size: 1.05rem;
-}
-
-.admin-vigilancia-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  padding: 0 30px 30px;
-}
-
-.admin-vigilancia-detail-item {
-  border: 1px solid #efe5fb;
-  border-radius: 18px;
-  padding: 16px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.admin-vigilancia-detail-item span {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #8f84a1;
-}
-
-.admin-vigilancia-detail-item strong {
-  color: #2d1d3d;
-  line-height: 1.45;
 }
 
 @media (max-width: 960px) {
   .admin-vigilancia-card-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-vigilancia-detail-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -259,20 +143,13 @@
 
   .admin-vigilancia-header,
   .admin-vigilancia-detail-header,
-  .admin-vigilancia-table-shell,
-  .admin-vigilancia-card-grid,
-  .admin-vigilancia-detail-grid {
-    padding-left: 18px;
-    padding-right: 18px;
+  .admin-vigilancia-card-grid {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .admin-vigilancia-header h2,
   .admin-vigilancia-detail-header h3 {
-    font-size: 1.35rem;
-  }
-
-  .admin-vigilancia-table-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+    font-size: 1.2rem;
   }
 }

@@ -161,6 +161,10 @@ function AdminComunicados() {
     <InternalLayout>
       <div className="content">
         <h1 className="internal-page-title page-title">Comunicados</h1>
+        <p className="page-copy">
+          Publica avisos para la comunidad desde una vista mas sobria, con lectura clara y
+          acciones directas para editar o eliminar.
+        </p>
 
         <div className="comunicados-layout">
           <div className="comunicados-list">

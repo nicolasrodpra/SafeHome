@@ -13,6 +13,7 @@ import AdminRegister from "./pages/admin/registroAdmin.js";
 import Home from "./pages/general/home.js";
 import Login from "./pages/general/login.js";
 import PerfilUsuarioPage from "./pages/general/perfilUsuario.js";
+import ResidenteComunicados from "./pages/residente/residenteComunicados.js";
 import ResidenteMenu from "./pages/residente/residenteMenu.js";
 import ResidenteManualConvivencia from "./pages/residente/residenteManualConvivencia.js";
 import ResidentesReservas from "./pages/residente/residentesReservas.js";
@@ -32,6 +33,8 @@ const privateRoutes = [
   { path: "/adminVigilanciaVehiculos", element: <AdminVigilanciaVehiculos /> },
   { path: "/adminVigilanciaVisitantes", element: <AdminVigilanciaVisitantes /> },
   { path: "/residenteMenu", element: <ResidenteMenu /> },
+  { path: "/residenteComunicados", element: <ResidenteComunicados /> },
+  { path: "/comunicadosResidente", element: <ResidenteComunicados /> },
   { path: "/residentesReservas", element: <ResidentesReservas /> },
   { path: "/residenteManualConvivencia", element: <ResidenteManualConvivencia /> },
   { path: "/vigilanteMenu", element: <VigilanteMenu /> },

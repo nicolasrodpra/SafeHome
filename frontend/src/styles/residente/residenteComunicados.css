@@ -1,0 +1,116 @@
+.residente-comunicados-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.residente-comunicados-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.residente-comunicados-copy {
+  max-width: 760px;
+  margin-top: 10px;
+  color: #666174;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.residente-comunicados-summary {
+  min-width: 190px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.residente-comunicados-summary span {
+  display: block;
+  margin-bottom: 8px;
+  color: #8c83a9;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.residente-comunicados-summary strong {
+  display: block;
+  color: #2c223a;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.residente-comunicados-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.residente-comunicado-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.residente-comunicado-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.residente-comunicado-head h2 {
+  margin: 0;
+  color: #2a2039;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.residente-comunicado-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  color: #8b8498;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.residente-comunicado-card p {
+  margin: 0;
+  color: #59526b;
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+
+.residente-comunicados-empty {
+  margin: 0;
+  padding: 24px;
+  border: 1px dashed rgba(17, 24, 39, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+  color: #7d778d;
+  text-align: center;
+}
+
+@media (max-width: 780px) {
+  .residente-comunicados-header,
+  .residente-comunicado-head {
+    flex-direction: column;
+  }
+
+  .residente-comunicados-summary {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .residente-comunicado-meta {
+    align-items: flex-start;
+  }
+}

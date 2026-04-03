@@ -107,7 +107,7 @@ export default function AdminVigilanciaModal({ isOpen, onClose }) {
               }}
             >
               <div className="admin-vigilancia-card-icon">
-                <i className={`ph-light ${section.icon}`}></i>
+                <i className={`ph-thin ${section.icon}`}></i>
               </div>
               <div>
                 <h3>{section.title}</h3>

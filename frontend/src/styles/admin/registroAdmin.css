@@ -1,7 +1,7 @@
 .admin-register-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
 }
 
 .admin-register-header {
@@ -13,85 +13,71 @@
 
 .admin-register-copy {
   max-width: 760px;
-  margin-top: 12px;
-  font-size: 0.98rem;
-  line-height: 1.7;
-  color: #6d6980;
+  margin-top: 10px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #666174;
 }
 
 .admin-register-role-badge {
-  min-width: 210px;
+  min-width: 200px;
   padding: 18px 20px;
-  border-radius: 22px;
-  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%);
-  border: 1px solid rgba(70, 6, 105, 0.08);
-  box-shadow: 0 16px 38px rgba(70, 6, 105, 0.08);
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .admin-register-role-badge span {
   display: block;
   margin-bottom: 8px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #8c83a9;
 }
 
 .admin-register-role-badge strong {
   display: block;
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #34114a;
-}
-
-.admin-register-role-badge.is-administrador strong {
-  color: #460669;
-}
-
-.admin-register-role-badge.is-residente strong {
-  color: #245c39;
-}
-
-.admin-register-role-badge.is-vigilante strong {
-  color: #8c2c1d;
+  color: #2c223a;
 }
 
 .admin-register-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) 320px;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.5fr) 300px;
+  gap: 22px;
   align-items: start;
 }
 
 .admin-register-form-card,
 .admin-register-side-card {
   background: #ffffff;
-  border-radius: 28px;
-  padding: 28px;
-  box-shadow: 0 18px 45px rgba(24, 16, 40, 0.06);
-  border: 1px solid rgba(70, 6, 105, 0.05);
+  border-radius: 22px;
+  padding: 24px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .admin-register-card-head {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .admin-register-kicker {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 999px;
-  background: #f3e8ff;
+  background: #f3eff8;
   color: #460669;
-  font-size: 0.78rem;
-  font-weight: 600;
-  margin-bottom: 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 
 .admin-register-card-head h2,
 .admin-register-side-copy h2 {
-  font-size: 1.55rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: #1a1527;
   margin-bottom: 10px;
@@ -99,23 +85,23 @@
 
 .admin-register-card-head p,
 .admin-register-side-copy p {
-  font-size: 0.95rem;
-  line-height: 1.7;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: #706a84;
 }
 
 .admin-register-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
 }
 
 .admin-register-group {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(70, 6, 105, 0.08);
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .admin-register-group:first-of-type {
@@ -130,21 +116,21 @@
 }
 
 .admin-register-group-head h3 {
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: #201a2f;
 }
 
 .admin-register-group-head p {
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   color: #8b85a3;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .admin-register-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .admin-register-field {
@@ -154,7 +140,7 @@
 }
 
 .admin-register-field label {
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: #312942;
 }
@@ -166,16 +152,15 @@
 .admin-register-field input,
 .admin-register-field select {
   width: 100%;
-  min-height: 54px;
-  border: 1px solid #e5def0;
-  border-radius: 16px;
-  background: #fcfbfe;
-  padding: 0 16px;
+  min-height: 48px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0 14px;
   font-family: "Poppins", sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: #271f35;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .admin-register-field input::placeholder,
@@ -186,8 +171,6 @@
 .admin-register-field input:focus,
 .admin-register-field select:focus {
   border-color: #460669;
-  box-shadow: 0 0 0 4px rgba(70, 6, 105, 0.1);
-  background: #ffffff;
 }
 
 .admin-register-field input:disabled,
@@ -204,37 +187,37 @@
 
 .admin-register-select-wrap select {
   appearance: none;
-  padding-right: 48px;
+  padding-right: 42px;
 }
 
 .admin-register-select-wrap i {
   position: absolute;
-  right: 16px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #6d6980;
   pointer-events: none;
 }
 
 .admin-register-empty-state {
   grid-column: 1 / -1;
-  padding: 18px 20px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
-  border: 1px dashed rgba(70, 6, 105, 0.18);
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #faf9fb;
+  border: 1px dashed rgba(70, 6, 105, 0.16);
 }
 
 .admin-register-empty-state strong {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.96rem;
+  font-size: 0.92rem;
   color: #34114a;
 }
 
 .admin-register-empty-state p {
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.86rem;
+  line-height: 1.55;
   color: #756f89;
 }
 
@@ -246,53 +229,48 @@
 
 .admin-register-primary,
 .admin-register-secondary {
-  min-height: 48px;
-  border-radius: 14px;
-  padding: 0 18px;
+  min-height: 44px;
+  border-radius: 10px;
+  padding: 0 16px;
   font-family: "Poppins", sans-serif;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
 .admin-register-primary {
   border: none;
   background: #460669;
   color: #ffffff;
-  box-shadow: 0 14px 28px rgba(70, 6, 105, 0.18);
 }
 
 .admin-register-primary:hover:not(:disabled) {
   background: #5b0a87;
-  transform: translateY(-1px);
 }
 
 .admin-register-secondary {
-  border: 1px solid rgba(70, 6, 105, 0.14);
+  border: 1px solid rgba(17, 24, 39, 0.1);
   background: #ffffff;
   color: #460669;
 }
 
 .admin-register-secondary:hover:not(:disabled) {
-  background: #faf7fc;
-  transform: translateY(-1px);
+  background: #faf9fb;
 }
 
 .admin-register-side-card {
   position: sticky;
   top: 24px;
-  background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
 }
 
 .admin-register-side-copy {
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .admin-register-checklist {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 0;
 }
 
@@ -303,18 +281,17 @@
 }
 
 .admin-register-check-dot {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   margin-top: 6px;
   border-radius: 999px;
   background: #460669;
-  box-shadow: 0 0 0 4px rgba(70, 6, 105, 0.12);
   flex-shrink: 0;
 }
 
 .admin-register-check-item p {
-  font-size: 0.92rem;
-  line-height: 1.6;
+  font-size: 0.86rem;
+  line-height: 1.55;
   color: #5f5874;
 }
 
@@ -346,8 +323,8 @@
 @media (max-width: 640px) {
   .admin-register-form-card,
   .admin-register-side-card {
-    padding: 22px 18px;
-    border-radius: 22px;
+    padding: 20px 16px;
+    border-radius: 18px;
   }
 
   .admin-register-actions {

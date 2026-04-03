@@ -491,7 +491,7 @@ export default function RegistroAdminPage() {
                     id="password"
                     type="password"
                     name="password"
-                    label="Contraseña"
+                    label="Contrasena"
                     value={form.password}
                     onChange={handleChange}
                     placeholder="Minimo 6 caracteres"
@@ -504,10 +504,10 @@ export default function RegistroAdminPage() {
                     id="confirmPassword"
                     type="password"
                     name="confirmPassword"
-                    label="Confirmar contraseña"
+                    label="Confirmar contrasena"
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Repite la contraseña"
+                    placeholder="Repite la contrasena"
                     required
                     autoComplete="new-password"
                     disabled={loading}

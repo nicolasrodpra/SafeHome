@@ -260,6 +260,17 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
 
   return (
     <div className="manual-page">
+      <header className="manual-page-header">
+        <div>
+          <h1 className="internal-page-title">Manual de convivencia</h1>
+          <p className="manual-page-copy">
+            {isAdminMode
+              ? "Administra el documento oficial del conjunto y mantenlo disponible para toda la comunidad."
+              : "Consulta el documento oficial compartido por administracion desde una vista clara y centralizada."}
+          </p>
+        </div>
+      </header>
+
       <div className={`manual-shell ${isAdminMode ? "is-admin" : "is-resident"}`}>
         <section className="manual-preview-panel">
           <div className="manual-panel-head">
@@ -431,7 +442,7 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
               <div className="manual-panel-head">
                 <div>
                   <h2>Acciones</h2>
-                  <p>Abre el PDF en una pestaña nueva para leerlo mejor o descargarlo.</p>
+                  <p>Abre el PDF en una pestana nueva para leerlo mejor o descargarlo.</p>
                 </div>
               </div>
 

@@ -20,7 +20,7 @@ const dashboardCards = [
     icon: "ph-bell",
     title: "Comunicados",
     description: "Enterate de los avisos y novedades del conjunto en tiempo real.",
-    to: "/comunicadosResidente",
+    to: "/residenteComunicados",
   },
   {
     icon: "ph-book-bookmark",
@@ -49,8 +49,8 @@ function DashboardCard({ card }) {
         <p>{card.description}</p>
       </div>
       <div className="residente-card-bottom">
-        <i className="ph-light ph-arrow-right residente-card-arrow"></i>
-        <i className={`ph-light ${card.icon} residente-card-icon`}></i>
+        <i className="ph-thin ph-arrow-right residente-card-arrow"></i>
+        <i className={`ph-thin ${card.icon} residente-card-icon`}></i>
       </div>
     </>
   );

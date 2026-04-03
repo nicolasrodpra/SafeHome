@@ -441,7 +441,7 @@ export default function ReservasCalendarModule({ mode }) {
   };
 
   return (
-    <div className="reservas-page">
+    <div className={`reservas-page ${isResidentMode ? "is-resident-mode" : "is-admin-mode"}`}>
       <header className="reservas-page-header">
         <div className="reservas-page-header-copy">
           <h1 className="internal-page-title">Reservas Zonas Comunes</h1>
