@@ -1,47 +1,44 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import illustration from "../../assets/login.png";
-import { auth, db } from "../../config/firebase";
+import { loginUser } from "../../services/modules/authApi";
+import { saveSession } from "../../services/sessionService";
 import "../../styles/general/login.css";
+
+const getRouteByRole = (role) => {
+  if (role === "Vigilante") return "/vigilanteMenu";
+  if (role === "Administrador") return "/adminMenu";
+  if (role === "Residente") return "/residenteMenu";
+  return "/login";
+};
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
+  const handleLogin = async (event) => {
+    event.preventDefault();
 
     try {
-      const credentials = await signInWithEmailAndPassword(auth, normalizedEmail, password);
-      const userDoc = await getDoc(doc(db, "users", credentials.user.uid));
+      const session = await loginUser({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (!userDoc.exists()) {
-        throw new Error("No se encontro la informacion del usuario.");
+      if (!session?.rol) {
+        throw new Error(
+          "No se pudo identificar el rol del usuario. Reinicia el backend e inténtalo de nuevo."
+        );
       }
 
-      const { rol } = userDoc.data();
-
-      if (rol === "Vigilante") navigate("/vigilanteMenu");
-      else if (rol === "Administrador") navigate("/adminMenu");
-      else if (rol === "Residente") navigate("/residenteMenu");
-      else throw new Error("El rol del usuario no es valido.");
+      saveSession(session);
+      navigate(getRouteByRole(session.rol), { replace: true });
     } catch (error) {
-      let message = error.message;
-
-      if (error.code === "auth/invalid-credential") {
-        message = "Correo o contrasena incorrectos.";
-      } else if (error.code === "auth/too-many-requests") {
-        message = "Demasiados intentos. Intenta mas tarde.";
-      }
-
       Swal.fire({
         title: "Error",
-        text: message,
+        text: error.message || "No se pudo iniciar sesión.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -52,7 +49,7 @@ export default function Login() {
     <div className="register-wrapper">
       <div className="left-panel">
         <div className="circle"></div>
-        <img className="illustration" src={illustration} alt="ilustracion" />
+        <img className="illustration" src={illustration} alt="Ilustración de inicio de sesión" />
         <Link to="/" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
         </Link>
@@ -61,7 +58,7 @@ export default function Login() {
       <div className="right-panel">
         <div className="form-box">
           <p className="welcome">Bienvenido</p>
-          <h1 className="title">Inicia sesion</h1>
+          <h1 className="title">Inicia sesión</h1>
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
@@ -69,7 +66,7 @@ export default function Login() {
               type="email"
               placeholder="Correo"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
             />
           </div>
 
@@ -77,14 +74,14 @@ export default function Login() {
             <i className="bi bi-lock"></i>
             <input
               type="password"
-              placeholder="Contrasena"
+              placeholder="Contraseña"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
             />
           </div>
 
           <button type="button" className="btn-register" onClick={handleLogin}>
-            Iniciar sesion
+            Iniciar sesión
           </button>
         </div>
       </div>

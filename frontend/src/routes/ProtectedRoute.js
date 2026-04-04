@@ -1,15 +1,10 @@
 import { Navigate } from "react-router-dom";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../config/firebase";
+import useSession from "../hooks/useSession";
 
 export default function ProtectedRoute({ children }) {
-  const [user, loading] = useAuthState(auth);
+  const session = useSession();
 
-  if (loading) {
-    return <p className="auth-route-loading">Cargando...</p>;
-  }
-
-  if (!user) {
+  if (!session?.uid) {
     return <Navigate to="/login" replace />;
   }
 

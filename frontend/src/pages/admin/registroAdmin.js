@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";
+import { apiPost } from "../../services/apiClient";
 import "../../styles/admin/registroAdmin.css";
 
 const initialForm = {
@@ -31,7 +32,7 @@ const roleDetails = {
   },
   Residente: {
     title: "Perfil de residente",
-    description: "Relaciona al usuario con su ubicacion dentro del conjunto.",
+    description: "Relaciona al usuario con su ubicación dentro del conjunto.",
     checklist: [
       "Registrar torre y apartamento",
       "Dejar listo el perfil para futuras actualizaciones",
@@ -39,7 +40,7 @@ const roleDetails = {
   },
   Vigilante: {
     title: "Perfil de vigilancia",
-    description: "Incluye datos operativos y un dato basico de emergencia.",
+    description: "Incluye datos operativos y un dato básico de emergencia.",
     checklist: [
       "Registrar zona de vigilancia",
       "Guardar tipo de sangre",
@@ -49,8 +50,8 @@ const roleDetails = {
     title: "Selecciona un rol",
     description: "Primero completa los datos base y luego elige el rol.",
     checklist: [
-      "Todos requieren nombres, apellidos y cedula",
-      "El formulario cambia segun el rol",
+      "Todos requieren nombres, apellidos y cédula",
+      "El formulario cambia según el rol",
     ],
   },
 };
@@ -101,38 +102,18 @@ const sanitizeRoleClass = (value) =>
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "-");
 
-const getFormSnapshot = (formElement) => {
-  const formData = new FormData(formElement);
-
-  return {
-    nombres: (formData.get("nombres") || "").toString(),
-    apellidos: (formData.get("apellidos") || "").toString(),
-    cedula: (formData.get("cedula") || "").toString(),
-    email: (formData.get("email") || "").toString(),
-    rol: (formData.get("rol") || "").toString(),
-    torre: (formData.get("torre") || "").toString(),
-    apartamento: (formData.get("apartamento") || "").toString(),
-    zonaVigilancia: (formData.get("zonaVigilancia") || "").toString(),
-    tipoSangre: (formData.get("tipoSangre") || "").toString(),
-    password: (formData.get("password") || "").toString(),
-    confirmPassword: (formData.get("confirmPassword") || "").toString(),
-  };
-};
-
 const getMissingFields = (currentForm) => {
   const fields = [
     { label: "nombres", value: currentForm.nombres },
     { label: "apellidos", value: currentForm.apellidos },
-    { label: "cedula", value: currentForm.cedula },
+    { label: "cédula", value: currentForm.cedula },
     { label: "correo", value: currentForm.email },
     { label: "rol", value: currentForm.rol },
-    { label: "contrasena", value: currentForm.password },
-    { label: "confirmacion de contrasena", value: currentForm.confirmPassword },
+    { label: "contraseña", value: currentForm.password },
+    { label: "confirmación de contraseña", value: currentForm.confirmPassword },
   ];
 
-  return fields
-    .filter((field) => !field.value.trim())
-    .map((field) => field.label);
+  return fields.filter((field) => !field.value.trim()).map((field) => field.label);
 };
 
 export default function RegistroAdminPage() {
@@ -190,11 +171,11 @@ export default function RegistroAdminPage() {
     }
 
     if (currentForm.password !== currentForm.confirmPassword) {
-      return "Las contrasenas no coinciden.";
+      return "Las contraseñas no coinciden.";
     }
 
     if (currentForm.password.length < 6) {
-      return "La contrasena debe tener al menos 6 caracteres.";
+      return "La contraseña debe tener al menos 6 caracteres.";
     }
 
     return "";
@@ -202,14 +183,7 @@ export default function RegistroAdminPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const currentForm = getFormSnapshot(event.currentTarget);
-
-    setForm((previousForm) => ({
-      ...previousForm,
-      ...currentForm,
-    }));
-
-    const validationMessage = validateForm(currentForm);
+    const validationMessage = validateForm(form);
 
     if (validationMessage) {
       Swal.fire({
@@ -222,40 +196,24 @@ export default function RegistroAdminPage() {
     }
 
     const payload = {
-      nombre: `${currentForm.nombres.trim()} ${currentForm.apellidos.trim()}`.trim(),
-      nombres: currentForm.nombres.trim(),
-      apellidos: currentForm.apellidos.trim(),
-      cedula: currentForm.cedula.trim(),
-      email: currentForm.email.trim(),
-      rol: currentForm.rol,
-      password: currentForm.password,
-      confirmPassword: currentForm.confirmPassword,
+      nombre: `${form.nombres.trim()} ${form.apellidos.trim()}`.trim(),
+      nombres: form.nombres.trim(),
+      apellidos: form.apellidos.trim(),
+      cedula: form.cedula.trim(),
+      email: form.email.trim(),
+      rol: form.rol,
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+      torre: form.rol === "Residente" ? form.torre.trim() : "",
+      apartamento: form.rol === "Residente" ? form.apartamento.trim() : "",
+      zonaVigilancia: form.rol === "Vigilante" ? form.zonaVigilancia.trim() : "",
+      tipoSangre: form.rol === "Vigilante" ? form.tipoSangre.trim() : "",
     };
-
-    if (currentForm.rol === "Residente") {
-      payload.torre = currentForm.torre.trim();
-      payload.apartamento = currentForm.apartamento.trim();
-    }
-
-    if (currentForm.rol === "Vigilante") {
-      payload.zonaVigilancia = currentForm.zonaVigilancia.trim();
-      payload.tipoSangre = currentForm.tipoSangre.trim();
-    }
 
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/registrar-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.mensaje || "No se pudo registrar el usuario.");
-      }
+      const data = await apiPost("/users", payload, "No se pudo registrar el usuario.");
 
       Swal.fire({
         title: "Usuario registrado",
@@ -268,7 +226,7 @@ export default function RegistroAdminPage() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message,
+        text: error.message || "No se pudo registrar el usuario.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -298,8 +256,8 @@ export default function RegistroAdminPage() {
           <section className="admin-register-form-card">
             <div className="admin-register-card-head">
               <span className="admin-register-kicker">Nuevo acceso</span>
-              <h2>Informacion del usuario</h2>
-              <p>Completa los datos base y agrega los campos que cambian segun el rol.</p>
+              <h2>Información del usuario</h2>
+              <p>Completa los datos base y agrega los campos que cambian según el rol.</p>
             </div>
 
             <form className="admin-register-form" onSubmit={handleSubmit}>
@@ -337,10 +295,10 @@ export default function RegistroAdminPage() {
                   <FormField
                     id="cedula"
                     name="cedula"
-                    label="Cedula"
+                    label="Cédula"
                     value={form.cedula}
                     onChange={handleChange}
-                    placeholder="Numero de cedula"
+                    placeholder="Número de cédula"
                     required
                     inputMode="numeric"
                     autoComplete="off"
@@ -364,8 +322,8 @@ export default function RegistroAdminPage() {
 
               <div className="admin-register-group">
                 <div className="admin-register-group-head">
-                  <h3>Rol y configuracion</h3>
-                  <p>El formulario mostrara aqui los campos especiales.</p>
+                  <h3>Rol y configuración</h3>
+                  <p>El formulario mostrará aquí los campos especiales.</p>
                 </div>
 
                 <div className="admin-register-grid">
@@ -432,7 +390,7 @@ export default function RegistroAdminPage() {
                         label="Zona de vigilancia"
                         value={form.zonaVigilancia}
                         onChange={handleChange}
-                        placeholder="Ej. Porteria principal"
+                        placeholder="Ej. Portería principal"
                         required
                         disabled={loading}
                       />
@@ -472,8 +430,8 @@ export default function RegistroAdminPage() {
                     <div className="admin-register-empty-state">
                       <strong>Sin campos extra para este rol</strong>
                       <p>
-                        El perfil administrativo solo necesita datos personales,
-                        correo y credenciales de acceso.
+                        El perfil administrativo solo necesita datos personales, correo y
+                        credenciales de acceso.
                       </p>
                     </div>
                   )}
@@ -483,7 +441,7 @@ export default function RegistroAdminPage() {
               <div className="admin-register-group">
                 <div className="admin-register-group-head">
                   <h3>Credenciales</h3>
-                  <p>Define la contrasena inicial del usuario.</p>
+                  <p>Define la contraseña inicial del usuario.</p>
                 </div>
 
                 <div className="admin-register-grid">
@@ -491,10 +449,10 @@ export default function RegistroAdminPage() {
                     id="password"
                     type="password"
                     name="password"
-                    label="Contrasena"
+                    label="Contraseña"
                     value={form.password}
                     onChange={handleChange}
-                    placeholder="Minimo 6 caracteres"
+                    placeholder="Mínimo 6 caracteres"
                     required
                     autoComplete="new-password"
                     disabled={loading}
@@ -504,10 +462,10 @@ export default function RegistroAdminPage() {
                     id="confirmPassword"
                     type="password"
                     name="confirmPassword"
-                    label="Confirmar contrasena"
+                    label="Confirmar contraseña"
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Repite la contrasena"
+                    placeholder="Repite la contraseña"
                     required
                     autoComplete="new-password"
                     disabled={loading}

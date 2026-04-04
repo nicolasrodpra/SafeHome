@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { db } from "../../config/firebase";
+import {
+  getCorrespondencia,
+  getVehiculos,
+  getVisitantes,
+} from "../../services/modules/vigilanciaApi";
 import "../../styles/admin/adminVigilanciaModal.css";
 
 const SECTIONS = [
@@ -11,15 +14,15 @@ const SECTIONS = [
     description: "Consulta paquetes, sobres y documentos recibidos por residentes.",
     icon: "ph-package",
     route: "/adminVigilanciaCorrespondencia",
-    collectionName: "correspondencia",
+    loadItems: getCorrespondencia,
   },
   {
     key: "vehiculos",
-    title: "Vehiculos",
+    title: "Vehículos",
     description: "Visualiza el registro de carros y motos asociados a residentes.",
     icon: "ph-car",
     route: "/adminVigilanciaVehiculos",
-    collectionName: "vehiculos",
+    loadItems: getVehiculos,
   },
   {
     key: "visitantes",
@@ -27,26 +30,9 @@ const SECTIONS = [
     description: "Revisa los ingresos autorizados y el motivo de cada visita.",
     icon: "ph-users-three",
     route: "/adminVigilanciaVisitantes",
-    collectionName: "visitantes",
+    loadItems: getVisitantes,
   },
 ];
-
-function formatDateFields(snapshotDoc) {
-  const data = snapshotDoc.data();
-  const sourceDate = data.fecha?.toDate ? data.fecha.toDate() : null;
-
-  return {
-    id: snapshotDoc.id,
-    ...data,
-    fecha: sourceDate ? sourceDate.toLocaleDateString("es-CO") : data.fecha ?? "",
-    hora: sourceDate
-      ? sourceDate.toLocaleTimeString("es-CO", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : data.hora ?? "",
-  };
-}
 
 export default function AdminVigilanciaModal({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -58,35 +44,39 @@ export default function AdminVigilanciaModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (!isOpen) {
-      return undefined;
+      return;
     }
 
-    const unsubscribers = SECTIONS.map((section) =>
-      onSnapshot(collection(db, section.collectionName), (snapshot) => {
-        const nextItems = snapshot.docs.map(formatDateFields);
-        setRecords((current) => ({ ...current, [section.key]: nextItems }));
-      })
-    );
+    const loadRecords = async () => {
+      const nextRecords = { correspondencia: [], vehiculos: [], visitantes: [] };
 
-    return () => {
-      unsubscribers.forEach((unsubscribe) => unsubscribe());
+      await Promise.all(
+        SECTIONS.map(async (section) => {
+          try {
+            nextRecords[section.key] = await section.loadItems();
+          } catch (error) {
+            nextRecords[section.key] = [];
+          }
+        })
+      );
+
+      setRecords(nextRecords);
     };
+
+    loadRecords();
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
     <div className="admin-vigilancia-overlay" onClick={onClose}>
-      <div
-        className="admin-vigilancia-modal"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div className="admin-vigilancia-modal" onClick={(event) => event.stopPropagation()}>
         <div className="admin-vigilancia-header">
           <div>
             <p className="admin-vigilancia-kicker">Vigilancia</p>
             <h2>Registros de seguridad</h2>
             <p className="admin-vigilancia-subtitle">
-              Selecciona uno de los modulos para ir a su vista completa en modo solo lectura.
+              Selecciona uno de los módulos para ir a su vista completa en modo solo lectura.
             </p>
           </div>
 

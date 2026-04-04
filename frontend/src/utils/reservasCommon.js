@@ -16,13 +16,13 @@ export const RESERVA_ZONAS = [
   },
   {
     key: "cancha_futbol",
-    label: "Cancha de Futbol",
+    label: "Cancha de Fútbol",
     maxHours: 2,
     colorToken: "field",
   },
   {
     key: "salon_comunal",
-    label: "Salon Comunal",
+    label: "Salón Comunal",
     maxHours: 5,
     colorToken: "hall",
   },
@@ -34,7 +34,7 @@ export const RESERVA_ZONAS = [
   },
 ];
 
-export const CALENDAR_DAY_NAMES = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+export const CALENDAR_DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sab"];
 export const MINI_CALENDAR_DAY_NAMES = ["D", "L", "M", "X", "J", "V", "S"];
 
 const monthFormatter = new Intl.DateTimeFormat("es-CO", {
@@ -101,6 +101,8 @@ export const sortReservationsByTime = (reservationA, reservationB) => {
   return reservationA.zoneLabel.localeCompare(reservationB.zoneLabel, "es");
 };
 
+// Esta función arma todas las casillas del calendario mensual.
+// También crea los espacios vacíos para que la grilla siempre conserve su forma.
 export const buildMonthCells = (monthDate) => {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -230,6 +232,8 @@ export const isUpcomingReservation = (reservation, baseDate = new Date()) => {
   return reservation.endHour > baseDate.getHours();
 };
 
+// Aquí reunimos las reglas del negocio para avisarle al usuario, paso a paso,
+// por qué una reserva es válida o qué condición le falta cumplir.
 export const getReservationValidation = ({
   reservations,
   dateKey,
@@ -244,15 +248,15 @@ export const getReservationValidation = ({
   }
 
   if (!zoneKey) {
-    return { valid: false, message: "Selecciona una zona comun." };
+    return { valid: false, message: "Selecciona una zona común." };
   }
 
   if (!Number.isFinite(startHour) || !Number.isFinite(duration)) {
-    return { valid: false, message: "Selecciona una hora de inicio y una duracion validas." };
+    return { valid: false, message: "Selecciona una hora de inicio y una duración válidas." };
   }
 
   if (isPastDateKey(dateKey, baseDate)) {
-    return { valid: false, message: "No puedes reservar dias anteriores." };
+    return { valid: false, message: "No puedes reservar días anteriores." };
   }
 
   const zone = getZoneMeta(zoneKey);
@@ -273,7 +277,7 @@ export const getReservationValidation = ({
   if (endHour > CLOSING_HOUR) {
     return {
       valid: false,
-      message: "La reserva debe terminar a mas tardar a las 10:00 PM.",
+      message: "La reserva debe terminar a más tardar a las 10:00 PM.",
     };
   }
 
@@ -290,7 +294,7 @@ export const getReservationValidation = ({
   ) {
     return {
       valid: false,
-      message: "No puedes reservar horas que ya pasaron en el dia de hoy.",
+      message: "No puedes reservar horas que ya pasaron en el día de hoy.",
     };
   }
 
@@ -305,7 +309,7 @@ export const getReservationValidation = ({
   if (conflictingReservation) {
     return {
       valid: false,
-      message: "Esa zona ya esta reservada en ese horario. Elige otra hora.",
+      message: "Esa zona ya está reservada en ese horario. Elige otra hora.",
     };
   }
 
@@ -320,7 +324,7 @@ export const getReservationValidation = ({
     return {
       valid: false,
       message:
-        "Solo puedes tener una reserva por zona en el mismo dia. Si necesitas otro horario, cancela la actual y crea una nueva.",
+        "Solo puedes tener una reserva por zona en el mismo día. Si necesitas otro horario, cancela la actual y crea una nueva.",
     };
   }
 
@@ -332,7 +336,7 @@ export const getReservationValidation = ({
   if (currentReservedHours + duration > zone.maxHours) {
     return {
       valid: false,
-      message: `No puedes superar ${zone.maxHours} hora(s) en ${zone.label} para el mismo dia.`,
+      message: `No puedes superar ${zone.maxHours} hora(s) en ${zone.label} para el mismo día.`,
     };
   }
 

@@ -1,18 +1,12 @@
-import { useState, useEffect } from "react";
-import {
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
+import {
+  createComunicado,
+  deleteComunicado,
+  getComunicados,
+  updateComunicado,
+} from "../../services/modules/comunicadosApi";
 import "../../styles/admin/adminComunicados.css";
 
 function AdminComunicados() {
@@ -23,34 +17,23 @@ function AdminComunicados() {
   const [editandoId, setEditandoId] = useState(null);
   const [accionandoId, setAccionandoId] = useState(null);
 
-  useEffect(() => {
-    const q = query(collection(db, "comunicados"), orderBy("fecha", "desc"));
-
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((snapshotDoc) => ({
-        id: snapshotDoc.id,
-        ...snapshotDoc.data(),
-        fechaStr: snapshotDoc.data().fecha?.toDate
-          ? snapshotDoc.data().fecha.toDate().toLocaleString("es-CO", {
-              weekday: "short",
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "",
-      }));
-
+  const loadComunicados = async () => {
+    try {
+      const data = await getComunicados();
       setComunicados(data);
+    } catch (error) {
+      setComunicados([]);
+    } finally {
       setCargando(false);
-    });
+    }
+  };
 
-    return () => unsub();
+  useEffect(() => {
+    loadComunicados();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -65,11 +48,6 @@ function AdminComunicados() {
       asunto: comunicado.asunto,
       mensaje: comunicado.mensaje,
     });
-  };
-
-  const handleCancelarEdicion = () => {
-    if (loading) return;
-    resetForm();
   };
 
   const handleEnviar = async () => {
@@ -87,25 +65,23 @@ function AdminComunicados() {
 
     try {
       if (editandoId) {
-        await updateDoc(doc(db, "comunicados", editandoId), {
+        await updateComunicado(editandoId, {
           asunto: form.asunto.trim(),
           mensaje: form.mensaje.trim(),
-          actualizadoEn: serverTimestamp(),
         });
       } else {
-        await addDoc(collection(db, "comunicados"), {
+        await createComunicado({
           asunto: form.asunto.trim(),
           mensaje: form.mensaje.trim(),
-          fecha: serverTimestamp(),
         });
       }
 
+      await loadComunicados();
       resetForm();
     } catch (error) {
-      console.error("Error al guardar comunicado:", error);
       Swal.fire({
         title: "Error",
-        text: "No se pudo guardar el comunicado. Intenta de nuevo.",
+        text: error.message || "No se pudo guardar el comunicado.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -116,8 +92,8 @@ function AdminComunicados() {
 
   const handleEliminar = async (comunicado) => {
     const result = await Swal.fire({
-      title: "Eliminar comunicado?",
-      text: "Esta accion no se puede deshacer.",
+      title: "¿Eliminar comunicado?",
+      text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -132,7 +108,8 @@ function AdminComunicados() {
     setAccionandoId(comunicado.id);
 
     try {
-      await deleteDoc(doc(db, "comunicados", comunicado.id));
+      await deleteComunicado(comunicado.id);
+      await loadComunicados();
 
       if (editandoId === comunicado.id) {
         resetForm();
@@ -145,10 +122,9 @@ function AdminComunicados() {
         confirmButtonColor: "#460669",
       });
     } catch (error) {
-      console.error("Error al eliminar comunicado:", error);
       Swal.fire({
         title: "Error",
-        text: "No se pudo eliminar el comunicado. Intenta de nuevo.",
+        text: error.message || "No se pudo eliminar el comunicado.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -162,7 +138,7 @@ function AdminComunicados() {
       <div className="content">
         <h1 className="internal-page-title page-title">Comunicados</h1>
         <p className="page-copy">
-          Publica avisos para la comunidad desde una vista mas sobria, con lectura clara y
+          Publica avisos para la comunidad desde una vista más sobria, con lectura clara y
           acciones directas para editar o eliminar.
         </p>
 
@@ -171,18 +147,18 @@ function AdminComunicados() {
             {cargando ? (
               <p className="estado-msg">Cargando comunicados...</p>
             ) : comunicados.length === 0 ? (
-              <p className="estado-msg">No hay comunicados publicados aun.</p>
+              <p className="estado-msg">No hay comunicados publicados aún.</p>
             ) : (
               comunicados.map((comunicado) => (
                 <div
-                  className={`comunicado-card${
-                    editandoId === comunicado.id ? " is-editing" : ""
-                  }`}
+                  className={`comunicado-card${editandoId === comunicado.id ? " is-editing" : ""}`}
                   key={comunicado.id}
                 >
                   <div className="comunicado-header">
                     <h4>{comunicado.asunto}</h4>
-                    <span className="comunicado-fecha">{comunicado.fechaStr}</span>
+                    <span className="comunicado-fecha">
+                      {comunicado.fecha} {comunicado.hora}
+                    </span>
                   </div>
                   <p>{comunicado.mensaje}</p>
 
@@ -225,7 +201,7 @@ function AdminComunicados() {
                 <button
                   type="button"
                   className="btn-cancelar-edicion"
-                  onClick={handleCancelarEdicion}
+                  onClick={resetForm}
                   disabled={loading}
                 >
                   Cancelar

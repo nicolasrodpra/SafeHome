@@ -1,52 +1,40 @@
 import { useEffect, useRef, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import AdminVigilanciaModal from "../components/admin/AdminVigilanciaModal";
-import { auth, db } from "../config/firebase";
+import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
+import { getUserProfile } from "../services/modules/userApi";
+import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/internalLayout.css";
 
 const ADMIN_NAV_ITEMS = [
-  { icon: "ph-megaphone", label: "Quejas", to: "/pqrRecibidosAdmin" },
+  { icon: "ph-megaphone", label: "Mensajería", to: "/adminMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
   { icon: "ph-security-camera", label: "Vigilancia", modal: "vigilancia" },
   { icon: "ph-user", label: "Residentes", to: "/adminResidentes" },
-  { icon: "ph-book-bookmark", label: "Manual Convivencia", to: "/adminManualConvivencia" },
+  { icon: "ph-book-bookmark", label: "Manual de convivencia", to: "/adminManualConvivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
-  { icon: "ph-user-plus", label: "Registrar Usuario", to: "/registroUsuario" },
+  { icon: "ph-user-plus", label: "Registrar usuario", to: "/registroUsuario" },
 ];
 
 const VIGILANTE_NAV_ITEMS = [
-  { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
+  { icon: "ph-car", label: "Registro de vehículos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
 ];
 
-const getCachedProfile = () => {
-  try {
-    return {
-      name: localStorage.getItem("safehome_profile_name") || "Usuario",
-      role: localStorage.getItem("safehome_profile_role") || null,
-    };
-  } catch (error) {
-    return { name: "Usuario", role: null };
-  }
-};
-
+// Este componente dibuja cada opción del menú lateral.
+// Si la opción abre una ruta usamos un Link; si abre un modal usamos un botón.
 function SidebarItem({ item, pathname, onOpenModal }) {
   if (item.to) {
     const isActive = pathname === item.to;
 
     return (
-      <Link
-        to={item.to}
-        className={isActive ? "internal-nav-link active" : "internal-nav-link"}
-      >
+      <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </Link>
@@ -66,92 +54,60 @@ function SidebarItem({ item, pathname, onOpenModal }) {
     );
   }
 
-  return (
-    <button
-      type="button"
-      className="internal-nav-link internal-nav-placeholder"
-      disabled
-    >
-      <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-      <span>{item.label}</span>
-    </button>
-  );
+  return null;
 }
 
 export default function InternalLayout({ children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [user, authLoading] = useAuthState(auth);
-  const cachedProfile = getCachedProfile();
-  const [profileName, setProfileName] = useState(cachedProfile.name);
-  const [profileRole, setProfileRole] = useState(cachedProfile.role);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const session = useSession();
+  const [profileName, setProfileName] = useState(session?.nombre || "Usuario");
+  const [profileRole, setProfileRole] = useState(session?.rol || null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isVigilanciaOpen, setIsVigilanciaOpen] = useState(false);
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    const cargarPerfil = async () => {
-      if (isMounted) {
-        setProfileLoaded(false);
-      }
-
-      if (!user) {
-        if (isMounted) {
+    const loadProfile = async () => {
+      if (!session?.uid) {
+        if (active) {
           setProfileName("Usuario");
           setProfileRole(null);
-          setProfileLoaded(true);
         }
-        try {
-          localStorage.removeItem("safehome_profile_name");
-          localStorage.removeItem("safehome_profile_role");
-        } catch (error) {}
         return;
       }
 
-      try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const profileData = userDoc.exists() ? userDoc.data() : {};
-        const nombreGuardado =
-          profileData.nombre ||
-          [profileData.nombres, profileData.apellidos].filter(Boolean).join(" ");
-        const fallbackName =
-          user.displayName || user.email?.split("@")[0] || "Usuario";
+      if (active) {
+        setProfileName(session.nombre || "Usuario");
+        setProfileRole(session.rol || null);
+      }
 
-        if (isMounted) {
-          setProfileName(nombreGuardado || fallbackName);
-          setProfileRole(profileData.rol || null);
-          setProfileLoaded(true);
+      try {
+        const profile = await getUserProfile(session.uid);
+
+        if (active) {
+          setProfileName(profile.nombre || "Usuario");
+          setProfileRole(profile.rol || null);
         }
-        try {
-          localStorage.setItem("safehome_profile_name", nombreGuardado || fallbackName);
-          localStorage.setItem("safehome_profile_role", profileData.rol || "");
-        } catch (error) {}
+
+        updateSessionProfile(profile);
       } catch (error) {
-        if (isMounted) {
-          setProfileName(user.displayName || user.email?.split("@")[0] || "Usuario");
-          setProfileRole(null);
-          setProfileLoaded(true);
+        if (active) {
+          setProfileName(session.nombre || "Usuario");
+          setProfileRole(session.rol || null);
         }
-        try {
-          localStorage.setItem(
-            "safehome_profile_name",
-            user.displayName || user.email?.split("@")[0] || "Usuario"
-          );
-          localStorage.removeItem("safehome_profile_role");
-        } catch (storageError) {}
       }
     };
 
-    cargarPerfil();
+    loadProfile();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
-  }, [user]);
+  }, [session]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -174,26 +130,9 @@ export default function InternalLayout({ children }) {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase())
       .join("") || "U";
-  const isProfileReady = !authLoading && (profileLoaded || !!profileRole);
-  const navItems = !isProfileReady
-    ? []
-    : profileRole === "Vigilante"
-    ? VIGILANTE_NAV_ITEMS
-    : ADMIN_NAV_ITEMS;
-  const homeRoute = !isProfileReady
-    ? "#"
-    : profileRole === "Vigilante"
-    ? "/vigilanteMenu"
-    : "/adminMenu";
-  const handleViewProfile = () => {
-    setUserMenuOpen(false);
-    navigate("/perfil");
-  };
 
-  const handleLogout = async () => {
-    setUserMenuOpen(false);
-    await cerrarSesion(navigate);
-  };
+  const navItems = profileRole === "Vigilante" ? VIGILANTE_NAV_ITEMS : ADMIN_NAV_ITEMS;
+  const homeRoute = profileRole === "Vigilante" ? "/vigilanteMenu" : "/adminMenu";
 
   return (
     <div className="internal-shell">
@@ -202,17 +141,17 @@ export default function InternalLayout({ children }) {
           SafeHome
         </Link>
 
-          <ul className="internal-nav-menu">
-            {navItems.map((item) => (
-              <li key={item.label}>
-                <SidebarItem
-                  item={item}
-                  pathname={pathname}
-                  onOpenModal={() => setIsVigilanciaOpen(true)}
-                />
-              </li>
-            ))}
-          </ul>
+        <ul className="internal-nav-menu">
+          {navItems.map((item) => (
+            <li key={item.label}>
+              <SidebarItem
+                item={item}
+                pathname={pathname}
+                onOpenModal={() => setIsVigilanciaOpen(true)}
+              />
+            </li>
+          ))}
+        </ul>
 
         <div className="internal-sidebar-assistant">
           <img src={asistenteVirtual} alt="Asistente virtual" />
@@ -235,17 +174,14 @@ export default function InternalLayout({ children }) {
           </div>
 
           <div className="internal-topbar-right">
-            <i
-              className="ph-light ph-envelope-simple internal-topbar-icon"
-              aria-hidden="true"
-            ></i>
+            <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
             <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
             <button
               type="button"
               className="internal-icon-button"
               onClick={() => cerrarSesion(navigate)}
-              aria-label="Cerrar sesion"
-              title="Cerrar sesion"
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
             >
               <i className="ph-light ph-sign-out internal-topbar-icon"></i>
             </button>
@@ -264,13 +200,27 @@ export default function InternalLayout({ children }) {
 
               {userMenuOpen && (
                 <div className="internal-user-dropdown" role="menu">
-                  <button type="button" className="internal-user-dropdown-item" onClick={handleViewProfile}>
+                  <button
+                    type="button"
+                    className="internal-user-dropdown-item"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate("/perfil");
+                    }}
+                  >
                     <i className="ph-light ph-user-circle"></i>
                     <span>Ver perfil</span>
                   </button>
-                  <button type="button" className="internal-user-dropdown-item" onClick={handleLogout}>
+                  <button
+                    type="button"
+                    className="internal-user-dropdown-item"
+                    onClick={async () => {
+                      setUserMenuOpen(false);
+                      await cerrarSesion(navigate);
+                    }}
+                  >
                     <i className="ph-light ph-sign-out"></i>
-                    <span>Cerrar sesion</span>
+                    <span>Cerrar sesión</span>
                   </button>
                 </div>
               )}

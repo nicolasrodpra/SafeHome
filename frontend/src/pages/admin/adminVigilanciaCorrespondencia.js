@@ -1,10 +1,11 @@
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
+import { getCorrespondencia } from "../../services/modules/vigilanciaApi";
 
 const config = {
-  title: "Registro de Correspondencia",
+  title: "Registro de correspondencia",
   icon: "ph-package",
-  collectionName: "correspondencia",
-  emptyMessage: "No hay correspondencia registrada",
+  loadItems: getCorrespondencia,
+  emptyMessage: "No hay correspondencia registrada.",
   columns: [
     { key: "tipoEntrega", label: "Tipo" },
     { key: "residente", label: "Residente" },
@@ -12,7 +13,7 @@ const config = {
     { key: "remitente", label: "Remitente" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
-    { key: "observacion", label: "Observacion" },
+    { key: "observacion", label: "Observación" },
     { key: "fecha", label: "Fecha" },
     { key: "hora", label: "Hora" },
   ],
@@ -23,7 +24,7 @@ const config = {
     { key: "remitente", label: "Remitente" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
-    { key: "observacion", label: "Observacion" },
+    { key: "observacion", label: "Observación" },
     { key: "fecha", label: "Fecha" },
     { key: "hora", label: "Hora" },
   ],

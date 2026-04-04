@@ -1,42 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
-import { auth, db } from "../config/firebase";
+import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
+import { getUserProfile } from "../services/modules/userApi";
+import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/InternalLayoutResidente.css";
 
 const RESIDENTE_NAV_ITEMS = [
-  { icon: "ph-megaphone", label: "PQR" },
+  { icon: "ph-megaphone", label: "Mensajería", to: "/residenteMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/residentesReservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/residenteComunicados" },
-  { icon: "ph-book-bookmark", label: "Manual Convivencia", to: "/residenteManualConvivencia" },
+  { icon: "ph-book-bookmark", label: "Manual de convivencia", to: "/residenteManualConvivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
-  { icon: "ph-hand", label: "Boton de panico" },
+  { icon: "ph-hand", label: "Botón de pánico" },
 ];
 
-const getCachedProfile = () => {
-  try {
-    return {
-      name: localStorage.getItem("safehome_profile_name") || "Usuario",
-      role: localStorage.getItem("safehome_profile_role") || "Residente",
-    };
-  } catch (error) {
-    return { name: "Usuario", role: "Residente" };
-  }
-};
-
+// En residente tenemos dos tipos de opción: una que navega
+// y otra que todavía queda como marcador visual deshabilitado.
 function SidebarItem({ item, pathname }) {
   if (item.to) {
     const isActive = pathname === item.to;
 
     return (
-      <Link
-        to={item.to}
-        className={isActive ? "internal-nav-link active" : "internal-nav-link"}
-      >
+      <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </Link>
@@ -44,11 +32,7 @@ function SidebarItem({ item, pathname }) {
   }
 
   return (
-    <button
-      type="button"
-      className="internal-nav-link internal-nav-placeholder"
-      disabled
-    >
+    <button type="button" className="internal-nav-link internal-nav-placeholder" disabled>
       <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
       <span>{item.label}</span>
     </button>
@@ -58,68 +42,53 @@ function SidebarItem({ item, pathname }) {
 export default function InternalLayoutResidente({ children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [user] = useAuthState(auth);
-  const cachedProfile = getCachedProfile();
-  const [profileName, setProfileName] = useState(cachedProfile.name);
-  const [profileRole, setProfileRole] = useState(cachedProfile.role);
+  const session = useSession();
+  const [profileName, setProfileName] = useState(session?.nombre || "Usuario");
+  const [profileRole, setProfileRole] = useState(session?.rol || "Residente");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    const cargarPerfil = async () => {
-      if (!user) {
-        if (isMounted) {
+    const loadProfile = async () => {
+      if (!session?.uid) {
+        if (active) {
           setProfileName("Usuario");
           setProfileRole("Residente");
         }
         return;
       }
 
+      if (active) {
+        setProfileName(session.nombre || "Usuario");
+        setProfileRole(session.rol || "Residente");
+      }
+
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const profileData = userDoc.exists() ? userDoc.data() : {};
-        const nombreGuardado =
-          profileData.nombre ||
-          [profileData.nombres, profileData.apellidos].filter(Boolean).join(" ");
-        const fallbackName =
-          user.displayName || user.email?.split("@")[0] || "Usuario";
-        const nextName = nombreGuardado || fallbackName;
-        const nextRole = profileData.rol || "Residente";
+        const profile = await getUserProfile(session.uid);
 
-        if (isMounted) {
-          setProfileName(nextName);
-          setProfileRole(nextRole);
+        if (active) {
+          setProfileName(profile.nombre || "Usuario");
+          setProfileRole(profile.rol || "Residente");
         }
 
-        try {
-          localStorage.setItem("safehome_profile_name", nextName);
-          localStorage.setItem("safehome_profile_role", nextRole);
-        } catch (storageError) {}
+        updateSessionProfile(profile);
       } catch (error) {
-        const fallbackName =
-          user.displayName || user.email?.split("@")[0] || "Usuario";
-
-        if (isMounted) {
-          setProfileName(fallbackName);
-          setProfileRole("Residente");
+        if (active) {
+          setProfileName(session.nombre || "Usuario");
+          setProfileRole(session.rol || "Residente");
         }
-
-        try {
-          localStorage.setItem("safehome_profile_name", fallbackName);
-          localStorage.setItem("safehome_profile_role", "Residente");
-        } catch (storageError) {}
       }
     };
 
-    cargarPerfil();
+    loadProfile();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
-  }, [user]);
+  }, [session]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -143,16 +112,6 @@ export default function InternalLayoutResidente({ children }) {
       .map((part) => part[0]?.toUpperCase())
       .join("") || "U";
 
-  const handleViewProfile = () => {
-    setUserMenuOpen(false);
-    navigate("/perfil");
-  };
-
-  const handleLogout = async () => {
-    setUserMenuOpen(false);
-    await cerrarSesion(navigate);
-  };
-
   return (
     <div className="internal-shell">
       <aside className="internal-sidebar">
@@ -169,7 +128,7 @@ export default function InternalLayoutResidente({ children }) {
         </ul>
 
         <div className="internal-sidebar-assistant">
-          <img src={asistenteVirtual} alt="Asistente Virtual" />
+          <img src={asistenteVirtual} alt="Asistente virtual" />
           <p>
             Asistente
             <br />
@@ -189,17 +148,14 @@ export default function InternalLayoutResidente({ children }) {
           </div>
 
           <div className="internal-topbar-right">
-            <i
-              className="ph-light ph-envelope-simple internal-topbar-icon"
-              aria-hidden="true"
-            ></i>
+            <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
             <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
             <button
               type="button"
               className="internal-icon-button"
-              onClick={handleLogout}
-              aria-label="Cerrar sesion"
-              title="Cerrar sesion"
+              onClick={() => cerrarSesion(navigate)}
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
             >
               <i className="ph-light ph-sign-out internal-topbar-icon"></i>
             </button>
@@ -222,7 +178,10 @@ export default function InternalLayoutResidente({ children }) {
                   <button
                     type="button"
                     className="internal-user-dropdown-item"
-                    onClick={handleViewProfile}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      navigate("/perfil");
+                    }}
                   >
                     <i className="ph-light ph-user-circle"></i>
                     <span>Ver perfil</span>
@@ -230,10 +189,13 @@ export default function InternalLayoutResidente({ children }) {
                   <button
                     type="button"
                     className="internal-user-dropdown-item"
-                    onClick={handleLogout}
+                    onClick={async () => {
+                      setUserMenuOpen(false);
+                      await cerrarSesion(navigate);
+                    }}
                   >
                     <i className="ph-light ph-sign-out"></i>
-                    <span>Cerrar sesion</span>
+                    <span>Cerrar sesión</span>
                   </button>
                 </div>
               )}

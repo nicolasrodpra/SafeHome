@@ -1,26 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
 import InternalLayout from "../../layouts/InternalLayout";
-import { db } from "../../config/firebase";
 import "../../styles/admin/adminVigilanciaSection.css";
 
-function formatDateFields(snapshotDoc) {
-  const data = snapshotDoc.data();
-  const sourceDate = data.fecha?.toDate ? data.fecha.toDate() : null;
-
-  return {
-    id: snapshotDoc.id,
-    ...data,
-    fecha: sourceDate ? sourceDate.toLocaleDateString("es-CO") : data.fecha ?? "",
-    hora: sourceDate
-      ? sourceDate.toLocaleTimeString("es-CO", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : data.hora ?? "",
-  };
-}
-
+// Este modal solo muestra la información completa del registro.
+// No permite editar nada; por eso se usa como vista de solo lectura.
 function DetailModal({ isOpen, item, config, onClose }) {
   if (!isOpen || !item) return null;
 
@@ -28,7 +11,7 @@ function DetailModal({ isOpen, item, config, onClose }) {
     <div className="admin-readonly-modal-overlay" onClick={onClose}>
       <div
         className="admin-readonly-modal-box admin-readonly-detail-modal"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="admin-readonly-modal-stripe" />
         <div className="admin-readonly-modal-header">
@@ -61,24 +44,28 @@ function DetailModal({ isOpen, item, config, onClose }) {
   );
 }
 
+// Este componente reutilizable permite mostrar distintos módulos de vigilancia
+// con la misma estructura. Lo único que cambia es la configuración recibida.
 export default function AdminVigilanciaSectionPage({ config }) {
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, config.collectionName),
-      (snapshot) => {
-        setItems(snapshot.docs.map(formatDateFields));
-      },
-      (error) => {
-        console.error(`Error cargando ${config.collectionName}:`, error);
+    // Cargamos los registros del módulo activo usando la función
+    // que llega en la configuración de la página.
+    const loadItems = async () => {
+      try {
+        const data = await config.loadItems();
+        setItems(data);
+      } catch (error) {
+        setItems([]);
       }
-    );
+    };
 
-    return () => unsubscribe();
-  }, [config.collectionName]);
+    loadItems();
+  }, [config]);
 
+  // El resumen superior se recalcula cuando cambian los datos cargados.
   const counters = useMemo(() => config.getCounters(items), [config, items]);
 
   return (
@@ -88,13 +75,13 @@ export default function AdminVigilanciaSectionPage({ config }) {
           <div>
             <h1 className="internal-page-title">{config.title}</h1>
             <p className="admin-vigilancia-page-copy">
-              Consulta el registro completo en modo solo lectura desde una vista mas clara y
-              consistente para administracion.
+              Consulta el registro completo en modo solo lectura desde una vista más clara y
+              consistente para administración.
             </p>
           </div>
 
           <div className="admin-vigilancia-page-summary">
-            <span>Total registros</span>
+            <span>Total de registros</span>
             <strong>{items.length}</strong>
           </div>
         </header>
@@ -102,10 +89,10 @@ export default function AdminVigilanciaSectionPage({ config }) {
         <section className="admin-vigilancia-surface">
           <div className="admin-vigilancia-card-header">
             <div>
-              <h2 className="admin-vigilancia-card-title">Resumen del modulo</h2>
+              <h2 className="admin-vigilancia-card-title">Resumen del módulo</h2>
               <p className="admin-readonly-card-copy">
-                Vista solo lectura para administracion. Desde aqui solo puedes observar el
-                registro completo.
+                Vista solo lectura para administración. Desde aquí solo puedes observar el registro
+                completo.
               </p>
             </div>
 
@@ -131,16 +118,13 @@ export default function AdminVigilanciaSectionPage({ config }) {
                   {config.columns.map((column) => (
                     <th key={column.key}>{column.label}</th>
                   ))}
-                  <th>Accion</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={config.columns.length + 1}
-                      className="admin-vigilancia-empty-row"
-                    >
+                    <td colSpan={config.columns.length + 1} className="admin-vigilancia-empty-row">
                       {config.emptyMessage}
                     </td>
                   </tr>

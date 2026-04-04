@@ -1,31 +1,32 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./routes/ProtectedRoute.js";
 import AdminComunicados from "./pages/admin/adminComunicados.js";
-import AdminMenu from "./pages/admin/adminMenu.js";
 import AdminManualConvivencia from "./pages/admin/adminManualConvivencia.js";
+import AdminMensajeriaPage from "./pages/admin/adminMensajeria.js";
+import AdminMenu from "./pages/admin/adminMenu.js";
 import AdminReservas from "./pages/admin/adminReservas.js";
 import AdminResidentes from "./pages/admin/adminResidentes.js";
 import AdminVigilanciaCorrespondencia from "./pages/admin/adminVigilanciaCorrespondencia.js";
 import AdminVigilanciaVehiculos from "./pages/admin/adminVigilanciaVehiculos.js";
 import AdminVigilanciaVisitantes from "./pages/admin/adminVigilanciaVisitantes.js";
-import PqrRecibidosAdmin from "./pages/admin/pqrRecibidos.js";
 import AdminRegister from "./pages/admin/registroAdmin.js";
 import Home from "./pages/general/home.js";
 import Login from "./pages/general/login.js";
 import PerfilUsuarioPage from "./pages/general/perfilUsuario.js";
 import ResidenteComunicados from "./pages/residente/residenteComunicados.js";
-import ResidenteMenu from "./pages/residente/residenteMenu.js";
 import ResidenteManualConvivencia from "./pages/residente/residenteManualConvivencia.js";
+import ResidenteMensajeriaPage from "./pages/residente/residenteMensajeria.js";
+import ResidenteMenu from "./pages/residente/residenteMenu.js";
 import ResidentesReservas from "./pages/residente/residentesReservas.js";
+import ProtectedRoute from "./routes/ProtectedRoute.js";
 import RegistroCorrespondencia from "./pages/vigilante/registroCorrespondencia.js";
-import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import RegistroVehiculos from "./pages/vigilante/registroVehiculos.js";
+import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
 
 const privateRoutes = [
   { path: "/registroUsuario", element: <AdminRegister /> },
   { path: "/adminComunicados", element: <AdminComunicados /> },
-  { path: "/pqrRecibidosAdmin", element: <PqrRecibidosAdmin /> },
+  { path: "/adminMensajeria", element: <AdminMensajeriaPage /> },
   { path: "/adminResidentes", element: <AdminResidentes /> },
   { path: "/adminReservas", element: <AdminReservas /> },
   { path: "/adminManualConvivencia", element: <AdminManualConvivencia /> },
@@ -33,6 +34,7 @@ const privateRoutes = [
   { path: "/adminVigilanciaVehiculos", element: <AdminVigilanciaVehiculos /> },
   { path: "/adminVigilanciaVisitantes", element: <AdminVigilanciaVisitantes /> },
   { path: "/residenteMenu", element: <ResidenteMenu /> },
+  { path: "/residenteMensajeria", element: <ResidenteMensajeriaPage /> },
   { path: "/residenteComunicados", element: <ResidenteComunicados /> },
   { path: "/comunicadosResidente", element: <ResidenteComunicados /> },
   { path: "/residentesReservas", element: <ResidentesReservas /> },

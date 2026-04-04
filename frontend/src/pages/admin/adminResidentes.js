@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
+import { getResidents } from "../../services/modules/userApi";
 import "../../styles/admin/adminResidentes.css";
 
 const getTemporaryLocation = (index) => {
@@ -32,37 +31,18 @@ export default function AdminResidentes() {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    const residentsQuery = query(collection(db, "users"), where("rol", "==", "Residente"));
-
-    const unsubscribe = onSnapshot(
-      residentsQuery,
-      (snapshot) => {
-        const residents = snapshot.docs
-          .map((snapshotDoc) => ({
-            id: snapshotDoc.id,
-            ...snapshotDoc.data(),
-          }))
-          .sort((a, b) => {
-            const fechaA = a.creadoEn?.seconds || 0;
-            const fechaB = b.creadoEn?.seconds || 0;
-
-            if (fechaA !== fechaB) {
-              return fechaA - fechaB;
-            }
-
-            return (a.nombre || "").localeCompare(b.nombre || "", "es");
-          });
-
+    const loadResidents = async () => {
+      try {
+        const residents = await getResidents();
         setResidentes(residents);
-        setCargando(false);
-      },
-      () => {
+      } catch (error) {
         setResidentes([]);
+      } finally {
         setCargando(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    loadResidents();
   }, []);
 
   return (
@@ -72,13 +52,13 @@ export default function AdminResidentes() {
           <div>
             <h1 className="internal-page-title">Residentes</h1>
             <p className="admin-residentes-copy">
-              Consulta los usuarios registrados con rol de residente y revisa la
-              informacion disponible hoy en la base de datos.
+              Consulta los usuarios registrados con rol de residente y revisa la información
+              disponible hoy en la base de datos.
             </p>
           </div>
 
           <div className="admin-residentes-summary">
-            <span>Total residentes</span>
+            <span>Total de residentes</span>
             <strong>{residentes.length}</strong>
           </div>
         </div>
@@ -87,7 +67,7 @@ export default function AdminResidentes() {
           <div className="admin-residentes-table-head">
             <span>ID</span>
             <span>Nombre</span>
-            <span>Cedula</span>
+            <span>Cédula</span>
             <span>Correo</span>
             <span>Torre</span>
             <span>Apartamento</span>
@@ -102,18 +82,18 @@ export default function AdminResidentes() {
             ) : residentes.length === 0 ? (
               <div className="admin-residentes-empty">
                 <i className="ph-light ph-users-three"></i>
-                <p>No hay residentes registrados todavia.</p>
+                <p>No hay residentes registrados todavía.</p>
               </div>
             ) : (
               residentes.map((residente, index) => {
                 const ubicacionTemporal = getTemporaryLocation(index);
-                const cedula = residente.cedula || residente.documento || "";
-                const correo = residente.correo || residente.email || "Sin correo";
+                const cedula = residente.cedula || "";
+                const correo = residente.email || "Sin correo";
                 const torre = residente.torre || ubicacionTemporal.torre;
                 const apartamento = residente.apartamento || ubicacionTemporal.apartamento;
 
                 return (
-                  <article className="resident-row" key={residente.id}>
+                  <article className="resident-row" key={residente.uid}>
                     <ResidentCell label="ID" className="resident-id-cell">
                       <span className="resident-id-badge">{index + 1}</span>
                     </ResidentCell>
@@ -125,7 +105,7 @@ export default function AdminResidentes() {
                       </div>
                     </ResidentCell>
 
-                    <ResidentCell label="Cedula">
+                    <ResidentCell label="Cédula">
                       {cedula ? (
                         <span className="resident-value">{cedula}</span>
                       ) : (

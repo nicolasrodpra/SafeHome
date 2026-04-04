@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
-import { readApiResponse } from "../../utils/readApiResponse";
+import {
+  createCorrespondencia,
+  deleteCorrespondencia,
+  getCorrespondencia,
+  updateCorrespondencia,
+} from "../../services/modules/vigilanciaApi";
 import "../../styles/vigilante/registroCorrespondencia.css";
 
 const EMPTY_FORM = {
@@ -53,26 +56,11 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    onSave(form);
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="guard-modal-overlay" onClick={onClose}>
-      <div className="guard-modal-box" onClick={(e) => e.stopPropagation()}>
+      <div className="guard-modal-box" onClick={(event) => event.stopPropagation()}>
         <div className="modal-stripe" />
         <div className="modal-header">
           <div className="modal-header-left">
@@ -97,14 +85,21 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
 
         <hr className="modal-divider" />
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!validate()) return;
+            onSave(form);
+          }}
+          className="modal-form"
+        >
           <div className="form-row">
             <div className="form-group">
               <label>Residente</label>
               <input
                 name="residente"
                 value={form.residente}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, residente: event.target.value }))}
                 placeholder="Nombre completo"
               />
               {errors.residente && <span className="field-error">{errors.residente}</span>}
@@ -115,8 +110,8 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <input
                 name="documento"
                 value={form.documento}
-                onChange={handleChange}
-                placeholder="Numero de documento"
+                onChange={(event) => setForm((prev) => ({ ...prev, documento: event.target.value }))}
+                placeholder="Número de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
             </div>
@@ -128,7 +123,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <input
                 name="torre"
                 value={form.torre}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, torre: event.target.value }))}
                 placeholder="Torre"
               />
               {errors.torre && <span className="field-error">{errors.torre}</span>}
@@ -139,7 +134,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <input
                 name="apartamento"
                 value={form.apartamento}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, apartamento: event.target.value }))}
                 placeholder="Apartamento"
               />
               {errors.apartamento && <span className="field-error">{errors.apartamento}</span>}
@@ -149,7 +144,11 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
           <div className="form-row">
             <div className="form-group">
               <label>Tipo de entrega</label>
-              <select name="tipoEntrega" value={form.tipoEntrega} onChange={handleChange}>
+              <select
+                name="tipoEntrega"
+                value={form.tipoEntrega}
+                onChange={(event) => setForm((prev) => ({ ...prev, tipoEntrega: event.target.value }))}
+              >
                 <option value="">Seleccionar...</option>
                 <option value="Paquete">Paquete</option>
                 <option value="Sobre">Sobre</option>
@@ -163,7 +162,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <input
                 name="remitente"
                 value={form.remitente}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, remitente: event.target.value }))}
                 placeholder="Empresa o persona"
               />
               {errors.remitente && <span className="field-error">{errors.remitente}</span>}
@@ -172,11 +171,11 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
 
           <div className="form-row form-row-single">
             <div className="form-group">
-              <label>Observacion</label>
+              <label>Observación</label>
               <input
                 name="observacion"
                 value={form.observacion}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, observacion: event.target.value }))}
                 placeholder="Detalles de la entrega"
               />
               {errors.observacion && <span className="field-error">{errors.observacion}</span>}
@@ -204,82 +203,40 @@ export default function RegistroCorrespondencia() {
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  const loadItems = async () => {
+    try {
+      const data = await getCorrespondencia();
+      setItems(data);
+    } catch (error) {
+      setItems([]);
+    }
+  };
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
   const totalPaquetes = items.filter((item) => item.tipoEntrega === "Paquete").length;
   const totalSobres = items.filter((item) => item.tipoEntrega === "Sobre").length;
   const totalDocumentos = items.filter((item) => item.tipoEntrega === "Documento").length;
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "correspondencia"),
-      (snapshot) => {
-        const data = snapshot.docs.map((snapshotDoc) => ({
-          id: snapshotDoc.id,
-          ...snapshotDoc.data(),
-          fecha: snapshotDoc.data().fecha?.toDate
-            ? snapshotDoc.data().fecha.toDate().toLocaleDateString("es-CO")
-            : snapshotDoc.data().fecha ?? "",
-          hora: snapshotDoc.data().fecha?.toDate
-            ? snapshotDoc.data().fecha.toDate().toLocaleTimeString("es-CO", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-        }));
-
-        setItems(data);
-      },
-      (error) => {
-        console.error("Error cargando correspondencia:", error);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleOpenCreate = () => {
-    setEditingItem(null);
-    setModalOpen(true);
-  };
-
-  const handleOpenEdit = (item) => {
-    setEditingItem(item);
-    setModalOpen(true);
-  };
 
   const handleSave = async (formData) => {
     setLoadingForm(true);
 
     try {
       if (editingItem) {
-        const res = await fetch(`http://localhost:5000/api/correspondencia/${editingItem.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        const data = await readApiResponse(res, "No se pudo actualizar la correspondencia.");
-
-        setItems((prev) =>
-          prev.map((item) =>
-            item.id === editingItem.id ? { ...item, ...data.correspondencia } : item
-          )
-        );
+        await updateCorrespondencia(editingItem.id, formData);
       } else {
-        const res = await fetch("http://localhost:5000/api/correspondencia", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        const data = await readApiResponse(res, "No se pudo registrar la correspondencia.");
-
-        setItems((prev) => [...prev, data.correspondencia]);
+        await createCorrespondencia(formData);
       }
 
+      await loadItems();
       setEditingItem(null);
       setModalOpen(false);
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "Ocurrio un error al guardar.",
+        text: error.message || "Ocurrió un error al guardar.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -290,8 +247,8 @@ export default function RegistroCorrespondencia() {
 
   const handleDelete = async (item) => {
     const result = await Swal.fire({
-      title: "Eliminar correspondencia?",
-      text: `Se eliminara la entrega registrada para ${item.residente}.`,
+      title: "¿Eliminar correspondencia?",
+      text: `Se eliminará la entrega registrada para ${item.residente}.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -306,13 +263,8 @@ export default function RegistroCorrespondencia() {
     setDeletingId(item.id);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/correspondencia/${item.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("No se pudo eliminar.");
-
-      setItems((prev) => prev.filter((currentItem) => currentItem.id !== item.id));
+      await deleteCorrespondencia(item.id);
+      await loadItems();
 
       Swal.fire({
         title: "Correspondencia eliminada",
@@ -323,7 +275,7 @@ export default function RegistroCorrespondencia() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message,
+        text: error.message || "No se pudo eliminar el registro.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -339,13 +291,13 @@ export default function RegistroCorrespondencia() {
           <div>
             <h1 className="internal-page-title">Registro de correspondencia</h1>
             <p className="guard-module-page-copy">
-              Lleva el control de paquetes, sobres y documentos con una vista mas limpia y
+              Lleva el control de paquetes, sobres y documentos con una vista más limpia y
               operativa para vigilancia.
             </p>
           </div>
 
           <div className="guard-module-summary">
-            <span>Total registros</span>
+            <span>Total de registros</span>
             <strong>{items.length}</strong>
           </div>
         </header>
@@ -355,8 +307,8 @@ export default function RegistroCorrespondencia() {
             <div className="guard-module-head-copy">
               <h2 className="card-title">Resumen operativo</h2>
               <p className="guard-module-card-copy">
-                Organiza las entregas registradas y actualiza rapidamente cualquier novedad del
-                modulo.
+                Organiza las entregas registradas y actualiza rápidamente cualquier novedad del
+                módulo.
               </p>
             </div>
 
@@ -393,7 +345,7 @@ export default function RegistroCorrespondencia() {
                 </div>
               </div>
 
-              <button type="button" className="register-btn" onClick={handleOpenCreate}>
+              <button type="button" className="register-btn" onClick={() => setModalOpen(true)}>
                 <span>
                   Registrar nueva
                   <br />
@@ -414,33 +366,27 @@ export default function RegistroCorrespondencia() {
                   <th>Remitente</th>
                   <th>Torre</th>
                   <th>Apartamento</th>
-                  <th>Observacion</th>
+                  <th>Observación</th>
                   <th>Fecha</th>
                   <th>Hora</th>
-                  <th>Accion</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="guard-module-empty-row">
-                      No hay correspondencia registrada
+                      No hay correspondencia registrada.
                     </td>
                   </tr>
                 ) : (
                   items.map((item) => (
                     <tr key={item.id}>
                       <td>
-                        <div
-                          className={`tipo-icon ${
-                            item.tipoEntrega === "Paquete" ? "car" : "moto"
-                          }`}
-                        >
+                        <div className={`tipo-icon ${item.tipoEntrega === "Paquete" ? "car" : "moto"}`}>
                           <i
                             className={`ph-light ${
-                              item.tipoEntrega === "Paquete"
-                                ? "ph-package"
-                                : "ph-file-text"
+                              item.tipoEntrega === "Paquete" ? "ph-package" : "ph-file-text"
                             }`}
                           ></i>
                         </div>
@@ -466,7 +412,10 @@ export default function RegistroCorrespondencia() {
                           <button
                             type="button"
                             className="action-icon-btn"
-                            onClick={() => handleOpenEdit(item)}
+                            onClick={() => {
+                              setEditingItem(item);
+                              setModalOpen(true);
+                            }}
                           >
                             <i className="ph-light ph-pencil-simple"></i>
                           </button>
@@ -483,7 +432,10 @@ export default function RegistroCorrespondencia() {
 
       <CorrespondenciaModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingItem(null);
+        }}
         onSave={handleSave}
         editingItem={editingItem}
         loading={loadingForm}

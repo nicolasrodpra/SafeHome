@@ -1,27 +1,28 @@
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
+import { getVehiculos } from "../../services/modules/vigilanciaApi";
 
 const config = {
-  title: "Ingreso de Vehiculos",
+  title: "Ingreso de vehículos",
   icon: "ph-car",
-  collectionName: "vehiculos",
-  emptyMessage: "No hay vehiculos registrados",
+  loadItems: getVehiculos,
+  emptyMessage: "No hay vehículos registrados.",
   columns: [
     { key: "tipo", label: "Tipo" },
     { key: "propietario", label: "Propietario" },
     { key: "documento", label: "Documento" },
     { key: "placa", label: "Placa" },
-    { key: "telefono", label: "Telefono" },
+    { key: "telefono", label: "Teléfono" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
     { key: "fecha", label: "Fecha" },
     { key: "hora", label: "Hora" },
   ],
   detailFields: [
-    { key: "tipo", label: "Tipo de vehiculo" },
+    { key: "tipo", label: "Tipo de vehículo" },
     { key: "propietario", label: "Propietario" },
     { key: "documento", label: "Documento" },
     { key: "placa", label: "Placa" },
-    { key: "telefono", label: "Telefono" },
+    { key: "telefono", label: "Teléfono" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
     { key: "fecha", label: "Fecha" },
