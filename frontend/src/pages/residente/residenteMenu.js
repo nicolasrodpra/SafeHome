@@ -1,25 +1,25 @@
 import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/inicioHeroResidente.png";
-import InternalLayout from "../../layouts/InternalLayoutResidente";
+import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
 import "../../styles/residente/residenteMenu.css";
 
 const dashboardCards = [
   {
     icon: "ph-megaphone",
-    title: "PQR",
-    description: "Envia tus peticiones, quejas o reclamos y haz seguimiento a tu solicitud.",
-    to: "/pqrResidente",
+    title: "Mensajería",
+    description: "Envía mensajes, solicitudes o autorizaciones y haz seguimiento a tu registro.",
+    to: "/residenteMensajeria",
   },
   {
     icon: "ph-calendar-blank",
     title: "Reservas",
-    description: "Agenda espacios comunes como el salon social o la zona BBQ facilmente desde aqui.",
+    description: "Agenda espacios comunes como el salón social o la zona BBQ fácilmente desde aquí.",
     to: "/residentesReservas",
   },
   {
     icon: "ph-bell",
     title: "Comunicados",
-    description: "Enterate de los avisos y novedades del conjunto en tiempo real.",
+    description: "Entérate de los avisos y novedades del conjunto en tiempo real.",
     to: "/residenteComunicados",
   },
   {
@@ -30,14 +30,14 @@ const dashboardCards = [
   },
   {
     icon: "ph-pencil-simple",
-    title: "Actualizar Datos",
-    description: "Manten tu informacion personal actualizada para una mejor comunicacion.",
+    title: "Actualizar datos",
+    description: "Mantén tu información personal actualizada para una mejor comunicación.",
     to: "/perfil",
   },
   {
     icon: "ph-hand",
-    title: "Boton de panico",
-    description: "Usa este boton en caso de emergencia para alertar al personal de seguridad.",
+    title: "Botón de pánico",
+    description: "Usa este botón en caso de emergencia para alertar al personal de seguridad.",
   },
 ];
 
@@ -68,7 +68,7 @@ function DashboardCard({ card }) {
 
 function ResidenteMenu() {
   return (
-    <InternalLayout>
+    <InternalLayoutResidente>
       {({ profileName }) => (
         <div className="residente-content">
           <div className="residente-hero-banner">
@@ -77,12 +77,12 @@ function ResidenteMenu() {
                 Hola, <span>{profileName}</span>
               </h1>
               <p>
-                Tu hogar, mas seguro y conectado: recibe avisos
+                Tu hogar, más seguro y conectado: recibe avisos
                 <br />
                 y participa en tu comunidad.
               </p>
             </div>
-            <img src={ilustracionMenu} alt="ilustracionMenu" />
+            <img src={ilustracionMenu} alt="Ilustración del panel del residente" />
           </div>
 
           <p className="residente-section-label">Opciones</p>
@@ -94,7 +94,7 @@ function ResidenteMenu() {
           </div>
         </div>
       )}
-    </InternalLayout>
+    </InternalLayoutResidente>
   );
 }
 

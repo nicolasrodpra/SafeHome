@@ -4,11 +4,8 @@ const ROLES_VALIDOS = ["Administrador", "Residente", "Vigilante"];
 const TIPOS_SANGRE_VALIDOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const FIREBASE_AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
 
-const limpiarTexto = (value) => (typeof value === "string" ? value.trim() : "");
-
-const construirNombreCompleto = (nombres, apellidos) =>
-  [nombres, apellidos].filter(Boolean).join(" ");
-
+// Esta función decide qué datos extra guardar según el rol.
+// Así evitamos mezclar datos de residente con datos de vigilante.
 const construirDatosPorRol = ({ rol, torre, apartamento, zonaVigilancia, tipoSangre }) => {
   if (rol === "Residente") {
     return { torre, apartamento };
@@ -21,6 +18,8 @@ const construirDatosPorRol = ({ rol, torre, apartamento, zonaVigilancia, tipoSan
   return {};
 };
 
+// Aquí validamos los campos especiales de cada rol.
+// Los datos generales, como correo y contraseña, se revisan después.
 const validarCamposPorRol = ({
   rol,
   torre,
@@ -37,28 +36,14 @@ const validarCamposPorRol = ({
   }
 
   if (rol === "Vigilante" && !TIPOS_SANGRE_VALIDOS.includes(tipoSangre)) {
-    return "Seleccione un tipo de sangre valido.";
+    return "Selecciona un tipo de sangre válido.";
   }
 
   return "";
 };
 
-const obtenerCamposFaltantes = ({ nombres, apellidos, cedula, email, password, confirmPassword, rolFinal }) => {
-  const fields = [
-    { label: "nombres", value: nombres },
-    { label: "apellidos", value: apellidos },
-    { label: "cedula", value: cedula },
-    { label: "correo", value: email },
-    { label: "contrasena", value: password },
-    { label: "confirmacion de contrasena", value: confirmPassword },
-    { label: "rol", value: rolFinal },
-  ];
-
-  return fields
-    .filter((field) => !field.value)
-    .map((field) => field.label);
-};
-
+// Esta función concentra la llamada HTTP a Firebase Auth.
+// La separamos para reutilizar el mismo flujo cuando haga falta.
 const ejecutarSolicitudFirebaseAuth = async (endpoint, body) => {
   if (!process.env.FIREBASE_API_KEY) {
     throw new Error("Falta FIREBASE_API_KEY para completar la solicitud.");
@@ -105,6 +90,11 @@ const enviarCorreoVerificacion = async (email, password) => {
   });
 };
 
+// Esta función hace el registro completo:
+// 1. valida los datos;
+// 2. crea el usuario en Firebase Auth;
+// 3. guarda el perfil en Firestore;
+// 4. envía el correo de verificación.
 const registrarUsuario = async (req, res, rolPorDefecto) => {
   const {
     nombre,
@@ -124,11 +114,11 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   const nombreCompleto = nombre || [nombres, apellidos].filter(Boolean).join(" ").trim();
 
   if (!nombreCompleto || !email || !password || !confirmPassword || !rolFinal) {
-    return res.status(400).json({ mensaje: "Complete todos los campos" });
+    return res.status(400).json({ mensaje: "Completa todos los campos." });
   }
 
   if (!ROLES_VALIDOS.includes(rolFinal)) {
-    return res.status(400).json({ mensaje: "Seleccione un rol valido" });
+    return res.status(400).json({ mensaje: "Selecciona un rol válido." });
   }
 
   const mensajeCamposPorRol = validarCamposPorRol({
@@ -144,19 +134,21 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   }
 
   if (password !== confirmPassword) {
-    return res.status(400).json({ mensaje: "Las contrasenas no coinciden" });
+    return res.status(400).json({ mensaje: "Las contraseñas no coinciden." });
   }
 
   if (password.length < 6) {
-    return res.status(400).json({ mensaje: "La contrasena debe tener al menos 6 caracteres" });
+    return res.status(400).json({ mensaje: "La contraseña debe tener al menos 6 caracteres." });
   }
 
   if (rolFinal === "Residente" && (!torre || !apartamento)) {
-    return res.status(400).json({ mensaje: "Para residente debes registrar torre y apartamento" });
+    return res.status(400).json({ mensaje: "Para residente debes registrar torre y apartamento." });
   }
 
   if (rolFinal === "Vigilante" && (!zonaVigilancia || !tipoSangre)) {
-    return res.status(400).json({ mensaje: "Para vigilante debes registrar zona de vigilancia y tipo de sangre" });
+    return res.status(400).json({
+      mensaje: "Para vigilante debes registrar la zona de vigilancia y el tipo de sangre.",
+    });
   }
 
   try {
@@ -198,17 +190,17 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     await enviarCorreoVerificacion(email, password);
 
     return res.status(201).json({
-      mensaje: "Registrado con exito, verifique su correo electronico",
+      mensaje: "Registro completado con éxito. Verifica tu correo electrónico.",
     });
   } catch (error) {
     let mensaje = error.message;
 
     if (error.code === "auth/email-already-exists") {
-      mensaje = "Este correo ya esta registrado.";
+      mensaje = "Este correo ya está registrado.";
     } else if (error.code === "auth/invalid-email") {
-      mensaje = "El correo no tiene un formato valido.";
+      mensaje = "El correo no tiene un formato válido.";
     } else if (error.code === "auth/weak-password") {
-      mensaje = "La contrasena debe tener al menos 6 caracteres.";
+      mensaje = "La contraseña debe tener al menos 6 caracteres.";
     }
 
     return res.status(400).json({ mensaje });

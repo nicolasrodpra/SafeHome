@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { doc, getDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { auth, db } from "../../config/firebase";
-import { readApiResponse } from "../../utils/readApiResponse";
+import useSession from "../../hooks/useSession";
+import {
+  deleteManualConvivencia,
+  getManualConvivencia,
+  uploadManualConvivencia,
+} from "../../services/modules/manualConvivenciaApi";
 import "../../styles/shared/manualConvivencia.css";
 
-const MANUAL_API_URL = "http://localhost:5000/api/manual-convivencia";
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+// Convertimos los bytes a un formato fácil de leer en la interfaz,
+// por ejemplo KB o MB según el tamaño del archivo.
 const formatBytes = (bytes = 0) => {
   if (!bytes) return "0 KB";
   const units = ["B", "KB", "MB", "GB"];
@@ -23,25 +26,28 @@ const formatBytes = (bytes = 0) => {
   return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 };
 
+// Antes de subir el archivo revisamos que exista, que sea PDF
+// y que no supere el peso máximo permitido.
 const validatePdf = (file) => {
   if (!file) {
     return "Selecciona un archivo PDF para continuar.";
   }
 
-  const isPdf =
-    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
   if (!isPdf) {
     return "Solo se permiten archivos en formato PDF.";
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return "El archivo supera el limite de 10 MB.";
+    return "El archivo supera el límite de 10 MB.";
   }
 
   return "";
 };
 
+// El backend recibe el PDF como texto base64, así que aquí
+// convertimos el archivo local a ese formato.
 const readFileAsDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -52,88 +58,41 @@ const readFileAsDataUrl = (file) =>
 
 export default function ManualConvivenciaModule({ mode = "resident" }) {
   const isAdminMode = mode === "admin";
-  const [user] = useAuthState(auth);
+  const session = useSession();
   const [manualData, setManualData] = useState(null);
   const [loadingManual, setLoadingManual] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [profileName, setProfileName] = useState("");
+
+  // Esta función trae el manual actual desde el backend.
+  // Si no existe, dejamos el estado en `null`.
+  const loadManual = async () => {
+    try {
+      const data = await getManualConvivencia();
+      setManualData(data.manual || null);
+    } catch (error) {
+      setManualData(null);
+    } finally {
+      setLoadingManual(false);
+    }
+  };
 
   useEffect(() => {
-    let active = true;
-
-    const loadManual = async () => {
-      try {
-        const res = await fetch(MANUAL_API_URL);
-        const data = await readApiResponse(res, "No se pudo cargar el manual de convivencia.");
-
-        if (active) {
-          setManualData(data.manual || null);
-          setLoadingManual(false);
-        }
-      } catch (error) {
-        if (active) {
-          setManualData(null);
-          setLoadingManual(false);
-        }
-      }
-    };
-
     loadManual();
-
-    return () => {
-      active = false;
-    };
   }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadProfile = async () => {
-      if (!user) {
-        if (active) {
-          setProfileName("Administrador");
-        }
-        return;
-      }
-
-      try {
-        const snapshot = await getDoc(doc(db, "users", user.uid));
-        const data = snapshot.exists() ? snapshot.data() : {};
-        const fullName =
-          data.nombre ||
-          [data.nombres, data.apellidos].filter(Boolean).join(" ").trim() ||
-          user.displayName ||
-          user.email?.split("@")[0] ||
-          "Administrador";
-
-        if (active) {
-          setProfileName(fullName);
-        }
-      } catch (error) {
-        if (active) {
-          setProfileName(user.displayName || user.email?.split("@")[0] || "Administrador");
-        }
-      }
-    };
-
-    loadProfile();
-
-    return () => {
-      active = false;
-    };
-  }, [user]);
 
   const previewFile = selectedFile || manualData;
 
+  // Cada vez que el usuario elige o arrastra un archivo
+  // validamos primero para evitar errores más adelante.
   const handleSelectFile = (file) => {
     const errorMessage = validatePdf(file);
 
     if (errorMessage) {
       Swal.fire({
-        title: "Archivo no valido",
+        title: "Archivo no válido",
         text: errorMessage,
         icon: "warning",
         confirmButtonColor: "#460669",
@@ -144,29 +103,13 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
     setSelectedFile(file);
   };
 
-  const handleInputChange = (event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleSelectFile(file);
-    }
-    event.target.value = "";
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setDragActive(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) {
-      handleSelectFile(file);
-    }
-  };
-
+  // Sube el PDF al backend y luego actualiza la vista con el nuevo manual publicado.
   const handleUpload = async () => {
     const errorMessage = validatePdf(selectedFile);
 
     if (errorMessage) {
       Swal.fire({
-        title: "Archivo no valido",
+        title: "Archivo no válido",
         text: errorMessage,
         icon: "warning",
         confirmButtonColor: "#460669",
@@ -178,31 +121,26 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
 
     try {
       const fileData = await readFileAsDataUrl(selectedFile);
-      const res = await fetch(MANUAL_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: selectedFile.name,
-          fileData,
-          updatedBy: profileName || "Administrador",
-          updatedByEmail: user?.email || "",
-        }),
+      const data = await uploadManualConvivencia({
+        fileName: selectedFile.name,
+        fileData,
+        updatedBy: session?.nombre || "Administrador",
+        updatedByEmail: session?.email || "",
       });
 
-      const data = await readApiResponse(res, "No se pudo subir el PDF.");
       setManualData(data.manual || null);
       setSelectedFile(null);
 
       Swal.fire({
         title: "Manual publicado",
-        text: "El PDF del manual de convivencia ya esta disponible.",
+        text: "El PDF del manual de convivencia ya está disponible.",
         icon: "success",
         confirmButtonColor: "#460669",
       });
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "No se pudo subir el PDF. Intenta de nuevo.",
+        text: error.message || "No se pudo subir el PDF.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -211,14 +149,16 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
     }
   };
 
+  // Elimina el manual actual después de una confirmación,
+  // para evitar borrados accidentales.
   const handleDeleteManual = async () => {
     if (!manualData?.url) {
       return;
     }
 
     const result = await Swal.fire({
-      title: "Eliminar manual?",
-      text: "Los residentes dejaran de verlo hasta que subas uno nuevo.",
+      title: "¿Eliminar manual?",
+      text: "Los residentes dejarán de verlo hasta que subas uno nuevo.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -235,21 +175,20 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
     setDeleting(true);
 
     try {
-      const res = await fetch(MANUAL_API_URL, { method: "DELETE" });
-      await readApiResponse(res, "No se pudo eliminar el manual.");
+      await deleteManualConvivencia();
       setManualData(null);
       setSelectedFile(null);
 
       Swal.fire({
         title: "Manual eliminado",
-        text: "El PDF se retiro correctamente del portal.",
+        text: "El PDF se retiró correctamente del portal.",
         icon: "success",
         confirmButtonColor: "#460669",
       });
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "No se pudo eliminar el manual. Intenta de nuevo.",
+        text: error.message || "No se pudo eliminar el manual.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -266,7 +205,7 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
           <p className="manual-page-copy">
             {isAdminMode
               ? "Administra el documento oficial del conjunto y mantenlo disponible para toda la comunidad."
-              : "Consulta el documento oficial compartido por administracion desde una vista clara y centralizada."}
+              : "Consulta el documento oficial compartido por administración desde una vista clara y centralizada."}
           </p>
         </div>
       </header>
@@ -278,7 +217,7 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
               <h2>Vista del documento</h2>
               <p>
                 {manualData?.url
-                  ? "Previsualizacion del PDF actualmente publicado."
+                  ? "Previsualización del PDF actualmente publicado."
                   : loadingManual
                   ? "Cargando manual..."
                   : ""}
@@ -313,7 +252,7 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
                 <p>
                   {isAdminMode
                     ? "Sube el PDF desde el panel derecho para que toda la comunidad pueda consultarlo."
-                    : "La administracion aun no ha publicado el manual de convivencia."}
+                    : "La administración aún no ha publicado el manual de convivencia."}
                 </p>
               </div>
             )}
@@ -324,11 +263,11 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
           <section className="manual-side-card">
             <div className="manual-panel-head">
               <div>
-                <h2>{isAdminMode ? "Publicacion" : "Informacion"}</h2>
+                <h2>{isAdminMode ? "Publicación" : "Información"}</h2>
                 <p>
                   {isAdminMode
                     ? "Carga el archivo oficial del manual en formato PDF."
-                    : "Detalles del archivo compartido por administracion."}
+                    : "Detalles del archivo compartido por administración."}
                 </p>
               </div>
             </div>
@@ -340,9 +279,7 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
               <div className="manual-file-copy">
                 <strong>{previewFile?.fileName || "manual_convivencia.pdf"}</strong>
                 <span>
-                  {previewFile?.fileSize
-                    ? formatBytes(previewFile.fileSize)
-                    : "PDF oficial del conjunto"}
+                  {previewFile?.fileSize ? formatBytes(previewFile.fileSize) : "PDF oficial del conjunto"}
                 </span>
               </div>
             </div>
@@ -377,19 +314,36 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
                   setDragActive(true);
                 }}
                 onDragLeave={() => setDragActive(false)}
-                onDrop={handleDrop}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragActive(false);
+                  const file = event.dataTransfer.files?.[0];
+                  if (file) {
+                    handleSelectFile(file);
+                  }
+                }}
               >
-                <input type="file" accept="application/pdf" onChange={handleInputChange} />
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      handleSelectFile(file);
+                    }
+                    event.target.value = "";
+                  }}
+                />
                 <div className="manual-upload-icon">
                   <i className="ph-fill ph-upload-simple"></i>
                 </div>
-                <strong>Adjunta o arrastra el PDF aqui</strong>
-                <span>Solo PDF, tamano maximo 10 MB.</span>
+                <strong>Adjunta o arrastra el PDF aquí</strong>
+                <span>Solo PDF, tamaño máximo de 10 MB.</span>
               </label>
 
               <div className="manual-selected-file">
                 <div className="manual-selected-file-copy">
-                  <strong>{selectedFile?.name || "Ningun archivo seleccionado"}</strong>
+                  <strong>{selectedFile?.name || "Ningún archivo seleccionado"}</strong>
                   <span>{selectedFile ? formatBytes(selectedFile.size) : "Elige el manual oficial"}</span>
                 </div>
 
@@ -442,7 +396,7 @@ export default function ManualConvivenciaModule({ mode = "resident" }) {
               <div className="manual-panel-head">
                 <div>
                   <h2>Acciones</h2>
-                  <p>Abre el PDF en una pestana nueva para leerlo mejor o descargarlo.</p>
+                  <p>Abre el PDF en una pestaña nueva para leerlo mejor o descargarlo.</p>
                 </div>
               </div>
 

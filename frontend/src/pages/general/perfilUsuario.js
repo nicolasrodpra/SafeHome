@@ -1,27 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { updateProfile } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
 import Swal from "sweetalert2";
+import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
-import { auth, db } from "../../config/firebase";
+import {
+  getUserProfile,
+  updateUserProfile,
+} from "../../services/modules/userApi";
+import { updateSessionProfile } from "../../services/sessionService";
 import "../../styles/general/perfilUsuario.css";
 
 const roleDescriptions = {
-  Administrador: "Gestiona la operacion general del conjunto y supervisa los modulos internos.",
-  Residente: "Consulta informacion del conjunto y mantiene sus datos residenciales asociados.",
+  Administrador: "Gestiona la operación general del conjunto y supervisa los módulos internos.",
+  Residente: "Consulta información del conjunto y mantiene sus datos residenciales asociados.",
   Vigilante: "Controla accesos, novedades y registros operativos del conjunto residencial.",
 };
 
 const getFieldValue = (value) => (value ? value : "No disponible");
-const getCachedRole = () => {
-  try {
-    return localStorage.getItem("safehome_profile_role");
-  } catch (error) {
-    return null;
-  }
-};
 
 const emptyForm = {
   nombres: "",
@@ -35,85 +30,129 @@ const emptyForm = {
   tipoSangre: "",
 };
 
+// Cuando la sesión solo trae el nombre completo, esta función lo separa
+// en dos partes simples para llenar el formulario mientras llega el backend.
+const getFallbackNameParts = (source = {}, session = null) => {
+  if (source.nombres || source.apellidos) {
+    return {
+      nombres: source.nombres || "",
+      apellidos: source.apellidos || "",
+    };
+  }
+
+  if (session?.nombres || session?.apellidos) {
+    return {
+      nombres: session.nombres || "",
+      apellidos: session.apellidos || "",
+    };
+  }
+
+  const fullName = session?.nombre?.trim() || "";
+  const parts = fullName.split(/\s+/).filter(Boolean);
+
+  if (parts.length <= 1) {
+    return {
+      nombres: fullName,
+      apellidos: "",
+    };
+  }
+
+  const splitIndex = Math.ceil(parts.length / 2);
+
+  return {
+    nombres: parts.slice(0, splitIndex).join(" "),
+    apellidos: parts.slice(splitIndex).join(" "),
+  };
+};
+
+// Esta función arma un perfil seguro usando primero la respuesta del backend
+// y, si algo falta, completa con lo que ya tenemos guardado en la sesión.
+const buildProfileFromSource = (source = {}, session = null) => {
+  const fallbackNameParts = getFallbackNameParts(source, session);
+  const nombres = source.nombres || session?.nombres || fallbackNameParts.nombres;
+  const apellidos = source.apellidos || session?.apellidos || fallbackNameParts.apellidos;
+  const nombre =
+    source.nombre ||
+    [nombres, apellidos].filter(Boolean).join(" ").trim() ||
+    session?.nombre ||
+    "Usuario";
+
+  return {
+    nombre,
+    nombres,
+    apellidos,
+    cedula: source.cedula || session?.cedula || "",
+    email: source.email || session?.email || "",
+    rol: source.rol || session?.rol || "Usuario",
+    torre: source.torre || session?.torre || "",
+    apartamento: source.apartamento || session?.apartamento || "",
+    zonaVigilancia: source.zonaVigilancia || session?.zonaVigilancia || "",
+    tipoSangre: source.tipoSangre || session?.tipoSangre || "",
+  };
+};
+
+const buildFormFromProfile = (profile) => ({
+  nombres: profile?.nombres || "",
+  apellidos: profile?.apellidos || "",
+  cedula: profile?.cedula || "",
+  email: profile?.email || "",
+  rol: profile?.rol || "",
+  torre: profile?.torre || "",
+  apartamento: profile?.apartamento || "",
+  zonaVigilancia: profile?.zonaVigilancia || "",
+  tipoSangre: profile?.tipoSangre || "",
+});
+
 export default function PerfilUsuarioPage() {
-  const [user] = useAuthState(auth);
+  const session = useSession();
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const layoutRole = profile?.rol || getCachedRole();
-  const LayoutComponent =
-    layoutRole === "Residente" ? InternalLayoutResidente : InternalLayout;
+
+  const layoutRole = profile?.rol || session?.rol;
+  const LayoutComponent = layoutRole === "Residente" ? InternalLayoutResidente : InternalLayout;
+
+  // Esta función actualiza el perfil mostrado y el formulario al mismo tiempo
+  // para que la vista y los inputs siempre queden sincronizados.
+  const syncProfileState = (nextProfile) => {
+    setProfile(nextProfile);
+    setForm(buildFormFromProfile(nextProfile));
+  };
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
     const loadProfile = async () => {
-      if (!user) {
-        if (isMounted) {
+      if (!session?.uid) {
+        if (active) {
           setProfile(null);
+          setForm(emptyForm);
           setLoading(false);
         }
         return;
       }
 
-      try {
-        const snapshot = await getDoc(doc(db, "users", user.uid));
-        const data = snapshot.exists() ? snapshot.data() : {};
-        const nextProfile = {
-          nombre:
-            data.nombre ||
-            [data.nombres, data.apellidos].filter(Boolean).join(" ").trim() ||
-            user.displayName ||
-            "Usuario",
-          nombres: data.nombres || "",
-          apellidos: data.apellidos || "",
-          cedula: data.cedula || "",
-          email: data.email || user.email || "",
-          rol: data.rol || "Usuario",
-          torre: data.torre || "",
-          apartamento: data.apartamento || "",
-          zonaVigilancia: data.zonaVigilancia || "",
-          tipoSangre: data.tipoSangre || "",
-        };
+      const fallbackProfile = buildProfileFromSource({}, session);
 
-        if (isMounted) {
-          setProfile(nextProfile);
-          setForm({
-            nombres: nextProfile.nombres,
-            apellidos: nextProfile.apellidos,
-            cedula: nextProfile.cedula,
-            email: nextProfile.email,
-            rol: nextProfile.rol,
-            torre: nextProfile.torre,
-            apartamento: nextProfile.apartamento,
-            zonaVigilancia: nextProfile.zonaVigilancia,
-            tipoSangre: nextProfile.tipoSangre,
-          });
-          setLoading(false);
+      if (active) {
+        syncProfileState(fallbackProfile);
+        setLoading(false);
+      }
+
+      try {
+        const nextProfile = await getUserProfile(session.uid);
+
+        if (active) {
+          syncProfileState(buildProfileFromSource(nextProfile, session));
         }
       } catch (error) {
-        const fallbackProfile = {
-          nombre: user.displayName || user.email?.split("@")[0] || "Usuario",
-          nombres: "",
-          apellidos: "",
-          cedula: "",
-          email: user.email || "",
-          rol: "Usuario",
-          torre: "",
-          apartamento: "",
-          zonaVigilancia: "",
-          tipoSangre: "",
-        };
-
-        if (isMounted) {
-          setProfile(fallbackProfile);
-          setForm({
-            ...emptyForm,
-            email: fallbackProfile.email,
-            rol: fallbackProfile.rol,
-          });
+        if (active) {
+          syncProfileState(fallbackProfile);
+        }
+      } finally {
+        if (active) {
           setLoading(false);
         }
       }
@@ -122,9 +161,9 @@ export default function PerfilUsuarioPage() {
     loadProfile();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
-  }, [user]);
+  }, [session]);
 
   const roleSpecificFields = useMemo(() => {
     if (!profile) return [];
@@ -149,78 +188,35 @@ export default function PerfilUsuarioPage() {
     ];
   }, [profile]);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
-  };
-
-  const handleEnableEdit = () => {
-    setEditMode(true);
-  };
-
   const handleCancel = () => {
     if (!profile) return;
 
-    setForm({
-      nombres: profile.nombres,
-      apellidos: profile.apellidos,
-      cedula: profile.cedula,
-      email: profile.email,
-      rol: profile.rol,
-      torre: profile.torre,
-      apartamento: profile.apartamento,
-      zonaVigilancia: profile.zonaVigilancia,
-      tipoSangre: profile.tipoSangre,
-    });
+    setForm(buildFormFromProfile(profile));
     setEditMode(false);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!user || !profile) return;
+
+    if (!session?.uid || !profile) return;
 
     setSaving(true);
 
     try {
-      const nombreCompleto = `${form.nombres.trim()} ${form.apellidos.trim()}`.trim();
-      const payload = {
-        nombre: nombreCompleto || profile.nombre,
+      const nextProfile = await updateUserProfile(session.uid, {
         nombres: form.nombres.trim(),
         apellidos: form.apellidos.trim(),
         cedula: form.cedula.trim(),
-        email: form.email.trim(),
-        rol: profile.rol,
         torre: form.torre.trim(),
         apartamento: form.apartamento.trim(),
         zonaVigilancia: form.zonaVigilancia.trim(),
         tipoSangre: form.tipoSangre.trim(),
-      };
-
-      await updateDoc(doc(db, "users", user.uid), payload);
-      await updateProfile(user, {
-        displayName: payload.nombre,
       });
 
-      localStorage.setItem("safehome_profile_name", payload.nombre);
-      localStorage.setItem("safehome_profile_role", profile.rol || "");
+      const normalizedProfile = buildProfileFromSource(nextProfile, session);
 
-      const nextProfile = {
-        ...profile,
-        ...payload,
-      };
-
-      setProfile(nextProfile);
-      setForm({
-        nombres: payload.nombres,
-        apellidos: payload.apellidos,
-        cedula: payload.cedula,
-        email: payload.email,
-        rol: payload.rol,
-        torre: payload.torre,
-        apartamento: payload.apartamento,
-        zonaVigilancia: payload.zonaVigilancia,
-        tipoSangre: payload.tipoSangre,
-      });
+      syncProfileState(normalizedProfile);
+      updateSessionProfile(normalizedProfile);
       setEditMode(false);
 
       Swal.fire({
@@ -252,7 +248,8 @@ export default function PerfilUsuarioPage() {
             <div>
               <h1 className="internal-page-title">Mi perfil</h1>
               <p className="profile-page-copy">
-                Consulta tu informacion y habilita el modo de actualizacion cuando necesites hacer cambios.
+                Consulta tu información y habilita el modo de actualización cuando necesites hacer
+                cambios.
               </p>
             </div>
 
@@ -265,12 +262,12 @@ export default function PerfilUsuarioPage() {
           <div className="profile-layout">
             <article className="profile-card">
               <div className="profile-card-head">
-                <span className="profile-kicker">{editMode ? "Modo edicion" : "Solo lectura"}</span>
-                <h2>Informacion principal</h2>
+                <span className="profile-kicker">{editMode ? "Modo edición" : "Solo lectura"}</span>
+                <h2>Información principal</h2>
                 <p>
                   {editMode
-                    ? "Actualiza tu foto y tus datos personales antes de guardar."
-                    : "Estos datos se muestran como referencia. Usa actualizar para habilitar la edicion."}
+                    ? "Actualiza tus datos personales antes de guardar."
+                    : "Estos datos se muestran como referencia. Usa actualizar para habilitar la edición."}
                 </p>
               </div>
 
@@ -286,7 +283,9 @@ export default function PerfilUsuarioPage() {
                     <input
                       name="nombres"
                       value={form.nombres}
-                      onChange={handleChange}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, nombres: event.target.value }))
+                      }
                       disabled={!editMode || loading}
                     />
                   </div>
@@ -296,17 +295,21 @@ export default function PerfilUsuarioPage() {
                     <input
                       name="apellidos"
                       value={form.apellidos}
-                      onChange={handleChange}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, apellidos: event.target.value }))
+                      }
                       disabled={!editMode || loading}
                     />
                   </div>
 
                   <div className="profile-field">
-                    <label>Cedula</label>
+                    <label>Cédula</label>
                     <input
                       name="cedula"
                       value={form.cedula}
-                      onChange={handleChange}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, cedula: event.target.value }))
+                      }
                       disabled={!editMode || loading}
                     />
                   </div>
@@ -328,7 +331,9 @@ export default function PerfilUsuarioPage() {
                         <input
                           name="torre"
                           value={form.torre}
-                          onChange={handleChange}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, torre: event.target.value }))
+                          }
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -337,7 +342,9 @@ export default function PerfilUsuarioPage() {
                         <input
                           name="apartamento"
                           value={form.apartamento}
-                          onChange={handleChange}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, apartamento: event.target.value }))
+                          }
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -351,7 +358,9 @@ export default function PerfilUsuarioPage() {
                         <input
                           name="zonaVigilancia"
                           value={form.zonaVigilancia}
-                          onChange={handleChange}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, zonaVigilancia: event.target.value }))
+                          }
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -360,7 +369,9 @@ export default function PerfilUsuarioPage() {
                         <input
                           name="tipoSangre"
                           value={form.tipoSangre}
-                          onChange={handleChange}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, tipoSangre: event.target.value }))
+                          }
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -379,7 +390,11 @@ export default function PerfilUsuarioPage() {
                       </button>
                     </>
                   ) : (
-                    <button type="button" className="profile-primary" onClick={handleEnableEdit}>
+                    <button
+                      type="button"
+                      className="profile-primary"
+                      onClick={() => setEditMode(true)}
+                    >
                       Actualizar
                     </button>
                   )}
@@ -393,8 +408,8 @@ export default function PerfilUsuarioPage() {
                 <h2>Detalle del perfil</h2>
                 <p>
                   {loading
-                    ? "Cargando informacion del perfil..."
-                    : roleDescriptions[profile?.rol] || "Consulta la informacion de tu cuenta."}
+                    ? "Cargando información del perfil..."
+                    : roleDescriptions[profile?.rol] || "Consulta la información de tu cuenta."}
                 </p>
               </div>
 

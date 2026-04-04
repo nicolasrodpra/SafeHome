@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
-import { readApiResponse } from "../../utils/readApiResponse";
+import {
+  createVehiculo,
+  deleteVehiculo,
+  getVehiculos,
+  updateVehiculo,
+} from "../../services/modules/vigilanciaApi";
 import "../../styles/vigilante/registroVehiculos.css";
 
 const EMPTY_FORM = {
@@ -53,26 +56,11 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    onSave(form);
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="guard-modal-overlay" onClick={onClose}>
-      <div className="guard-modal-box" onClick={(e) => e.stopPropagation()}>
+      <div className="guard-modal-box" onClick={(event) => event.stopPropagation()}>
         <div className="modal-stripe" />
         <div className="modal-header">
           <div className="modal-header-left">
@@ -81,11 +69,11 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             </div>
             <div>
               <p className="modal-title">
-                {editingVehicle ? "Editar vehiculo" : "Registrar vehiculo"}
+                {editingVehicle ? "Editar vehículo" : "Registrar vehículo"}
               </p>
               <p className="modal-subtitle">
                 {editingVehicle
-                  ? "Modifica los datos del vehiculo"
+                  ? "Modifica los datos del vehículo"
                   : "Completa los datos del propietario"}
               </p>
             </div>
@@ -97,14 +85,20 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 
         <hr className="modal-divider" />
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!validate()) return;
+            onSave(form);
+          }}
+          className="modal-form"
+        >
           <div className="form-row">
             <div className="form-group">
               <label>Propietario</label>
               <input
-                name="propietario"
                 value={form.propietario}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, propietario: event.target.value }))}
                 placeholder="Nombre completo"
               />
               {errors.propietario && <span className="field-error">{errors.propietario}</span>}
@@ -113,10 +107,9 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             <div className="form-group">
               <label>Documento</label>
               <input
-                name="documento"
                 value={form.documento}
-                onChange={handleChange}
-                placeholder="Numero de documento"
+                onChange={(event) => setForm((prev) => ({ ...prev, documento: event.target.value }))}
+                placeholder="Número de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
             </div>
@@ -126,9 +119,8 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             <div className="form-group">
               <label>Placa</label>
               <input
-                name="placa"
                 value={form.placa}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, placa: event.target.value }))}
                 placeholder="ABC123"
                 className="input-placa"
               />
@@ -136,12 +128,11 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             </div>
 
             <div className="form-group">
-              <label>Telefono</label>
+              <label>Teléfono</label>
               <input
-                name="telefono"
                 value={form.telefono}
-                onChange={handleChange}
-                placeholder="Numero de contacto"
+                onChange={(event) => setForm((prev) => ({ ...prev, telefono: event.target.value }))}
+                placeholder="Número de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
             </div>
@@ -149,9 +140,8 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             <div className="form-group">
               <label>Torre</label>
               <input
-                name="torre"
                 value={form.torre}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, torre: event.target.value }))}
                 placeholder="Torre"
               />
               {errors.torre && <span className="field-error">{errors.torre}</span>}
@@ -160,9 +150,8 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             <div className="form-group">
               <label>Apartamento</label>
               <input
-                name="apartamento"
                 value={form.apartamento}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, apartamento: event.target.value }))}
                 placeholder="Apartamento"
               />
               {errors.apartamento && <span className="field-error">{errors.apartamento}</span>}
@@ -171,8 +160,11 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Tipo de vehiculo</label>
-              <select name="tipo" value={form.tipo} onChange={handleChange}>
+              <label>Tipo de vehículo</label>
+              <select
+                value={form.tipo}
+                onChange={(event) => setForm((prev) => ({ ...prev, tipo: event.target.value }))}
+              >
                 <option value="">Seleccionar...</option>
                 <option value="Carro">Carro</option>
                 <option value="Moto">Moto</option>
@@ -202,81 +194,39 @@ export default function RegistroVehiculos() {
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const totalCarros = vehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
-  const totalMotos = vehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
+  const loadVehicles = async () => {
+    try {
+      const data = await getVehiculos();
+      setVehicles(data);
+    } catch (error) {
+      setVehicles([]);
+    }
+  };
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "vehiculos"),
-      (snapshot) => {
-        const data = snapshot.docs.map((snapshotDoc) => ({
-          id: snapshotDoc.id,
-          ...snapshotDoc.data(),
-          fecha: snapshotDoc.data().fecha?.toDate
-            ? snapshotDoc.data().fecha.toDate().toLocaleDateString("es-CO")
-            : snapshotDoc.data().fecha ?? "",
-          hora: snapshotDoc.data().fecha?.toDate
-            ? snapshotDoc.data().fecha.toDate().toLocaleTimeString("es-CO", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-        }));
-
-        setVehicles(data);
-      },
-      (error) => {
-        console.error("Error cargando vehiculos:", error);
-      }
-    );
-
-    return () => unsubscribe();
+    loadVehicles();
   }, []);
 
-  const handleOpenCreate = () => {
-    setEditingVehicle(null);
-    setModalOpen(true);
-  };
-
-  const handleOpenEdit = (vehicle) => {
-    setEditingVehicle(vehicle);
-    setModalOpen(true);
-  };
+  const totalCarros = vehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
+  const totalMotos = vehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
 
   const handleSave = async (formData) => {
     setLoadingForm(true);
 
     try {
       if (editingVehicle) {
-        const res = await fetch(`http://localhost:5000/api/vehiculos/${editingVehicle.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        const data = await readApiResponse(res, "No se pudo actualizar el vehiculo.");
-
-        setVehicles((prev) =>
-          prev.map((vehicle) =>
-            vehicle.id === editingVehicle.id ? { ...vehicle, ...data.vehiculo } : vehicle
-          )
-        );
+        await updateVehiculo(editingVehicle.id, formData);
       } else {
-        const res = await fetch("http://localhost:5000/api/vehiculos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        const data = await readApiResponse(res, "No se pudo registrar el vehiculo.");
-
-        setVehicles((prev) => [...prev, data.vehiculo]);
+        await createVehiculo(formData);
       }
 
+      await loadVehicles();
       setEditingVehicle(null);
       setModalOpen(false);
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "Ocurrio un error al guardar.",
+        text: error.message || "Ocurrió un error al guardar.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -287,8 +237,8 @@ export default function RegistroVehiculos() {
 
   const handleDelete = async (vehicle) => {
     const result = await Swal.fire({
-      title: "Eliminar vehiculo?",
-      text: `Se eliminara el vehiculo de ${vehicle.propietario} (${vehicle.placa}).`,
+      title: "¿Eliminar vehículo?",
+      text: `Se eliminará el vehículo de ${vehicle.propietario} (${vehicle.placa}).`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -303,16 +253,11 @@ export default function RegistroVehiculos() {
     setDeletingId(vehicle.id);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/vehiculos/${vehicle.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("No se pudo eliminar.");
-
-      setVehicles((prev) => prev.filter((currentVehicle) => currentVehicle.id !== vehicle.id));
+      await deleteVehiculo(vehicle.id);
+      await loadVehicles();
 
       Swal.fire({
-        title: "Vehiculo eliminado",
+        title: "Vehículo eliminado",
         text: "El registro fue eliminado correctamente.",
         icon: "success",
         confirmButtonColor: "#460669",
@@ -320,7 +265,7 @@ export default function RegistroVehiculos() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message,
+        text: error.message || "No se pudo eliminar el registro.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -334,15 +279,15 @@ export default function RegistroVehiculos() {
       <main className="content guard-module-page">
         <header className="guard-module-page-header">
           <div>
-            <h1 className="internal-page-title">Registro de vehiculos</h1>
+            <h1 className="internal-page-title">Registro de vehículos</h1>
             <p className="guard-module-page-copy">
-              Controla el ingreso de carros y motos desde una vista mas clara, simple y
-              consistente con el resto del sistema.
+              Controla el ingreso de carros y motos desde una vista más clara, simple y consistente
+              con el resto del sistema.
             </p>
           </div>
 
           <div className="guard-module-summary">
-            <span>Total registros</span>
+            <span>Total de registros</span>
             <strong>{vehicles.length}</strong>
           </div>
         </header>
@@ -352,8 +297,8 @@ export default function RegistroVehiculos() {
             <div className="guard-module-head-copy">
               <h2 className="card-title">Resumen operativo</h2>
               <p className="guard-module-card-copy">
-                Consulta, crea y edita los vehiculos autorizados para mantener el control del
-                turno al dia.
+                Consulta, crea y edita los vehículos autorizados para mantener el control del turno
+                al día.
               </p>
             </div>
 
@@ -380,11 +325,11 @@ export default function RegistroVehiculos() {
                 </div>
               </div>
 
-              <button type="button" className="register-btn" onClick={handleOpenCreate}>
+              <button type="button" className="register-btn" onClick={() => setModalOpen(true)}>
                 <span>
                   Registrar nuevo
                   <br />
-                  vehiculo
+                  vehículo
                 </span>
                 <span className="plus-sq"></span>
               </button>
@@ -399,19 +344,19 @@ export default function RegistroVehiculos() {
                   <th>Propietario</th>
                   <th>Documento</th>
                   <th>Placa</th>
-                  <th>Telefono</th>
+                  <th>Teléfono</th>
                   <th>Torre</th>
                   <th>Apartamento</th>
                   <th>Fecha</th>
                   <th>Hora</th>
-                  <th>Accion</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {vehicles.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="guard-module-empty-row">
-                      No hay vehiculos registrados
+                      No hay vehículos registrados.
                     </td>
                   </tr>
                 ) : (
@@ -447,7 +392,10 @@ export default function RegistroVehiculos() {
                           <button
                             type="button"
                             className="action-icon-btn"
-                            onClick={() => handleOpenEdit(vehicle)}
+                            onClick={() => {
+                              setEditingVehicle(vehicle);
+                              setModalOpen(true);
+                            }}
                           >
                             <i className="ph-light ph-pencil-simple"></i>
                           </button>
@@ -464,7 +412,10 @@ export default function RegistroVehiculos() {
 
       <VehicleModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingVehicle(null);
+        }}
         onSave={handleSave}
         editingVehicle={editingVehicle}
         loading={loadingForm}

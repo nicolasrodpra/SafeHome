@@ -6,17 +6,24 @@ const dataDir = path.join(__dirname, "..", "..", "data");
 const metadataPath = path.join(dataDir, "manualConvivencia.json");
 const maxFileSize = 10 * 1024 * 1024;
 
+// Este paso crea las carpetas necesarias antes de guardar el PDF
+// y su archivo de metadatos.
 const ensureDirectories = () => {
   fs.mkdirSync(uploadsDir, { recursive: true });
   fs.mkdirSync(dataDir, { recursive: true });
 };
 
+// Limpiamos el nombre del archivo para evitar espacios raros
+// o caracteres que puedan dar problemas al guardarlo.
 const sanitizeFileName = (fileName = "manual.pdf") =>
   fileName.replace(/\s+/g, "-").replace(/[^\w.-]/g, "").toLowerCase();
 
+// Con esta URL el frontend puede abrir el manual usando la ruta pública del servidor.
 const getPublicUrl = (req, fileName) =>
   `${req.protocol}://${req.get("host")}/uploads/manual-convivencia/${encodeURIComponent(fileName)}`;
 
+// Aquí leemos los metadatos del manual actual. Si algo falla,
+// devolvemos `null` para que la app entienda que no hay manual publicado.
 const readMetadata = () => {
   try {
     if (!fs.existsSync(metadataPath)) {
@@ -29,11 +36,15 @@ const readMetadata = () => {
   }
 };
 
+// Guardamos un pequeño resumen del archivo para no tener que leer el PDF
+// completo cada vez que el frontend pregunta por el manual.
 const writeMetadata = (metadata) => {
   ensureDirectories();
   fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2), "utf8");
 };
 
+// Antes de subir una nueva versión eliminamos la anterior
+// para que no queden PDFs viejos ocupando espacio.
 const removeCurrentFile = () => {
   const currentMetadata = readMetadata();
 
@@ -48,6 +59,7 @@ const removeCurrentFile = () => {
   }
 };
 
+// Esta ruta devuelve la información del manual actual, si existe.
 const getManualConvivencia = (req, res) => {
   const metadata = readMetadata();
 
@@ -63,6 +75,8 @@ const getManualConvivencia = (req, res) => {
   });
 };
 
+// Esta función recibe el PDF en base64, valida su tamaño y formato,
+// lo guarda en disco y actualiza sus metadatos.
 const uploadManualConvivencia = (req, res) => {
   const { fileName, fileData, updatedBy, updatedByEmail } = req.body || {};
 
@@ -77,13 +91,13 @@ const uploadManualConvivencia = (req, res) => {
   const match = String(fileData).match(/^data:application\/pdf;base64,(.+)$/);
 
   if (!match) {
-    return res.status(400).json({ mensaje: "El archivo enviado no tiene un formato PDF valido." });
+    return res.status(400).json({ mensaje: "El archivo enviado no tiene un formato PDF válido." });
   }
 
   const buffer = Buffer.from(match[1], "base64");
 
   if (buffer.length > maxFileSize) {
-    return res.status(400).json({ mensaje: "El archivo supera el limite de 10 MB." });
+    return res.status(400).json({ mensaje: "El archivo supera el límite de 10 MB." });
   }
 
   ensureDirectories();
@@ -114,6 +128,8 @@ const uploadManualConvivencia = (req, res) => {
   });
 };
 
+// Aquí eliminamos tanto el archivo físico como los metadatos
+// para dejar el módulo sin manual publicado.
 const deleteManualConvivencia = (req, res) => {
   removeCurrentFile();
 

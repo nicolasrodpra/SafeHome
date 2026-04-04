@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { db } from "../../config/firebase";
 import InternalLayout from "../../layouts/InternalLayout";
-import { readApiResponse } from "../../utils/readApiResponse";
+import {
+  createVisitante,
+  deleteVisitante,
+  getVisitantes,
+  updateVisitante,
+} from "../../services/modules/vigilanciaApi";
 import "../../styles/vigilante/registroVisitantes.css";
 
 const EMPTY_FORM = {
@@ -53,26 +56,11 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    onSave(form);
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="guard-modal-overlay" onClick={onClose}>
-      <div className="guard-modal-box" onClick={(e) => e.stopPropagation()}>
+      <div className="guard-modal-box" onClick={(event) => event.stopPropagation()}>
         <div className="modal-stripe" />
         <div className="modal-header">
           <div className="modal-header-left">
@@ -97,14 +85,20 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
 
         <hr className="modal-divider" />
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!validate()) return;
+            onSave(form);
+          }}
+          className="modal-form"
+        >
           <div className="form-row">
             <div className="form-group">
               <label>Visitante</label>
               <input
-                name="nombre"
                 value={form.nombre}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, nombre: event.target.value }))}
                 placeholder="Nombre completo"
               />
               {errors.nombre && <span className="field-error">{errors.nombre}</span>}
@@ -113,10 +107,9 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
             <div className="form-group">
               <label>Documento</label>
               <input
-                name="documento"
                 value={form.documento}
-                onChange={handleChange}
-                placeholder="Numero de documento"
+                onChange={(event) => setForm((prev) => ({ ...prev, documento: event.target.value }))}
+                placeholder="Número de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
             </div>
@@ -126,21 +119,19 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
             <div className="form-group">
               <label>Residente que autoriza</label>
               <input
-                name="residente"
                 value={form.residente}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, residente: event.target.value }))}
                 placeholder="Nombre del residente"
               />
               {errors.residente && <span className="field-error">{errors.residente}</span>}
             </div>
 
             <div className="form-group">
-              <label>Telefono</label>
+              <label>Teléfono</label>
               <input
-                name="telefono"
                 value={form.telefono}
-                onChange={handleChange}
-                placeholder="Numero de contacto"
+                onChange={(event) => setForm((prev) => ({ ...prev, telefono: event.target.value }))}
+                placeholder="Número de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
             </div>
@@ -150,9 +141,8 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
             <div className="form-group">
               <label>Torre</label>
               <input
-                name="torre"
                 value={form.torre}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, torre: event.target.value }))}
                 placeholder="Torre"
               />
               {errors.torre && <span className="field-error">{errors.torre}</span>}
@@ -161,9 +151,8 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
             <div className="form-group">
               <label>Apartamento</label>
               <input
-                name="apartamento"
                 value={form.apartamento}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, apartamento: event.target.value }))}
                 placeholder="Apartamento"
               />
               {errors.apartamento && <span className="field-error">{errors.apartamento}</span>}
@@ -174,9 +163,8 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
             <div className="form-group">
               <label>Motivo de visita</label>
               <input
-                name="motivo"
                 value={form.motivo}
-                onChange={handleChange}
+                onChange={(event) => setForm((prev) => ({ ...prev, motivo: event.target.value }))}
                 placeholder="Ej. visita familiar, mantenimiento"
               />
               {errors.motivo && <span className="field-error">{errors.motivo}</span>}
@@ -203,80 +191,37 @@ export default function RegistroVisitantes() {
   const [editingVisitor, setEditingVisitor] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const totalVisitas = visitors.length;
+
+  const loadVisitors = async () => {
+    try {
+      const data = await getVisitantes();
+      setVisitors(data);
+    } catch (error) {
+      setVisitors([]);
+    }
+  };
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "visitantes"),
-      (snapshot) => {
-        const data = snapshot.docs.map((snapshotDoc) => ({
-          id: snapshotDoc.id,
-          ...snapshotDoc.data(),
-          fecha: snapshotDoc.data().fecha?.toDate
-            ? snapshotDoc.data().fecha.toDate().toLocaleDateString("es-CO")
-            : snapshotDoc.data().fecha ?? "",
-          hora: snapshotDoc.data().fecha?.toDate
-            ? snapshotDoc.data().fecha.toDate().toLocaleTimeString("es-CO", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-        }));
-
-        setVisitors(data);
-      },
-      (error) => {
-        console.error("Error cargando visitantes:", error);
-      }
-    );
-
-    return () => unsubscribe();
+    loadVisitors();
   }, []);
-
-  const handleOpenCreate = () => {
-    setEditingVisitor(null);
-    setModalOpen(true);
-  };
-
-  const handleOpenEdit = (visitor) => {
-    setEditingVisitor(visitor);
-    setModalOpen(true);
-  };
 
   const handleSave = async (formData) => {
     setLoadingForm(true);
 
     try {
       if (editingVisitor) {
-        const res = await fetch(`http://localhost:5000/api/visitantes/${editingVisitor.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        const data = await readApiResponse(res, "No se pudo actualizar el visitante.");
-
-        setVisitors((prev) =>
-          prev.map((visitor) =>
-            visitor.id === editingVisitor.id ? { ...visitor, ...data.visitante } : visitor
-          )
-        );
+        await updateVisitante(editingVisitor.id, formData);
       } else {
-        const res = await fetch("http://localhost:5000/api/visitantes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        });
-        const data = await readApiResponse(res, "No se pudo registrar el visitante.");
-
-        setVisitors((prev) => [...prev, data.visitante]);
+        await createVisitante(formData);
       }
 
+      await loadVisitors();
       setEditingVisitor(null);
       setModalOpen(false);
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "Ocurrio un error al guardar.",
+        text: error.message || "Ocurrió un error al guardar.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -287,8 +232,8 @@ export default function RegistroVisitantes() {
 
   const handleDelete = async (visitor) => {
     const result = await Swal.fire({
-      title: "Eliminar visitante?",
-      text: `Se eliminara el ingreso registrado para ${visitor.nombre}.`,
+      title: "¿Eliminar visitante?",
+      text: `Se eliminará el ingreso registrado para ${visitor.nombre}.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Eliminar",
@@ -303,13 +248,8 @@ export default function RegistroVisitantes() {
     setDeletingId(visitor.id);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/visitantes/${visitor.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("No se pudo eliminar.");
-
-      setVisitors((prev) => prev.filter((currentVisitor) => currentVisitor.id !== visitor.id));
+      await deleteVisitante(visitor.id);
+      await loadVisitors();
 
       Swal.fire({
         title: "Visitante eliminado",
@@ -320,7 +260,7 @@ export default function RegistroVisitantes() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message,
+        text: error.message || "No se pudo eliminar el registro.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -336,13 +276,13 @@ export default function RegistroVisitantes() {
           <div>
             <h1 className="internal-page-title">Registro de visitantes</h1>
             <p className="guard-module-page-copy">
-              Gestiona los ingresos autorizados con una vista mas ordenada para registrar,
-              editar y consultar visitantes del conjunto.
+              Gestiona los ingresos autorizados con una vista más ordenada para registrar, editar y
+              consultar visitantes del conjunto.
             </p>
           </div>
 
           <div className="guard-module-summary">
-            <span>Total registros</span>
+            <span>Total de registros</span>
             <strong>{visitors.length}</strong>
           </div>
         </header>
@@ -352,8 +292,8 @@ export default function RegistroVisitantes() {
             <div className="guard-module-head-copy">
               <h2 className="card-title">Resumen operativo</h2>
               <p className="guard-module-card-copy">
-                Mantiene trazabilidad de los ingresos del dia desde una interfaz mas limpia y
-                facil de revisar.
+                Mantén trazabilidad de los ingresos del día desde una interfaz más limpia y fácil
+                de revisar.
               </p>
             </div>
 
@@ -364,13 +304,13 @@ export default function RegistroVisitantes() {
                     <i className="ph-light ph-users-three"></i>
                   </div>
                   <div className="counter-info">
-                    <span className="counter-number">{totalVisitas}</span>
+                    <span className="counter-number">{visitors.length}</span>
                     <span className="counter-label">Visitantes</span>
                   </div>
                 </div>
               </div>
 
-              <button type="button" className="register-btn" onClick={handleOpenCreate}>
+              <button type="button" className="register-btn" onClick={() => setModalOpen(true)}>
                 <span>
                   Registrar nuevo
                   <br />
@@ -389,20 +329,20 @@ export default function RegistroVisitantes() {
                   <th>Visitante</th>
                   <th>Documento</th>
                   <th>Residente</th>
-                  <th>Telefono</th>
+                  <th>Teléfono</th>
                   <th>Torre</th>
                   <th>Apartamento</th>
                   <th>Motivo</th>
                   <th>Fecha</th>
                   <th>Hora</th>
-                  <th>Accion</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {visitors.length === 0 ? (
                   <tr>
                     <td colSpan={11} className="guard-module-empty-row">
-                      No hay visitantes registrados
+                      No hay visitantes registrados.
                     </td>
                   </tr>
                 ) : (
@@ -445,7 +385,10 @@ export default function RegistroVisitantes() {
                           <button
                             type="button"
                             className="action-icon-btn"
-                            onClick={() => handleOpenEdit(visitor)}
+                            onClick={() => {
+                              setEditingVisitor(visitor);
+                              setModalOpen(true);
+                            }}
                           >
                             <i className="ph-light ph-pencil-simple"></i>
                           </button>
@@ -462,7 +405,10 @@ export default function RegistroVisitantes() {
 
       <VisitanteModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingVisitor(null);
+        }}
         onSave={handleSave}
         editingVisitor={editingVisitor}
         loading={loadingForm}

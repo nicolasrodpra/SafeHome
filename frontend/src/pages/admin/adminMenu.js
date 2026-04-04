@@ -8,9 +8,9 @@ import "../../styles/admin/adminMenu.css";
 const dashboardCards = [
   {
     icon: "ph-megaphone",
-    title: "Quejas",
-    description: "Gestiona y da seguimiento a las quejas de los residentes.",
-    to: "/pqrRecibidosAdmin",
+    title: "Mensajería",
+    description: "Gestiona quejas, solicitudes y autorizaciones enviadas por los residentes.",
+    to: "/adminMensajeria",
   },
   {
     icon: "ph-calendar-blank",
@@ -33,24 +33,24 @@ const dashboardCards = [
   {
     icon: "ph-user",
     title: "Residentes",
-    description: "Administra la informacion de los residentes del conjunto.",
+    description: "Administra la información de los residentes del conjunto.",
     to: "/adminResidentes",
   },
   {
     icon: "ph-book-bookmark",
-    title: "Manual Convivencia",
+    title: "Manual de convivencia",
     description: "Consulta y gestiona las normas del conjunto residencial.",
     to: "/adminManualConvivencia",
   },
   {
     icon: "ph-pencil-simple",
-    title: "Actualizacion Datos",
-    description: "Modifica y mantiene actualizada tu informacion.",
+    title: "Actualización de datos",
+    description: "Modifica y mantiene actualizada tu información.",
     to: "/perfil",
   },
   {
     icon: "ph-user-plus",
-    title: "Registrar Usuario",
+    title: "Registrar usuario",
     description: "Crea nuevos usuarios y asigna sus datos de acceso al sistema.",
     to: "/registroUsuario",
   },
@@ -108,7 +108,7 @@ function AdminMenuPage() {
                   herramientas inteligentes.
                 </p>
               </div>
-              <img src={ilustracionMenu} alt="ilustracionMenu" />
+              <img src={ilustracionMenu} alt="Ilustración del panel administrativo" />
             </div>
 
             <p className="section-label">Opciones</p>

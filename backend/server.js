@@ -8,19 +8,17 @@ const manualConvivenciaRoutes = require("./routes/admin/manualConvivenciaRoutes"
 const registroAdminRoutes = require("./routes/admin/registroAdminRoutes");
 const loginRoutes = require("./routes/general/loginRoutes");
 const registroResidenteRoutes = require("./routes/residente/registroResidenteRoutes");
+const comunicadosRoutes = require("./routes/shared/comunicadosRoutes");
+const mensajeriaRoutes = require("./routes/shared/mensajeriaRoutes");
+const reservasRoutes = require("./routes/shared/reservasRoutes");
+const resumenVigilanciaRoutes = require("./routes/shared/resumenVigilanciaRoutes");
+const usuariosRoutes = require("./routes/shared/usuariosRoutes");
 const registroCorrespondenciaRoutes = require("./routes/vigilante/registroCorrespondenciaRoutes");
 const registroVehiculosRoutes = require("./routes/vigilante/registroVehiculosRoutes");
 const registroVisitantesRoutes = require("./routes/vigilante/registroVisitantesRoutes");
 const registroVigilanteRoutes = require("./routes/vigilante/registroVigilanteRoutes");
 
 const app = express();
-const apiRoutes = [
-  registroAdminRoutes,
-  loginRoutes,
-  registroResidenteRoutes,
-  registroVehiculosRoutes,
-  registroVigilanteRoutes,
-];
 
 app.disable("x-powered-by");
 app.use(cors());
@@ -31,10 +29,17 @@ app.get("/", (req, res) => {
   res.send("API SafeHome funcionando");
 });
 
+// Aquí agrupamos todas las rutas bajo `/api` para que el frontend
+// tenga un punto único de entrada hacia el backend.
 app.use("/api", registroAdminRoutes);
 app.use("/api", manualConvivenciaRoutes);
 app.use("/api", loginRoutes);
 app.use("/api", registroResidenteRoutes);
+app.use("/api", usuariosRoutes);
+app.use("/api", comunicadosRoutes);
+app.use("/api", mensajeriaRoutes);
+app.use("/api", reservasRoutes);
+app.use("/api", resumenVigilanciaRoutes);
 app.use("/api", registroCorrespondenciaRoutes);
 app.use("/api", registroVehiculosRoutes);
 app.use("/api", registroVisitantesRoutes);
@@ -43,5 +48,5 @@ app.use("/api", registroVigilanteRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });

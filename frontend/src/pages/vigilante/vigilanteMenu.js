@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/inicioHero.png";
 import InternalLayout from "../../layouts/InternalLayout";
-import { subscribeVigilanteDashboardStats } from "../../services/vigilanteDashboardService";
+import { getResumenVigilancia } from "../../services/modules/vigilanciaApi";
 import "../../styles/admin/adminMenu.css";
 import "../../styles/vigilante/vigilanteMenu.css";
 
@@ -10,7 +10,7 @@ const statCards = [
   {
     key: "vehiculosHoy",
     icon: "ph-car",
-    label: "Vehiculos de hoy",
+    label: "Vehículos de hoy",
     description: "Registros vehiculares realizados durante la jornada actual.",
     variant: "vehicles",
   },
@@ -18,7 +18,7 @@ const statCards = [
     key: "correspondenciaHoy",
     icon: "ph-package",
     label: "Correspondencia de hoy",
-    description: "Entregas recibidas y pendientes de registro para este dia.",
+    description: "Entregas recibidas y pendientes de registro para este día.",
     variant: "mail",
   },
   {
@@ -33,7 +33,7 @@ const statCards = [
 const dashboardCards = [
   {
     icon: "ph-car",
-    title: "Registro de vehiculos",
+    title: "Registro de vehículos",
     description: "Controla el ingreso de carros y motos autorizados dentro del conjunto.",
     to: "/registroVehiculos",
   },
@@ -47,12 +47,12 @@ const dashboardCards = [
     icon: "ph-users-three",
     title: "Registro de visitantes",
     to: "/registroVisitantes",
-    description: "Registra visitantes y manten trazabilidad de los ingresos al conjunto residencial.",
+    description: "Registra visitantes y mantén trazabilidad de los ingresos al conjunto residencial.",
   },
   {
     icon: "ph-bell",
     title: "Comunicados",
-    description: "Recibe y consulta los comunicados enviados por el administrador del conjunto.",
+    description: "Recibe y consulta los comunicados enviados por la administración del conjunto.",
     to: "/adminComunicados",
   },
 ];
@@ -106,16 +106,20 @@ function VigilanteMenu() {
   });
 
   useEffect(() => {
-    const unsubscribe = subscribeVigilanteDashboardStats(
-      (nextStats) => {
+    const loadStats = async () => {
+      try {
+        const nextStats = await getResumenVigilancia();
         setStats(nextStats);
-      },
-      (error) => {
-        console.error("Error cargando resumen de vigilancia:", error);
+      } catch (error) {
+        setStats({
+          vehiculosHoy: 0,
+          correspondenciaHoy: 0,
+          visitantesHoy: 0,
+        });
       }
-    );
+    };
 
-    return () => unsubscribe();
+    loadStats();
   }, []);
 
   return (
@@ -133,7 +137,7 @@ function VigilanteMenu() {
                 conjuntos residenciales con un control claro y organizado.
               </p>
             </div>
-            <img src={ilustracionMenu} alt="ilustracionMenu" />
+            <img src={ilustracionMenu} alt="Ilustración del panel de vigilancia" />
           </div>
 
           <div className="vigilante-stats-grid">
@@ -154,4 +158,5 @@ function VigilanteMenu() {
     </InternalLayout>
   );
 }
+
 export default VigilanteMenu;

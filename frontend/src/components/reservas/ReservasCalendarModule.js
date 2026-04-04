@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
 import Swal from "sweetalert2";
-import { auth, db } from "../../config/firebase";
-import { createReserva, deleteReserva, subscribeToReservas } from "../../services/reservasService";
+import useSession from "../../hooks/useSession";
+import { getUserProfile } from "../../services/modules/userApi";
+import {
+  createReserva,
+  deleteReserva,
+  getReservas,
+} from "../../services/modules/reservasApi";
 import {
   CALENDAR_DAY_NAMES,
   MINI_CALENDAR_DAY_NAMES,
@@ -30,20 +33,10 @@ import {
 } from "../../utils/reservasCommon";
 import "../../styles/shared/reservasModule.css";
 
-const getCachedRole = () => {
-  try {
-    return localStorage.getItem("safehome_profile_role") || "";
-  } catch (error) {
-    return "";
-  }
-};
-
 function ReservationChip({ reservation, isOwner }) {
   const zoneMeta = getZoneMeta(reservation.zoneKey);
   const zoneClassName = zoneMeta ? `is-${zoneMeta.colorToken}` : "";
-  const itemClassName = zoneClassName
-    ? `reservas-chip ${zoneClassName}`
-    : "reservas-chip";
+  const itemClassName = zoneClassName ? `reservas-chip ${zoneClassName}` : "reservas-chip";
 
   return (
     <div className={itemClassName}>
@@ -83,9 +76,9 @@ function SelectedDayReservationItem({
         <div className="reservas-day-item-meta">
           <span>{reservation.residentName || "Residente"}</span>
           <span>
-            Torre {reservation.torre || "-"} / Apto {reservation.apartamento || "-"}
+            Torre {reservation.torre || "-"} / Apto. {reservation.apartamento || "-"}
           </span>
-          <span>Cedula {reservation.cedula || "No registrada"}</span>
+          <span>Cédula {reservation.cedula || "No registrada"}</span>
         </div>
       )}
 
@@ -104,7 +97,7 @@ function SelectedDayReservationItem({
 
 export default function ReservasCalendarModule({ mode }) {
   const isResidentMode = mode === "resident";
-  const [user, authLoading] = useAuthState(auth);
+  const session = useSession();
   const [reservas, setReservas] = useState([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -116,19 +109,19 @@ export default function ReservasCalendarModule({ mode }) {
   const [startHour, setStartHour] = useState("");
   const [duration, setDuration] = useState("");
 
-  useEffect(() => {
-    const unsubscribe = subscribeToReservas(
-      (nextReservas) => {
-        setReservas(nextReservas);
-        setLoadingReservas(false);
-      },
-      () => {
-        setReservas([]);
-        setLoadingReservas(false);
-      }
-    );
+  const loadReservas = async () => {
+    try {
+      const nextReservas = await getReservas();
+      setReservas(nextReservas);
+    } catch (error) {
+      setReservas([]);
+    } finally {
+      setLoadingReservas(false);
+    }
+  };
 
-    return () => unsubscribe();
+  useEffect(() => {
+    loadReservas();
   }, []);
 
   useEffect(() => {
@@ -137,54 +130,42 @@ export default function ReservasCalendarModule({ mode }) {
       return;
     }
 
-    let isMounted = true;
+    let active = true;
 
     const loadProfile = async () => {
-      if (!user) {
-        if (isMounted) {
+      if (!session?.uid) {
+        if (active) {
           setUserProfile(null);
           setProfileLoading(false);
         }
         return;
       }
 
-      if (isMounted) {
-        setProfileLoading(true);
-      }
-
       try {
-        const snapshot = await getDoc(doc(db, "users", user.uid));
-        const data = snapshot.exists() ? snapshot.data() : {};
-        const resolvedRole = data.rol || getCachedRole() || "Residente";
-        const fullName =
-          data.nombre ||
-          [data.nombres, data.apellidos].filter(Boolean).join(" ").trim() ||
-          user.displayName ||
-          user.email?.split("@")[0] ||
-          "Residente";
+        const profile = await getUserProfile(session.uid);
 
-        if (isMounted) {
+        if (active) {
           setUserProfile({
-            userId: user.uid,
-            nombre: fullName,
-            cedula: data.cedula || data.documento || "",
-            torre: data.torre || "",
-            apartamento: data.apartamento || "",
-            email: data.email || user.email || "",
-            rol: resolvedRole,
+            userId: profile.uid,
+            nombre: profile.nombre,
+            cedula: profile.cedula,
+            torre: profile.torre,
+            apartamento: profile.apartamento,
+            email: profile.email,
+            rol: profile.rol,
           });
           setProfileLoading(false);
         }
       } catch (error) {
-        if (isMounted) {
+        if (active) {
           setUserProfile({
-            userId: user.uid,
-            nombre: user.displayName || user.email?.split("@")[0] || "Residente",
-            cedula: "",
-            torre: "",
-            apartamento: "",
-            email: user.email || "",
-            rol: getCachedRole() || "Residente",
+            userId: session.uid,
+            nombre: session.nombre || "Residente",
+            cedula: session.cedula || "",
+            torre: session.torre || "",
+            apartamento: session.apartamento || "",
+            email: session.email || "",
+            rol: session.rol || "Residente",
           });
           setProfileLoading(false);
         }
@@ -194,9 +175,9 @@ export default function ReservasCalendarModule({ mode }) {
     loadProfile();
 
     return () => {
-      isMounted = false;
+      active = false;
     };
-  }, [isResidentMode, user]);
+  }, [isResidentMode, session]);
 
   const monthCells = useMemo(() => buildMonthCells(currentMonth), [currentMonth]);
   const miniCalendarDays = useMemo(() => buildMiniCalendarDays(currentMonth), [currentMonth]);
@@ -212,6 +193,8 @@ export default function ReservasCalendarModule({ mode }) {
     [monthReservations]
   );
 
+  // Agrupamos las reservas por fecha para que cada celda del calendario
+  // consulte solo su lista local y no tenga que filtrar todo el arreglo otra vez.
   const reservationsByDate = useMemo(() => {
     const groupedReservations = {};
 
@@ -236,18 +219,18 @@ export default function ReservasCalendarModule({ mode }) {
   );
 
   const upcomingUserReservations = useMemo(() => {
-    if (!user) {
+    if (!session?.uid) {
       return [];
     }
 
     return reservas
       .filter(
         (reservation) =>
-          reservation.userId === user.uid && isUpcomingReservation(reservation, new Date())
+          reservation.userId === session.uid && isUpcomingReservation(reservation, new Date())
       )
       .sort(sortReservationsByTime)
       .slice(0, 5);
-  }, [reservas, user]);
+  }, [reservas, session]);
 
   const availableStartHours = useMemo(
     () => getAvailableStartHours(selectedDateKey, new Date()),
@@ -290,9 +273,8 @@ export default function ReservasCalendarModule({ mode }) {
   const selectedDateIsPast = isPastDateKey(selectedDateKey, new Date());
   const canSubmitReservation =
     isResidentMode &&
-    !authLoading &&
     !profileLoading &&
-    !!user &&
+    !!session?.uid &&
     !!selectedZone &&
     !!startHour &&
     !!duration &&
@@ -314,18 +296,10 @@ export default function ReservasCalendarModule({ mode }) {
     setSelectedDateKey(formatDateKey(nextSelectedDate));
   };
 
-  const handleSelectDate = (dateKey) => {
-    setSelectedDateKey(dateKey);
-  };
-
   const handleCreateReservation = async (event) => {
     event.preventDefault();
 
-    if (!isResidentMode) {
-      return;
-    }
-
-    if (!user || !userProfile || userProfile.rol !== "Residente") {
+    if (!session?.uid || !userProfile || userProfile.rol !== "Residente") {
       Swal.fire({
         title: "Acceso no permitido",
         text: "Solo los residentes pueden crear reservas.",
@@ -343,7 +317,7 @@ export default function ReservasCalendarModule({ mode }) {
       zoneKey: selectedZoneKey,
       startHour: startHourValue,
       duration: durationValue,
-      userId: user.uid,
+      userId: session.uid,
       baseDate: new Date(),
     });
 
@@ -367,7 +341,7 @@ export default function ReservasCalendarModule({ mode }) {
         startHour: startHourValue,
         endHour: startHourValue + durationValue,
         duration: durationValue,
-        userId: user.uid,
+        userId: session.uid,
         residentName: userProfile.nombre,
         residentEmail: userProfile.email,
         cedula: userProfile.cedula,
@@ -375,9 +349,11 @@ export default function ReservasCalendarModule({ mode }) {
         apartamento: userProfile.apartamento,
       });
 
+      await loadReservas();
+
       Swal.fire({
         title: "Reserva creada",
-        text: `Tu reserva de ${selectedZone.label} quedo registrada correctamente.`,
+        text: `Tu reserva de ${selectedZone.label} quedó registrada correctamente.`,
         icon: "success",
         confirmButtonColor: "#460669",
       });
@@ -394,7 +370,7 @@ export default function ReservasCalendarModule({ mode }) {
   };
 
   const handleCancelReservation = async (reservation) => {
-    if (!user || !canManageReservation(reservation, user.uid, new Date())) {
+    if (!session?.uid || !canManageReservation(reservation, session.uid, new Date())) {
       Swal.fire({
         title: "No disponible",
         text: "Solo puedes cancelar tus propias reservas futuras.",
@@ -406,7 +382,7 @@ export default function ReservasCalendarModule({ mode }) {
 
     const result = await Swal.fire({
       title: "Cancelar reserva",
-      text: `Se cancelara la reserva de ${reservation.zoneLabel} del ${getFullDateLabel(
+      text: `Se cancelará la reserva de ${reservation.zoneLabel} del ${getFullDateLabel(
         reservation.dateKey
       )}.`,
       icon: "warning",
@@ -423,10 +399,11 @@ export default function ReservasCalendarModule({ mode }) {
 
     try {
       await deleteReserva(reservation.id);
+      await loadReservas();
 
       Swal.fire({
         title: "Reserva cancelada",
-        text: "La reserva se elimino correctamente.",
+        text: "La reserva se eliminó correctamente.",
         icon: "success",
         confirmButtonColor: "#460669",
       });
@@ -444,10 +421,10 @@ export default function ReservasCalendarModule({ mode }) {
     <div className={`reservas-page ${isResidentMode ? "is-resident-mode" : "is-admin-mode"}`}>
       <header className="reservas-page-header">
         <div className="reservas-page-header-copy">
-          <h1 className="internal-page-title">Reservas Zonas Comunes</h1>
+          <h1 className="internal-page-title">Reservas de zonas comunes</h1>
           <p className="reservas-page-copy">
             {isResidentMode
-              ? "Reserva piscina, gimnasio, salon comunal, cancha o zona BBQ con validaciones de horario, cruces y limite de horas por zona."
+              ? "Reserva piscina, gimnasio, salón comunal, cancha o zona BBQ con validaciones de horario, cruces y límite de horas por zona."
               : "Consulta en tiempo real las reservas registradas por los residentes sin posibilidad de crear ni editar eventos."}
           </p>
         </div>
@@ -458,7 +435,7 @@ export default function ReservasCalendarModule({ mode }) {
             <strong>{totalMonthReservations}</strong>
           </article>
           <article className="reservas-hero-stat">
-            <span>Dias ocupados</span>
+            <span>Días ocupados</span>
             <strong>{occupiedDaysCount}</strong>
           </article>
           <article className="reservas-hero-stat">
@@ -473,7 +450,7 @@ export default function ReservasCalendarModule({ mode }) {
           <div className="reservas-calendar-topbar">
             <div>
               <h2>{getMonthLabel(currentMonth)}</h2>
-              <p>Horario habilitado de 7:00 AM a 10:00 PM.</p>
+              <p>Horario habilitado de 7:00 a. m. a 10:00 p. m.</p>
             </div>
 
             <div className="reservas-month-controls">
@@ -516,13 +493,12 @@ export default function ReservasCalendarModule({ mode }) {
               const isSelected = cell.dateKey === selectedDateKey;
               const isToday = cell.dateKey === formatDateKey(new Date());
               const isPast = isPastDateKey(cell.dateKey, new Date());
-              const isBlocked = isPast;
               const cellClassName = [
                 "reservas-calendar-cell",
                 isSelected ? "is-selected" : "",
                 isToday ? "is-today" : "",
                 isPast ? "is-past" : "",
-                isBlocked ? "is-blocked" : "",
+                isPast ? "is-blocked" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
@@ -532,8 +508,8 @@ export default function ReservasCalendarModule({ mode }) {
                   key={cell.dateKey}
                   type="button"
                   className={cellClassName}
-                  onClick={() => handleSelectDate(cell.dateKey)}
-                  disabled={isBlocked}
+                  onClick={() => setSelectedDateKey(cell.dateKey)}
+                  disabled={isPast}
                 >
                   <span className="reservas-calendar-cell-day">{cell.dayNumber}</span>
 
@@ -542,14 +518,12 @@ export default function ReservasCalendarModule({ mode }) {
                       <ReservationChip
                         key={reservation.id}
                         reservation={reservation}
-                        isOwner={isResidentMode && reservation.userId === user?.uid}
+                        isOwner={isResidentMode && reservation.userId === session?.uid}
                       />
                     ))}
 
                     {cellReservations.length > 3 ? (
-                      <span className="reservas-more-badge">
-                        +{cellReservations.length - 3} mas
-                      </span>
+                      <span className="reservas-more-badge">+{cellReservations.length - 3} más</span>
                     ) : null}
                   </div>
                 </button>
@@ -598,7 +572,7 @@ export default function ReservasCalendarModule({ mode }) {
                     key={day.dateKey}
                     type="button"
                     className={buttonClassName}
-                    onClick={() => handleSelectDate(day.dateKey)}
+                    onClick={() => setSelectedDateKey(day.dateKey)}
                     disabled={isPastDateKey(day.dateKey, new Date())}
                   >
                     {day.dayNumber}
@@ -608,28 +582,27 @@ export default function ReservasCalendarModule({ mode }) {
             </div>
           </section>
 
-            <section className="reservas-side-section">
-              <div className="reservas-side-section-head">
-                <h3>{getFullDateLabel(selectedDateKey)}</h3>
-                <span>{selectedDayReservations.length} reserva(s)</span>
+          <section className="reservas-side-section">
+            <div className="reservas-side-section-head">
+              <h3>{getFullDateLabel(selectedDateKey)}</h3>
+              <span>{selectedDayReservations.length} reserva(s)</span>
             </div>
 
             <div className="reservas-day-list">
               {loadingReservas ? (
                 <p className="reservas-empty-state">Cargando reservas...</p>
               ) : selectedDayReservations.length === 0 ? (
-                <p className="reservas-empty-state">
-                  No hay reservas registradas para este dia.
-                </p>
+                <p className="reservas-empty-state">No hay reservas registradas para este día.</p>
               ) : (
                 selectedDayReservations.map((reservation) => (
                   <SelectedDayReservationItem
                     key={reservation.id}
                     reservation={reservation}
                     isResidentMode={isResidentMode}
-                    isOwner={reservation.userId === user?.uid}
+                    isOwner={reservation.userId === session?.uid}
                     canCancel={
-                      isResidentMode && canManageReservation(reservation, user?.uid, new Date())
+                      isResidentMode &&
+                      canManageReservation(reservation, session?.uid, new Date())
                     }
                     onCancel={handleCancelReservation}
                   />
@@ -643,7 +616,7 @@ export default function ReservasCalendarModule({ mode }) {
               <div className="reservas-side-section-head">
                 <h3>Crear reserva</h3>
                 <span>
-                  {selectedZone ? `Max ${selectedZone.maxHours} hora(s)` : "Selecciona una zona"}
+                  {selectedZone ? `Máx. ${selectedZone.maxHours} hora(s)` : "Selecciona una zona"}
                 </span>
               </div>
 
@@ -679,19 +652,11 @@ export default function ReservasCalendarModule({ mode }) {
                   </label>
                   <label>
                     Nombre
-                    <input
-                      type="text"
-                      value={profileLoading ? "Cargando..." : userProfile?.nombre || ""}
-                      readOnly
-                    />
+                    <input type="text" value={profileLoading ? "Cargando..." : userProfile?.nombre || ""} readOnly />
                   </label>
                   <label>
                     Torre
-                    <input
-                      type="text"
-                      value={profileLoading ? "Cargando..." : userProfile?.torre || ""}
-                      readOnly
-                    />
+                    <input type="text" value={profileLoading ? "Cargando..." : userProfile?.torre || ""} readOnly />
                   </label>
                   <label>
                     Apartamento
@@ -702,7 +667,7 @@ export default function ReservasCalendarModule({ mode }) {
                     />
                   </label>
                   <label>
-                    Cedula
+                    Cédula
                     <input
                       type="text"
                       value={profileLoading ? "Cargando..." : userProfile?.cedula || ""}
@@ -721,7 +686,7 @@ export default function ReservasCalendarModule({ mode }) {
 
                 <div className="reservas-time-grid">
                   <label>
-                    Hora inicio
+                    Hora de inicio
                     <select
                       value={startHour}
                       onChange={(event) => setStartHour(event.target.value)}
@@ -740,7 +705,7 @@ export default function ReservasCalendarModule({ mode }) {
                   </label>
 
                   <label>
-                    Duracion
+                    Duración
                     <select
                       value={duration}
                       onChange={(event) => setDuration(event.target.value)}
@@ -769,12 +734,12 @@ export default function ReservasCalendarModule({ mode }) {
                           Number(startHour),
                           Number(startHour) + Number(duration)
                         )
-                      : "Selecciona hora y duracion"}
+                      : "Selecciona hora y duración"}
                   </strong>
-                  <span>Politica</span>
+                  <span>Política</span>
                   <strong>
                     {selectedZone
-                      ? `${selectedZone.maxHours} hora(s) maximas por usuario`
+                      ? `${selectedZone.maxHours} hora(s) máximas por usuario`
                       : "Sin zona seleccionada"}
                   </strong>
                 </div>
@@ -797,15 +762,13 @@ export default function ReservasCalendarModule({ mode }) {
           {isResidentMode ? (
             <section className="reservas-side-section">
               <div className="reservas-side-section-head">
-                <h3>Mis proximas reservas</h3>
+                <h3>Mis próximas reservas</h3>
                 <span>{upcomingUserReservations.length}</span>
               </div>
 
               <div className="reservas-day-list">
                 {upcomingUserReservations.length === 0 ? (
-                  <p className="reservas-empty-state">
-                    Aun no tienes reservas activas para mostrar.
-                  </p>
+                  <p className="reservas-empty-state">Aún no tienes reservas activas para mostrar.</p>
                 ) : (
                   upcomingUserReservations.map((reservation) => (
                     <SelectedDayReservationItem
@@ -813,7 +776,7 @@ export default function ReservasCalendarModule({ mode }) {
                       reservation={reservation}
                       isResidentMode
                       isOwner
-                      canCancel={canManageReservation(reservation, user?.uid, new Date())}
+                      canCancel={canManageReservation(reservation, session?.uid, new Date())}
                       onCancel={handleCancelReservation}
                     />
                   ))

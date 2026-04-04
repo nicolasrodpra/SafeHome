@@ -1,3 +1,5 @@
+// Esta función interpreta la respuesta del backend y convierte los errores
+// en mensajes claros para mostrarlos con alertas en el frontend.
 export async function readApiResponse(res, fallbackMessage) {
   const contentType = res.headers.get("content-type") || "";
 

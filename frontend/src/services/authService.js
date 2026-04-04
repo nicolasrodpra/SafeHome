@@ -1,10 +1,11 @@
-import { signOut } from "firebase/auth";
 import Swal from "sweetalert2";
-import { auth } from "../config/firebase";
+import { clearSession } from "./sessionService";
 
+// Esta función muestra la confirmación de salida y, si el usuario acepta,
+// limpia la sesión local antes de volver al login.
 export const cerrarSesion = async (navigate) => {
   const resultado = await Swal.fire({
-    text: "Estas seguro de que deseas cerrar sesion?",
+    text: "¿Estás seguro de que deseas cerrar sesión?",
     icon: "warning",
     iconColor: "#460669",
     showCancelButton: true,
@@ -16,10 +17,6 @@ export const cerrarSesion = async (navigate) => {
 
   if (!resultado.isConfirmed) return;
 
-  try {
-    await signOut(auth);
-    navigate("/login", { replace: true });
-  } catch (error) {
-    console.error("Error al cerrar sesion:", error);
-  }
+  clearSession();
+  navigate("/login", { replace: true });
 };

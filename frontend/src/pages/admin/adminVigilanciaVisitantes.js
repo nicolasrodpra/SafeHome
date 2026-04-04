@@ -1,15 +1,16 @@
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
+import { getVisitantes } from "../../services/modules/vigilanciaApi";
 
 const config = {
-  title: "Registro de Visitantes",
+  title: "Registro de visitantes",
   icon: "ph-users-three",
-  collectionName: "visitantes",
-  emptyMessage: "No hay visitantes registrados",
+  loadItems: getVisitantes,
+  emptyMessage: "No hay visitantes registrados.",
   columns: [
     { key: "nombre", label: "Visitante" },
     { key: "documento", label: "Documento" },
     { key: "residente", label: "Residente" },
-    { key: "telefono", label: "Telefono" },
+    { key: "telefono", label: "Teléfono" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
     { key: "motivo", label: "Motivo" },
@@ -20,7 +21,7 @@ const config = {
     { key: "nombre", label: "Visitante" },
     { key: "documento", label: "Documento" },
     { key: "residente", label: "Residente que autoriza" },
-    { key: "telefono", label: "Telefono" },
+    { key: "telefono", label: "Teléfono" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
     { key: "motivo", label: "Motivo de visita" },
