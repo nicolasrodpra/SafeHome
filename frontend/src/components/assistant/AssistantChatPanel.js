@@ -1,0 +1,279 @@
+import { useEffect, useMemo, useState } from "react";
+import { askAssistant } from "../../services/modules/assistantApi";
+import "../../styles/shared/assistantChat.css";
+
+const CHAT_COPY_BY_ROLE = {
+  Administrador: {
+    badge: "Modo administrativo",
+    title: "Asistente Virtual SafeHome",
+    subtitle: "Guia rapida para usar mejor los modulos de administracion.",
+    welcome:
+      "Hola. Puedo guiarte paso a paso para publicar comunicados, responder mensajes, revisar reservas y gestionar usuarios.",
+    suggestions: [
+      "Como publico un comunicado?",
+      "Como respondo una solicitud?",
+      "Como registro un usuario?",
+      "Como reviso las reservas?",
+      "Donde veo a los residentes?",
+      "Como entro al modulo de vigilancia?",
+    ],
+  },
+  Residente: {
+    badge: "Modo residente",
+    title: "Asistente Virtual SafeHome",
+    subtitle: "Ayuda practica para realizar tareas dentro de tu panel.",
+    welcome:
+      "Hola. Puedo ayudarte paso a paso con reservas, solicitudes, comunicados y el uso general de tu panel.",
+    suggestions: [
+      "Como reservo la piscina?",
+      "Como envio una solicitud?",
+      "Donde veo el manual de convivencia?",
+      "Como reviso mis comunicados?",
+      "Como actualizo mis datos?",
+      "Donde veo mis reservas?",
+    ],
+  },
+  Vigilante: {
+    badge: "Modo vigilancia",
+    title: "Asistente Virtual SafeHome",
+    subtitle: "Apoyo operativo para registrar y ubicar funciones del dia.",
+    welcome:
+      "Hola. Puedo orientarte paso a paso para registrar visitantes, vehiculos, correspondencia y revisar modulos de vigilancia.",
+    suggestions: [
+      "Como registro un visitante?",
+      "Como registro un vehiculo?",
+      "Como registro correspondencia?",
+      "Como edito un registro?",
+      "Donde veo el resumen del dia?",
+      "Como reviso los visitantes registrados?",
+    ],
+  },
+  default: {
+    badge: "Modo general",
+    title: "Asistente Virtual SafeHome",
+    subtitle: "Haz una pregunta para recibir ayuda dentro del sistema.",
+    welcome:
+      "Hola. Estoy listo para guiarte dentro del sistema segun tu rol.",
+    suggestions: [
+      "Como funciona este asistente?",
+      "En que modulos me puedes ayudar?",
+      "Como hago una tarea dentro del sistema?",
+      "Como encuentro el modulo que necesito?",
+      "Como usar mejor mi panel?",
+    ],
+  },
+};
+
+const buildInitialMessages = (copy) => [
+  {
+    id: "assistant-welcome",
+    sender: "assistant",
+    text: copy.welcome,
+  },
+];
+
+export default function AssistantChatPanel({ isOpen, onClose, role, userName, session }) {
+  const copy = CHAT_COPY_BY_ROLE[role] || CHAT_COPY_BY_ROLE.default;
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState(() => buildInitialMessages(copy));
+  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    setMessages(buildInitialMessages(copy));
+    setQuestion("");
+    setSuggestionsOpen(true);
+  }, [copy]);
+
+  const greetingName = useMemo(() => {
+    if (!userName) return "Usuario";
+    return userName.split(" ")[0] || "Usuario";
+  }, [userName]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedQuestion = question.trim();
+
+    if (!trimmedQuestion || isSending) {
+      return;
+    }
+
+    const nextUserMessage = {
+      id: `user-${Date.now()}`,
+      sender: "user",
+      text: trimmedQuestion,
+    };
+
+    setMessages((currentMessages) => [...currentMessages, nextUserMessage]);
+    setQuestion("");
+    setSuggestionsOpen(false);
+
+    try {
+      setIsSending(true);
+
+      const answer = await askAssistant({
+        message: trimmedQuestion,
+        session,
+        history: messages.map((item) => ({
+          role: item.sender === "assistant" ? "assistant" : "user",
+          content: item.text,
+        })),
+      });
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: `assistant-${Date.now() + 1}`,
+          sender: "assistant",
+          text: answer,
+        },
+      ]);
+    } catch (error) {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          id: `assistant-error-${Date.now() + 1}`,
+          sender: "assistant",
+          text:
+            error.message ||
+            "No pude responder en este momento. Intenta de nuevo en unos segundos.",
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setQuestion(suggestion);
+  };
+
+  const handleQuestionKeyDown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSubmit(event);
+    }
+  };
+
+  const hasConversationStarted = messages.length > 1;
+
+  return (
+    <div className={`assistant-chat-shell${isOpen ? " is-open" : ""}`} aria-hidden={!isOpen}>
+      <button
+        type="button"
+        className="assistant-chat-backdrop"
+        onClick={onClose}
+        aria-label="Cerrar asistente"
+      />
+
+      <aside className="assistant-chat-panel" aria-label="Panel del asistente virtual">
+        <header className="assistant-chat-header">
+          <div className="assistant-chat-header-topbar">
+            <span className="assistant-chat-badge">{copy.badge}</span>
+            <button
+              type="button"
+              className="assistant-chat-close"
+              onClick={onClose}
+              aria-label="Cerrar panel del asistente"
+            >
+              <i className="ph-light ph-x"></i>
+            </button>
+          </div>
+
+          <div className="assistant-chat-header-copy">
+            <h2>{copy.title}</h2>
+            <p>
+              {greetingName}, {copy.subtitle}
+            </p>
+          </div>
+        </header>
+
+        <section className="assistant-chat-suggestions-shell">
+          <div className="assistant-chat-suggestions-toolbar">
+            <button
+              type="button"
+              className="assistant-chat-suggestions-toggle"
+              onClick={() => setSuggestionsOpen((current) => !current)}
+              disabled={isSending}
+            >
+              <i className="ph-light ph-sparkle"></i>
+              <span>Recomendaciones</span>
+              <i
+                className={`ph-light ${
+                  suggestionsOpen ? "ph-caret-up" : "ph-caret-down"
+                }`}
+              ></i>
+            </button>
+          </div>
+
+          {suggestionsOpen ? (
+            <section
+              className={`assistant-chat-suggestions${
+                hasConversationStarted ? " is-floating" : ""
+              }`}
+            >
+              <span>Pruebas rapidas</span>
+              <div className="assistant-chat-suggestion-list">
+                {copy.suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="assistant-chat-suggestion"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    disabled={isSending}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </section>
+
+        <section className="assistant-chat-messages">
+          {messages.map((message) => (
+            <article
+              key={message.id}
+              className={`assistant-chat-message is-${message.sender}`}
+            >
+              <span className="assistant-chat-message-label">
+                {message.sender === "assistant" ? "Asistente" : "Tu"}
+              </span>
+              <p>{message.text}</p>
+            </article>
+          ))}
+
+          {isSending ? (
+            <article className="assistant-chat-message is-assistant is-loading">
+              <span className="assistant-chat-message-label">Asistente</span>
+              <p>Estoy pensando la mejor respuesta para ti...</p>
+            </article>
+          ) : null}
+        </section>
+
+        <form className="assistant-chat-form" onSubmit={handleSubmit}>
+          <label htmlFor="assistant-question" className="assistant-chat-input-label">
+            Escribe tu pregunta
+          </label>
+
+          <div className="assistant-chat-input-wrap">
+            <textarea
+              id="assistant-question"
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={handleQuestionKeyDown}
+              placeholder="Pregunta algo sobre el sistema..."
+              rows={3}
+              disabled={isSending}
+            />
+
+            <button type="submit" className="assistant-chat-submit" disabled={isSending}>
+              {isSending ? "Pensando..." : "Enviar"}
+            </button>
+          </div>
+        </form>
+      </aside>
+    </div>
+  );
+}

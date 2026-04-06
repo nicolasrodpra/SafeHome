@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import AdminVigilanciaModal from "../components/admin/AdminVigilanciaModal";
 import useSession from "../hooks/useSession";
@@ -65,6 +66,7 @@ export default function InternalLayout({ children }) {
   const [profileRole, setProfileRole] = useState(session?.rol || null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isVigilanciaOpen, setIsVigilanciaOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
 
@@ -155,12 +157,14 @@ export default function InternalLayout({ children }) {
 
         <div className="internal-sidebar-assistant">
           <img src={asistenteVirtual} alt="Asistente virtual" />
-          <p>
-            Asistente
-            <br />
-            Virtual
-          </p>
-          <button type="button" className="internal-assistant-button">
+          <div className="internal-sidebar-assistant-copy">
+            <h3>Asistente virtual</h3>
+          </div>
+          <button
+            type="button"
+            className="internal-assistant-button"
+            onClick={() => setIsAssistantOpen(true)}
+          >
             Iniciar
           </button>
         </div>
@@ -235,6 +239,13 @@ export default function InternalLayout({ children }) {
         <AdminVigilanciaModal
           isOpen={isVigilanciaOpen}
           onClose={() => setIsVigilanciaOpen(false)}
+        />
+        <AssistantChatPanel
+          isOpen={isAssistantOpen}
+          onClose={() => setIsAssistantOpen(false)}
+          role={profileRole}
+          userName={profileName}
+          session={session}
         />
       </div>
     </div>

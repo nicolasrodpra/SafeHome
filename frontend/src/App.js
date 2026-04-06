@@ -24,27 +24,47 @@ import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
 
 const privateRoutes = [
-  { path: "/registroUsuario", element: <AdminRegister /> },
-  { path: "/adminComunicados", element: <AdminComunicados /> },
-  { path: "/adminMensajeria", element: <AdminMensajeriaPage /> },
-  { path: "/adminResidentes", element: <AdminResidentes /> },
-  { path: "/adminReservas", element: <AdminReservas /> },
-  { path: "/adminManualConvivencia", element: <AdminManualConvivencia /> },
-  { path: "/adminVigilanciaCorrespondencia", element: <AdminVigilanciaCorrespondencia /> },
-  { path: "/adminVigilanciaVehiculos", element: <AdminVigilanciaVehiculos /> },
-  { path: "/adminVigilanciaVisitantes", element: <AdminVigilanciaVisitantes /> },
-  { path: "/residenteMenu", element: <ResidenteMenu /> },
-  { path: "/residenteMensajeria", element: <ResidenteMensajeriaPage /> },
-  { path: "/residenteComunicados", element: <ResidenteComunicados /> },
-  { path: "/comunicadosResidente", element: <ResidenteComunicados /> },
-  { path: "/residentesReservas", element: <ResidentesReservas /> },
-  { path: "/residenteManualConvivencia", element: <ResidenteManualConvivencia /> },
-  { path: "/vigilanteMenu", element: <VigilanteMenu /> },
-  { path: "/adminMenu", element: <AdminMenu /> },
-  { path: "/perfil", element: <PerfilUsuarioPage /> },
-  { path: "/registroCorrespondencia", element: <RegistroCorrespondencia /> },
-  { path: "/registroVisitantes", element: <RegistroVisitantes /> },
-  { path: "/registroVehiculos", element: <RegistroVehiculos /> },
+  { path: "/registroUsuario", element: <AdminRegister />, roles: ["Administrador"] },
+  { path: "/adminComunicados", element: <AdminComunicados />, roles: ["Administrador"] },
+  { path: "/adminMensajeria", element: <AdminMensajeriaPage />, roles: ["Administrador"] },
+  { path: "/adminResidentes", element: <AdminResidentes />, roles: ["Administrador"] },
+  { path: "/adminReservas", element: <AdminReservas />, roles: ["Administrador"] },
+  { path: "/adminManualConvivencia", element: <AdminManualConvivencia />, roles: ["Administrador"] },
+  {
+    path: "/adminVigilanciaCorrespondencia",
+    element: <AdminVigilanciaCorrespondencia />,
+    roles: ["Administrador"],
+  },
+  {
+    path: "/adminVigilanciaVehiculos",
+    element: <AdminVigilanciaVehiculos />,
+    roles: ["Administrador"],
+  },
+  {
+    path: "/adminVigilanciaVisitantes",
+    element: <AdminVigilanciaVisitantes />,
+    roles: ["Administrador"],
+  },
+  { path: "/residenteMenu", element: <ResidenteMenu />, roles: ["Residente"] },
+  { path: "/residenteMensajeria", element: <ResidenteMensajeriaPage />, roles: ["Residente"] },
+  { path: "/residenteComunicados", element: <ResidenteComunicados />, roles: ["Residente"] },
+  { path: "/comunicadosResidente", element: <ResidenteComunicados />, roles: ["Residente"] },
+  { path: "/residentesReservas", element: <ResidentesReservas />, roles: ["Residente"] },
+  {
+    path: "/residenteManualConvivencia",
+    element: <ResidenteManualConvivencia />,
+    roles: ["Residente"],
+  },
+  { path: "/vigilanteMenu", element: <VigilanteMenu />, roles: ["Vigilante"] },
+  { path: "/adminMenu", element: <AdminMenu />, roles: ["Administrador"] },
+  {
+    path: "/perfil",
+    element: <PerfilUsuarioPage />,
+    roles: ["Administrador", "Residente", "Vigilante"],
+  },
+  { path: "/registroCorrespondencia", element: <RegistroCorrespondencia />, roles: ["Vigilante"] },
+  { path: "/registroVisitantes", element: <RegistroVisitantes />, roles: ["Vigilante"] },
+  { path: "/registroVehiculos", element: <RegistroVehiculos />, roles: ["Vigilante"] },
 ];
 
 function App() {
@@ -57,7 +77,11 @@ function App() {
           <Route
             key={route.path}
             path={route.path}
-            element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+            element={
+              <ProtectedRoute allowedRoles={route.roles}>
+                {route.element}
+              </ProtectedRoute>
+            }
           />
         ))}
       </Routes>

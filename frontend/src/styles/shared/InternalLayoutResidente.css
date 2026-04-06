@@ -105,45 +105,77 @@
 .internal-sidebar-assistant {
   margin-top: auto;
   width: 100%;
-  padding: 14px 12px 12px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: linear-gradient(180deg, #faf8fc 0%, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 12px 12px;
+  border: 1px solid rgba(111, 33, 155, 0.1);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top center, rgba(255, 255, 255, 0.35), transparent 42%),
+    #eadbf3;
   text-align: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 16px 26px rgba(72, 38, 96, 0.05);
 }
 
 .internal-sidebar-assistant img {
-  width: 92px;
-  height: 92px;
+  width: 100%;
+  max-width: 178px;
+  height: auto;
+  max-height: 140px;
   display: block;
-  margin: 0 auto 8px;
+  margin: -2px auto 0;
   object-fit: contain;
 }
 
-.internal-sidebar-assistant p {
-  margin: 0 0 10px;
-  color: #5d5470;
-  font-size: 0.72rem;
+.internal-sidebar-assistant-copy {
+  width: 100%;
+}
+
+.internal-sidebar-assistant-copy h3 {
+  margin: 0;
+  color: #8f66b1;
+  font-size: 0.94rem;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .internal-assistant-button {
-  width: 100%;
-  min-height: 36px;
+  width: auto;
+  min-width: 102px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 17px;
   border: none;
-  border-radius: 12px;
-  background: var(--accent);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7b42a5 0%, #6f219b 100%);
   color: #ffffff;
   font-family: "Poppins", sans-serif;
-  font-size: 0.76rem;
+  font-size: 0.77rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.18s ease;
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 10px 18px rgba(111, 33, 155, 0.2);
 }
 
 .internal-assistant-button:hover {
-  background: #5b0a87;
+  background: linear-gradient(135deg, #74409b 0%, #631b8b 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(111, 33, 155, 0.22);
+}
+
+.internal-assistant-button::before {
+  content: "\f309";
+  font-family: "Phosphor";
+  font-size: 0.84rem;
+  font-weight: 400;
 }
 
 .internal-main {
