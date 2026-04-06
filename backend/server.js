@@ -18,6 +18,12 @@ const registroCorrespondenciaRoutes = require("./routes/vigilante/registroCorres
 const registroVehiculosRoutes = require("./routes/vigilante/registroVehiculosRoutes");
 const registroVisitantesRoutes = require("./routes/vigilante/registroVisitantesRoutes");
 const registroVigilanteRoutes = require("./routes/vigilante/registroVigilanteRoutes");
+const {
+  limpiarVehiculosFinalizadosAntiguos,
+} = require("./controllers/vigilante/registroVehiculosController");
+const {
+  limpiarVisitantesAntiguos,
+} = require("./controllers/vigilante/registroVisitantesController");
 
 const app = express();
 
@@ -48,6 +54,25 @@ app.use("/api", registroVisitantesRoutes);
 app.use("/api", registroVigilanteRoutes);
 
 const PORT = process.env.PORT || 5000;
+const DAILY_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+limpiarVehiculosFinalizadosAntiguos().catch((error) => {
+  console.error("No se pudo ejecutar la limpieza inicial de vehiculos:", error.message);
+});
+
+limpiarVisitantesAntiguos().catch((error) => {
+  console.error("No se pudo ejecutar la limpieza inicial de visitantes:", error.message);
+});
+
+setInterval(() => {
+  limpiarVehiculosFinalizadosAntiguos().catch((error) => {
+    console.error("No se pudo ejecutar la limpieza programada de vehiculos:", error.message);
+  });
+
+  limpiarVisitantesAntiguos().catch((error) => {
+    console.error("No se pudo ejecutar la limpieza programada de visitantes:", error.message);
+  });
+}, DAILY_CLEANUP_INTERVAL_MS);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);

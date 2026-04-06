@@ -23,6 +23,10 @@ const buildUserProfile = (uid, data = {}) => {
     apartamento: normalizeText(data.apartamento),
     zonaVigilancia: normalizeText(data.zonaVigilancia),
     tipoSangre: normalizeText(data.tipoSangre),
+    tarifaHora:
+      typeof data.tarifaHora === "number" && Number.isFinite(data.tarifaHora)
+        ? data.tarifaHora
+        : 0,
   };
 };
 

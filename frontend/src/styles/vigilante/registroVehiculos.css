@@ -85,6 +85,51 @@
   flex-wrap: wrap;
 }
 
+.guard-module-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.guard-module-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.guard-module-search {
+  min-height: 46px;
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.guard-module-search i {
+  color: #8b8498;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.guard-module-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #312942;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.86rem;
+}
+
+.guard-module-search input::placeholder {
+  color: #9a94a8;
+}
+
 .vehicle-counters {
   display: flex;
   gap: 12px;
@@ -259,6 +304,81 @@
 
 .action-icon-btn.delete:hover {
   background: #f5e0e5;
+}
+
+.action-icon-btn.exit {
+  color: #117a37;
+  background: #eaf7ef;
+  border-color: rgba(17, 122, 55, 0.14);
+}
+
+.action-icon-btn.exit:hover:not(:disabled) {
+  background: #dcf0e3;
+}
+
+.action-icon-btn.exit.is-complete {
+  color: #667085;
+  background: #f2f4f7;
+  border-color: rgba(102, 112, 133, 0.16);
+}
+
+.action-icon-btn.delivered {
+  color: #117a37;
+  background: #eaf7ef;
+  border-color: rgba(17, 122, 55, 0.14);
+}
+
+.action-icon-btn.delivered:hover:not(:disabled) {
+  background: #dcf0e3;
+}
+
+.action-icon-btn.delivered.is-complete {
+  color: #667085;
+  background: #f2f4f7;
+  border-color: rgba(102, 112, 133, 0.16);
+}
+
+.vehicle-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vehicle-status.is-active {
+  background: #eaf7ef;
+  color: #117a37;
+}
+
+.vehicle-status.is-exited {
+  background: #f2f4f7;
+  color: #4b5565;
+}
+
+.vehicle-cobro {
+  font-weight: 700;
+  color: #1f172e;
+}
+
+.cash-close-surface {
+  margin-top: 0;
+}
+
+.cash-close-alert {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(180, 35, 24, 0.14);
+  background: #fbefef;
+  color: #8d2b20;
+  font-size: 0.84rem;
+  line-height: 1.55;
 }
 
 .guard-modal-overlay {
@@ -469,6 +589,10 @@
 }
 
 @media (max-width: 780px) {
+  .guard-module-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
   .guard-modal-box .form-row {
     grid-template-columns: 1fr;
   }

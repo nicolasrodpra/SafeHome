@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
-import AdminVigilanciaModal from "../components/admin/AdminVigilanciaModal";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
 import { getUserProfile } from "../services/modules/userApi";
@@ -10,11 +9,21 @@ import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/internalLayout.css";
 
+const ADMIN_VIGILANCIA_ITEMS = [
+  { icon: "ph-car", label: "Vehiculos", to: "/adminVigilanciaVehiculos" },
+  {
+    icon: "ph-package",
+    label: "Correspondencia",
+    to: "/adminVigilanciaCorrespondencia",
+  },
+  { icon: "ph-users-three", label: "Visitantes", to: "/adminVigilanciaVisitantes" },
+];
+
 const ADMIN_NAV_ITEMS = [
-  { icon: "ph-megaphone", label: "Mensajería", to: "/adminMensajeria" },
+  { icon: "ph-megaphone", label: "Mensajeria", to: "/adminMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
-  { icon: "ph-security-camera", label: "Vigilancia", modal: "vigilancia" },
+  { icon: "ph-security-camera", label: "Vigilancia", children: ADMIN_VIGILANCIA_ITEMS },
   { icon: "ph-user", label: "Residentes", to: "/adminResidentes" },
   { icon: "ph-book-bookmark", label: "Manual de convivencia", to: "/adminManualConvivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
@@ -22,15 +31,71 @@ const ADMIN_NAV_ITEMS = [
 ];
 
 const VIGILANTE_NAV_ITEMS = [
-  { icon: "ph-car", label: "Registro de vehículos", to: "/registroVehiculos" },
+  { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
   { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
 ];
 
-// Este componente dibuja cada opción del menú lateral.
-// Si la opción abre una ruta usamos un Link; si abre un modal usamos un botón.
-function SidebarItem({ item, pathname, onOpenModal }) {
+function SidebarItem({ item, pathname }) {
+  const [submenuOpen, setSubmenuOpen] = useState(false);
+
+  useEffect(() => {
+    setSubmenuOpen(false);
+  }, [pathname]);
+
+  if (item.children?.length) {
+    const isActive = item.children.some((child) => pathname === child.to);
+
+    return (
+      <div
+        className={`internal-nav-group ${submenuOpen ? "open" : ""} ${isActive ? "active" : ""}`}
+        onMouseEnter={() => setSubmenuOpen(true)}
+        onMouseLeave={() => setSubmenuOpen(false)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setSubmenuOpen(false);
+          }
+        }}
+      >
+        <button
+          type="button"
+          className={`internal-nav-link internal-nav-button internal-nav-parent ${
+            isActive ? "active" : ""
+          }`}
+          onClick={() => setSubmenuOpen((current) => !current)}
+          onFocus={() => setSubmenuOpen(true)}
+          aria-haspopup="menu"
+          aria-expanded={submenuOpen}
+        >
+          <span className="internal-nav-link-copy">
+            <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
+            <span>{item.label}</span>
+          </span>
+          <i className="ph-light ph-caret-right internal-nav-parent-caret" aria-hidden="true"></i>
+        </button>
+
+        <div className="internal-nav-flyout" role="menu" aria-label={item.label}>
+          {item.children.map((child) => {
+            const childIsActive = pathname === child.to;
+
+            return (
+              <Link
+                key={child.to}
+                to={child.to}
+                className={`internal-nav-flyout-link ${childIsActive ? "active" : ""}`}
+                onClick={() => setSubmenuOpen(false)}
+              >
+                <i className={`ph-light ${child.icon}`} aria-hidden="true"></i>
+                <span>{child.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   if (item.to) {
     const isActive = pathname === item.to;
 
@@ -39,19 +104,6 @@ function SidebarItem({ item, pathname, onOpenModal }) {
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </Link>
-    );
-  }
-
-  if (item.modal === "vigilancia") {
-    return (
-      <button
-        type="button"
-        className="internal-nav-link internal-nav-button"
-        onClick={onOpenModal}
-      >
-        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-        <span>{item.label}</span>
-      </button>
     );
   }
 
@@ -65,7 +117,6 @@ export default function InternalLayout({ children }) {
   const [profileName, setProfileName] = useState(session?.nombre || "Usuario");
   const [profileRole, setProfileRole] = useState(session?.rol || null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [isVigilanciaOpen, setIsVigilanciaOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
@@ -146,11 +197,7 @@ export default function InternalLayout({ children }) {
         <ul className="internal-nav-menu">
           {navItems.map((item) => (
             <li key={item.label}>
-              <SidebarItem
-                item={item}
-                pathname={pathname}
-                onOpenModal={() => setIsVigilanciaOpen(true)}
-              />
+              <SidebarItem item={item} pathname={pathname} />
             </li>
           ))}
         </ul>
@@ -184,8 +231,8 @@ export default function InternalLayout({ children }) {
               type="button"
               className="internal-icon-button"
               onClick={() => cerrarSesion(navigate)}
-              aria-label="Cerrar sesión"
-              title="Cerrar sesión"
+              aria-label="Cerrar sesion"
+              title="Cerrar sesion"
             >
               <i className="ph-light ph-sign-out internal-topbar-icon"></i>
             </button>
@@ -224,7 +271,7 @@ export default function InternalLayout({ children }) {
                     }}
                   >
                     <i className="ph-light ph-sign-out"></i>
-                    <span>Cerrar sesión</span>
+                    <span>Cerrar sesion</span>
                   </button>
                 </div>
               )}
@@ -232,14 +279,7 @@ export default function InternalLayout({ children }) {
           </div>
         </div>
 
-        {typeof children === "function"
-          ? children({ profileName, profileRole })
-          : children}
-
-        <AdminVigilanciaModal
-          isOpen={isVigilanciaOpen}
-          onClose={() => setIsVigilanciaOpen(false)}
-        />
+        {typeof children === "function" ? children({ profileName, profileRole }) : children}
         <AssistantChatPanel
           isOpen={isAssistantOpen}
           onClose={() => setIsAssistantOpen(false)}

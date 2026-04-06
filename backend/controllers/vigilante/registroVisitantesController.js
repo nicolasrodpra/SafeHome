@@ -1,25 +1,57 @@
-const admin = require("firebase-admin");
+const admin = require("../../config/firebaseAdmin");
+const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 
 const visitantesCollection = () => admin.firestore().collection("visitantes");
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const obtenerFechaVisitante = (data = {}) => toDate(data.createdAt || data.fecha);
+
+const obtenerInicioDia = (dateValue = new Date()) => {
+  const nextDate = new Date(dateValue);
+  nextDate.setHours(0, 0, 0, 0);
+  return nextDate;
+};
 
 const mapVisitante = (snapshotDoc) => {
   const data = snapshotDoc.data();
+  const fechaVisitante = obtenerFechaVisitante(data);
 
   return {
     id: snapshotDoc.id,
     ...data,
-    fecha: data.fecha?.toDate ? data.fecha.toDate().toLocaleDateString("es-CO") : data.fecha ?? "",
-    hora: data.fecha?.toDate
-      ? data.fecha.toDate().toLocaleTimeString("es-CO", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "",
+    fecha: formatDateLabel(fechaVisitante) || "",
+    hora: formatTimeLabel(fechaVisitante) || "",
   };
+};
+
+const limpiarVisitantesAntiguos = async () => {
+  const snapshot = await visitantesCollection().get();
+  const inicioHoy = obtenerInicioDia(new Date()).getTime();
+
+  const docsToDelete = snapshot.docs.filter((snapshotDoc) => {
+    const fechaVisitante = obtenerFechaVisitante(snapshotDoc.data());
+
+    if (!fechaVisitante) {
+      return false;
+    }
+
+    const diferencia = inicioHoy - obtenerInicioDia(fechaVisitante).getTime();
+    return diferencia >= MILLISECONDS_PER_DAY;
+  });
+
+  if (!docsToDelete.length) {
+    return;
+  }
+
+  const batch = admin.firestore().batch();
+  docsToDelete.forEach((snapshotDoc) => batch.delete(snapshotDoc.ref));
+  await batch.commit();
 };
 
 const obtenerVisitantes = async (req, res) => {
   try {
+    await limpiarVisitantesAntiguos();
+
     const snapshot = await visitantesCollection().get();
     const visitantes = snapshot.docs.map(mapVisitante);
 
@@ -111,4 +143,5 @@ module.exports = {
   crearVisitante,
   actualizarVisitante,
   eliminarVisitante,
+  limpiarVisitantesAntiguos,
 };

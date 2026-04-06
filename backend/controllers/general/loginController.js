@@ -37,6 +37,15 @@ const login = async (req, res) => {
     }
 
     const uid = firebaseData.localId;
+    const authUser = await admin.auth().getUser(uid);
+
+    if (!authUser.emailVerified) {
+      return res.status(403).json({
+        mensaje:
+          "Debes verificar tu correo electronico antes de iniciar sesion. Revisa tu bandeja de entrada.",
+      });
+    }
+
     const userDoc = await admin.firestore().collection("users").doc(uid).get();
 
     if (!userDoc.exists) {

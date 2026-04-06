@@ -14,6 +14,7 @@ const initialForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
+  tarifaHora: "",
   password: "",
   confirmPassword: "",
 };
@@ -25,14 +26,11 @@ const roleDetails = {
   Administrador: {
     title: "Acceso administrativo",
     description: "Gestiona el panel completo y no requiere datos extra.",
-    checklist: [
-      "Control total del panel",
-      "Solo necesita datos personales y acceso",
-    ],
+    checklist: ["Control total del panel", "Solo necesita datos personales y acceso"],
   },
   Residente: {
     title: "Perfil de residente",
-    description: "Relaciona al usuario con su ubicación dentro del conjunto.",
+    description: "Relaciona al usuario con su ubicacion dentro del conjunto.",
     checklist: [
       "Registrar torre y apartamento",
       "Dejar listo el perfil para futuras actualizaciones",
@@ -40,18 +38,20 @@ const roleDetails = {
   },
   Vigilante: {
     title: "Perfil de vigilancia",
-    description: "Incluye datos operativos y un dato básico de emergencia.",
+    description:
+      "Incluye datos operativos, el tipo de sangre y la tarifa por hora para vehiculos visitantes.",
     checklist: [
       "Registrar zona de vigilancia",
       "Guardar tipo de sangre",
+      "Definir tarifa por hora",
     ],
   },
   default: {
     title: "Selecciona un rol",
     description: "Primero completa los datos base y luego elige el rol.",
     checklist: [
-      "Todos requieren nombres, apellidos y cédula",
-      "El formulario cambia según el rol",
+      "Todos requieren nombres, apellidos y cedula",
+      "El formulario cambia segun el rol",
     ],
   },
 };
@@ -69,6 +69,8 @@ function FormField({
   inputMode,
   autoComplete,
   disabled = false,
+  min,
+  step,
 }) {
   return (
     <div className="admin-register-field">
@@ -89,6 +91,8 @@ function FormField({
           inputMode={inputMode}
           autoComplete={autoComplete}
           disabled={disabled}
+          min={min}
+          step={step}
         />
       )}
     </div>
@@ -106,14 +110,19 @@ const getMissingFields = (currentForm) => {
   const fields = [
     { label: "nombres", value: currentForm.nombres },
     { label: "apellidos", value: currentForm.apellidos },
-    { label: "cédula", value: currentForm.cedula },
+    { label: "cedula", value: currentForm.cedula },
     { label: "correo", value: currentForm.email },
     { label: "rol", value: currentForm.rol },
-    { label: "contraseña", value: currentForm.password },
-    { label: "confirmación de contraseña", value: currentForm.confirmPassword },
+    { label: "contrasena", value: currentForm.password },
+    { label: "confirmacion de contrasena", value: currentForm.confirmPassword },
   ];
 
   return fields.filter((field) => !field.value.trim()).map((field) => field.label);
+};
+
+const parseTarifaHora = (value) => {
+  const parsedValue = Number(String(value).replace(",", "."));
+  return Number.isFinite(parsedValue) ? parsedValue : NaN;
 };
 
 export default function RegistroAdminPage() {
@@ -141,6 +150,7 @@ export default function RegistroAdminPage() {
         apartamento: value === "Residente" ? currentForm.apartamento : "",
         zonaVigilancia: value === "Vigilante" ? currentForm.zonaVigilancia : "",
         tipoSangre: value === "Vigilante" ? currentForm.tipoSangre : "",
+        tarifaHora: value === "Vigilante" ? currentForm.tarifaHora : "",
       };
     });
   };
@@ -165,17 +175,27 @@ export default function RegistroAdminPage() {
 
     if (
       currentForm.rol === "Vigilante" &&
-      (!currentForm.zonaVigilancia.trim() || !currentForm.tipoSangre.trim())
+      (!currentForm.zonaVigilancia.trim() ||
+        !currentForm.tipoSangre.trim() ||
+        !currentForm.tarifaHora.trim())
     ) {
-      return "Para un vigilante debes registrar zona de vigilancia y tipo de sangre.";
+      return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre y tarifa por hora.";
+    }
+
+    if (currentForm.rol === "Vigilante") {
+      const tarifaHora = parseTarifaHora(currentForm.tarifaHora);
+
+      if (Number.isNaN(tarifaHora) || tarifaHora <= 0) {
+        return "La tarifa por hora del vigilante debe ser mayor a 0.";
+      }
     }
 
     if (currentForm.password !== currentForm.confirmPassword) {
-      return "Las contraseñas no coinciden.";
+      return "Las contrasenas no coinciden.";
     }
 
     if (currentForm.password.length < 6) {
-      return "La contraseña debe tener al menos 6 caracteres.";
+      return "La contrasena debe tener al menos 6 caracteres.";
     }
 
     return "";
@@ -208,6 +228,7 @@ export default function RegistroAdminPage() {
       apartamento: form.rol === "Residente" ? form.apartamento.trim() : "",
       zonaVigilancia: form.rol === "Vigilante" ? form.zonaVigilancia.trim() : "",
       tipoSangre: form.rol === "Vigilante" ? form.tipoSangre.trim() : "",
+      tarifaHora: form.rol === "Vigilante" ? parseTarifaHora(form.tarifaHora) : "",
     };
 
     setLoading(true);
@@ -256,8 +277,8 @@ export default function RegistroAdminPage() {
           <section className="admin-register-form-card">
             <div className="admin-register-card-head">
               <span className="admin-register-kicker">Nuevo acceso</span>
-              <h2>Información del usuario</h2>
-              <p>Completa los datos base y agrega los campos que cambian según el rol.</p>
+              <h2>Informacion del usuario</h2>
+              <p>Completa los datos base y agrega los campos que cambian segun el rol.</p>
             </div>
 
             <form className="admin-register-form" onSubmit={handleSubmit}>
@@ -295,10 +316,10 @@ export default function RegistroAdminPage() {
                   <FormField
                     id="cedula"
                     name="cedula"
-                    label="Cédula"
+                    label="Cedula"
                     value={form.cedula}
                     onChange={handleChange}
-                    placeholder="Número de cédula"
+                    placeholder="Numero de cedula"
                     required
                     inputMode="numeric"
                     autoComplete="off"
@@ -322,8 +343,8 @@ export default function RegistroAdminPage() {
 
               <div className="admin-register-group">
                 <div className="admin-register-group-head">
-                  <h3>Rol y configuración</h3>
-                  <p>El formulario mostrará aquí los campos especiales.</p>
+                  <h3>Rol y configuracion</h3>
+                  <p>El formulario mostrara aqui los campos especiales.</p>
                 </div>
 
                 <div className="admin-register-grid">
@@ -390,7 +411,7 @@ export default function RegistroAdminPage() {
                         label="Zona de vigilancia"
                         value={form.zonaVigilancia}
                         onChange={handleChange}
-                        placeholder="Ej. Portería principal"
+                        placeholder="Ej. Porteria principal"
                         required
                         disabled={loading}
                       />
@@ -423,6 +444,21 @@ export default function RegistroAdminPage() {
                           <i className="ph-light ph-caret-down"></i>
                         </div>
                       </FormField>
+
+                      <FormField
+                        id="tarifaHora"
+                        type="number"
+                        name="tarifaHora"
+                        label="Tarifa por hora"
+                        value={form.tarifaHora}
+                        onChange={handleChange}
+                        placeholder="Ej. 5000"
+                        required
+                        min="1"
+                        step="0.01"
+                        inputMode="decimal"
+                        disabled={loading}
+                      />
                     </>
                   )}
 
@@ -441,7 +477,7 @@ export default function RegistroAdminPage() {
               <div className="admin-register-group">
                 <div className="admin-register-group-head">
                   <h3>Credenciales</h3>
-                  <p>Define la contraseña inicial del usuario.</p>
+                  <p>Define la contrasena inicial del usuario.</p>
                 </div>
 
                 <div className="admin-register-grid">
@@ -449,10 +485,10 @@ export default function RegistroAdminPage() {
                     id="password"
                     type="password"
                     name="password"
-                    label="Contraseña"
+                    label="Contrasena"
                     value={form.password}
                     onChange={handleChange}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Minimo 6 caracteres"
                     required
                     autoComplete="new-password"
                     disabled={loading}
@@ -462,10 +498,10 @@ export default function RegistroAdminPage() {
                     id="confirmPassword"
                     type="password"
                     name="confirmPassword"
-                    label="Confirmar contraseña"
+                    label="Confirmar contrasena"
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Repite la contraseña"
+                    placeholder="Repite la contrasena"
                     required
                     autoComplete="new-password"
                     disabled={loading}

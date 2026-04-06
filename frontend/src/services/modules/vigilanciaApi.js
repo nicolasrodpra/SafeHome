@@ -1,30 +1,26 @@
 import { apiDelete, apiGet, apiPost, apiPut } from "../apiClient";
 
-// Este archivo concentra todas las llamadas del módulo de vigilancia.
-// Así cada pantalla solo importa la operación que necesita.
 export const getResumenVigilancia = async () =>
   apiGet("/resumen-vigilancia", "No se pudo cargar el resumen de vigilancia.");
 
 export const getVehiculos = async () =>
-  apiGet("/vehiculos", "No se pudo cargar el registro de vehículos.");
+  apiGet("/vehiculos", "No se pudo cargar el registro de vehiculos.");
 
 export const createVehiculo = async (payload) => {
-  const data = await apiPost("/vehiculos", payload, "No se pudo registrar el vehículo.");
+  const data = await apiPost("/vehiculos", payload, "No se pudo registrar el vehiculo.");
   return data.vehiculo;
 };
 
 export const updateVehiculo = async (id, payload) => {
-  const data = await apiPut(
-    `/vehiculos/${id}`,
-    payload,
-    "No se pudo actualizar el vehículo."
-  );
-
+  const data = await apiPut(`/vehiculos/${id}`, payload, "No se pudo actualizar el vehiculo.");
   return data.vehiculo;
 };
 
+export const registerVehiculoSalida = async (id, payload) =>
+  apiPost(`/vehiculos/${id}/salida`, payload, "No se pudo registrar la salida del vehiculo.");
+
 export const deleteVehiculo = async (id) =>
-  apiDelete(`/vehiculos/${id}`, "No se pudo eliminar el vehículo.");
+  apiDelete(`/vehiculos/${id}`, "No se pudo eliminar el vehiculo.");
 
 export const getCorrespondencia = async () =>
   apiGet("/correspondencia", "No se pudo cargar la correspondencia.");
@@ -49,6 +45,13 @@ export const updateCorrespondencia = async (id, payload) => {
   return data.correspondencia;
 };
 
+export const markCorrespondenciaEntregada = async (id, payload) =>
+  apiPost(
+    `/correspondencia/${id}/entregar`,
+    payload,
+    "No se pudo registrar la entrega de la correspondencia."
+  );
+
 export const deleteCorrespondencia = async (id) =>
   apiDelete(`/correspondencia/${id}`, "No se pudo eliminar la correspondencia.");
 
@@ -61,12 +64,7 @@ export const createVisitante = async (payload) => {
 };
 
 export const updateVisitante = async (id, payload) => {
-  const data = await apiPut(
-    `/visitantes/${id}`,
-    payload,
-    "No se pudo actualizar el visitante."
-  );
-
+  const data = await apiPut(`/visitantes/${id}`, payload, "No se pudo actualizar el visitante.");
   return data.visitante;
 };
 

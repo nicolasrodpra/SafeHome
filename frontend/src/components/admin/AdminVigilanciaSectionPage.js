@@ -2,10 +2,24 @@ import { useEffect, useMemo, useState } from "react";
 import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminVigilanciaSection.css";
 
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
 // Este modal solo muestra la información completa del registro.
 // No permite editar nada; por eso se usa como vista de solo lectura.
 function DetailModal({ isOpen, item, config, onClose }) {
   if (!isOpen || !item) return null;
+
+  const readFieldValue = (field) => {
+    if (typeof field.getValue === "function") {
+      return field.getValue(item);
+    }
+
+    const value = item[field.key];
+    return value === 0 || value ? value : "Sin dato";
+  };
 
   return (
     <div className="admin-readonly-modal-overlay" onClick={onClose}>
@@ -35,7 +49,7 @@ function DetailModal({ isOpen, item, config, onClose }) {
           {config.detailFields.map((field) => (
             <div key={field.key} className="admin-readonly-detail-item">
               <span>{field.label}</span>
-              <strong>{item[field.key] || "Sin dato"}</strong>
+              <strong>{readFieldValue(field)}</strong>
             </div>
           ))}
         </div>
@@ -49,6 +63,12 @@ function DetailModal({ isOpen, item, config, onClose }) {
 export default function AdminVigilanciaSectionPage({ config }) {
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [filterValues, setFilterValues] = useState({});
+
+  useEffect(() => {
+    const nextFilters = Object.fromEntries((config.filters || []).map((filter) => [filter.key, ""]));
+    setFilterValues(nextFilters);
+  }, [config]);
 
   useEffect(() => {
     // Cargamos los registros del módulo activo usando la función
@@ -65,8 +85,30 @@ export default function AdminVigilanciaSectionPage({ config }) {
     loadItems();
   }, [config]);
 
+  const filteredItems = useMemo(() => {
+    if (!config.filters?.length) {
+      return items;
+    }
+
+    return items.filter((item) =>
+      config.filters.every((filter) => {
+        const searchValue = normalizeText(filterValues[filter.key]);
+
+        if (!searchValue) {
+          return true;
+        }
+
+        if (typeof filter.matches === "function") {
+          return filter.matches(item, searchValue);
+        }
+
+        return normalizeText(item[filter.key]).includes(searchValue);
+      })
+    );
+  }, [config, filterValues, items]);
+
   // El resumen superior se recalcula cuando cambian los datos cargados.
-  const counters = useMemo(() => config.getCounters(items), [config, items]);
+  const counters = useMemo(() => config.getCounters(filteredItems), [config, filteredItems]);
 
   return (
     <InternalLayout>
@@ -81,8 +123,8 @@ export default function AdminVigilanciaSectionPage({ config }) {
           </div>
 
           <div className="admin-vigilancia-page-summary">
-            <span>Total de registros</span>
-            <strong>{items.length}</strong>
+            <span>Registros visibles</span>
+            <strong>{filteredItems.length}</strong>
           </div>
         </header>
 
@@ -111,6 +153,31 @@ export default function AdminVigilanciaSectionPage({ config }) {
             </div>
           </div>
 
+          {config.filters?.length ? (
+            <div
+              className={`admin-vigilancia-filters ${
+                config.filters.length === 1 ? "single-column" : ""
+              }`}
+            >
+              {config.filters.map((filter) => (
+                <div key={filter.key} className="admin-vigilancia-search">
+                  <i className={`ph-light ${filter.icon || "ph-magnifying-glass"}`}></i>
+                  <input
+                    type="text"
+                    value={filterValues[filter.key] || ""}
+                    onChange={(event) =>
+                      setFilterValues((prev) => ({
+                        ...prev,
+                        [filter.key]: event.target.value,
+                      }))
+                    }
+                    placeholder={filter.placeholder || `Buscar por ${filter.label?.toLowerCase()}`}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
+
           <div className="admin-vigilancia-table-wrap">
             <table className="admin-vigilancia-table">
               <thead>
@@ -122,14 +189,16 @@ export default function AdminVigilanciaSectionPage({ config }) {
                 </tr>
               </thead>
               <tbody>
-                {items.length === 0 ? (
+                {filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={config.columns.length + 1} className="admin-vigilancia-empty-row">
-                      {config.emptyMessage}
+                      {items.length > 0
+                        ? "No hay registros que coincidan con la busqueda."
+                        : config.emptyMessage}
                     </td>
                   </tr>
                 ) : (
-                  items.map((item) => (
+                  filteredItems.map((item) => (
                     <tr key={item.id}>
                       {config.columns.map((column) => (
                         <td key={`${item.id}-${column.key}`}>

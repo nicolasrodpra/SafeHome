@@ -88,6 +88,12 @@ const buildProfileFromSource = (source = {}, session = null) => {
     apartamento: source.apartamento || session?.apartamento || "",
     zonaVigilancia: source.zonaVigilancia || session?.zonaVigilancia || "",
     tipoSangre: source.tipoSangre || session?.tipoSangre || "",
+    tarifaHora:
+      typeof source.tarifaHora === "number"
+        ? source.tarifaHora
+        : typeof session?.tarifaHora === "number"
+          ? session.tarifaHora
+          : 0,
   };
 };
 
@@ -179,6 +185,7 @@ export default function PerfilUsuarioPage() {
       return [
         { label: "Zona de vigilancia", value: profile.zonaVigilancia },
         { label: "Tipo de sangre", value: profile.tipoSangre },
+        { label: "Tarifa por hora", value: profile.tarifaHora ? `$${profile.tarifaHora}` : "" },
       ];
     }
 
