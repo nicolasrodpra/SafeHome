@@ -599,6 +599,55 @@ const answerByRole = (session, question, context) => {
   return "No tengo respuestas configuradas para este rol.";
 };
 
+const buildFallbackContext = (session) => {
+  if (session.rol === "Administrador") {
+    return {
+      modulo: "administracion",
+      resumen: {
+        totalResidentes: 0,
+        mensajesPendientes: 0,
+        reservasRegistradas: 0,
+        visitantesHoy: 0,
+        vehiculosHoy: 0,
+        correspondenciaHoy: 0,
+      },
+      comunicados: [],
+      mensajes: [],
+      reservas: [],
+    };
+  }
+
+  if (session.rol === "Residente") {
+    return {
+      modulo: "residente",
+      manual: {
+        disponible: false,
+      },
+      comunicados: [],
+      mensajes: [],
+      reservas: [],
+    };
+  }
+
+  if (session.rol === "Vigilante") {
+    return {
+      modulo: "vigilancia",
+      resumen: {
+        visitantesHoy: 0,
+        vehiculosHoy: 0,
+        correspondenciaHoy: 0,
+      },
+      visitantes: [],
+      vehiculos: [],
+      correspondencia: [],
+    };
+  }
+
+  return {
+    modulo: "general",
+  };
+};
+
 const chatWithAssistant = async (req, res) => {
   const message = normalizeText(req.body?.message);
   const session = validateSession(req.body?.session);
@@ -611,16 +660,40 @@ const chatWithAssistant = async (req, res) => {
     return res.status(400).json({ mensaje: "No se pudo identificar la sesión del usuario." });
   }
 
+  let context = buildFallbackContext(session);
+
   try {
-    const context = await buildContextForRole(session);
+    context = await buildContextForRole(session);
+  } catch (error) {
+    console.error("Asistente: no se pudo construir el contexto dinamico.", error.message);
+  }
+
+  try {
     const groqMessages = buildGroqMessages(session, message, context);
     const answer = await callGroqChat(groqMessages);
 
     return res.status(200).json({
       answer,
       model: DEFAULT_GROQ_MODEL,
+      source: "groq",
     });
   } catch (error) {
+    console.error("Asistente: respuesta IA no disponible, usando fallback local.", error.message);
+
+    try {
+      const fallbackAnswer = answerByRole(session, message, context);
+
+      return res.status(200).json({
+        answer: fallbackAnswer,
+        model: "local-fallback",
+        source: "fallback",
+      });
+    } catch (fallbackError) {
+      return res.status(500).json({
+        mensaje: "No se pudo responder en este momento desde el asistente virtual.",
+      });
+    }
+
     return res.status(500).json({
       mensaje: error.message || "Ocurrió un error al consultar el asistente virtual.",
     });

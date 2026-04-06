@@ -53,7 +53,7 @@ const dashboardCards = [
     icon: "ph-bell",
     title: "Comunicados",
     description: "Recibe y consulta los comunicados enviados por la administración del conjunto.",
-    to: "/adminComunicados",
+    to: "/vigilanteComunicados",
   },
 ];
 

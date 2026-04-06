@@ -34,21 +34,61 @@ const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
-  { icon: "ph-bell", label: "Comunicados", to: "/adminComunicados" },
+  { icon: "ph-bell", label: "Comunicados", to: "/vigilanteComunicados" },
 ];
 
 function SidebarItem({ item, pathname }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
+  const [flyoutStyle, setFlyoutStyle] = useState({});
+  const groupRef = useRef(null);
 
   useEffect(() => {
     setSubmenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!submenuOpen) {
+      return undefined;
+    }
+
+    const syncFlyoutPosition = () => {
+      if (!groupRef.current || window.innerWidth <= 720) {
+        setFlyoutStyle({});
+        return;
+      }
+
+      const rect = groupRef.current.getBoundingClientRect();
+      const flyoutWidth = 220;
+      const viewportPadding = 16;
+      const preferredLeft = rect.right + 8;
+      const left = Math.min(
+        Math.max(preferredLeft, viewportPadding),
+        window.innerWidth - flyoutWidth - viewportPadding
+      );
+      const top = Math.max(rect.top - 6, viewportPadding);
+
+      setFlyoutStyle({
+        left: `${left}px`,
+        top: `${top}px`,
+      });
+    };
+
+    syncFlyoutPosition();
+    window.addEventListener("resize", syncFlyoutPosition);
+    window.addEventListener("scroll", syncFlyoutPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", syncFlyoutPosition);
+      window.removeEventListener("scroll", syncFlyoutPosition, true);
+    };
+  }, [submenuOpen]);
 
   if (item.children?.length) {
     const isActive = item.children.some((child) => pathname === child.to);
 
     return (
       <div
+        ref={groupRef}
         className={`internal-nav-group ${submenuOpen ? "open" : ""} ${isActive ? "active" : ""}`}
         onMouseEnter={() => setSubmenuOpen(true)}
         onMouseLeave={() => setSubmenuOpen(false)}
@@ -75,7 +115,12 @@ function SidebarItem({ item, pathname }) {
           <i className="ph-light ph-caret-right internal-nav-parent-caret" aria-hidden="true"></i>
         </button>
 
-        <div className="internal-nav-flyout" role="menu" aria-label={item.label}>
+        <div
+          className="internal-nav-flyout"
+          role="menu"
+          aria-label={item.label}
+          style={flyoutStyle}
+        >
           {item.children.map((child) => {
             const childIsActive = pathname === child.to;
 
@@ -212,6 +257,7 @@ export default function InternalLayout({ children }) {
             className="internal-assistant-button"
             onClick={() => setIsAssistantOpen(true)}
           >
+            <i className="ph-light ph-chat-circle-dots" aria-hidden="true"></i>
             Iniciar
           </button>
         </div>

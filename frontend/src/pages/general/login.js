@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import illustration from "../../assets/Login.png";
+import illustration from "../../assets/login.png";
 import { loginUser } from "../../services/modules/authApi";
 import { saveSession } from "../../services/sessionService";
 import "../../styles/general/login.css";

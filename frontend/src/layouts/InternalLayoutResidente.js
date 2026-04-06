@@ -139,6 +139,7 @@ export default function InternalLayoutResidente({ children }) {
             className="internal-assistant-button"
             onClick={() => setIsAssistantOpen(true)}
           >
+            <i className="ph-light ph-chat-circle-dots" aria-hidden="true"></i>
             Iniciar
           </button>
         </div>

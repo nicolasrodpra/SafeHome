@@ -72,17 +72,36 @@ const buildInitialMessages = (copy) => [
   },
 ];
 
+const buildAssistantErrorMessage = (error) => {
+  const rawMessage = String(error?.message || "").toLowerCase();
+
+  if (
+    rawMessage.includes("backend") ||
+    rawMessage.includes("servidor") ||
+    rawMessage.includes("ruta") ||
+    rawMessage.includes("groq") ||
+    rawMessage.includes("conectar") ||
+    rawMessage.includes("ia")
+  ) {
+    return "No pude responder en este momento, pero puedes intentarlo de nuevo en unos segundos.";
+  }
+
+  return (
+    error?.message || "No pude responder en este momento. Intenta de nuevo en unos segundos."
+  );
+};
+
 export default function AssistantChatPanel({ isOpen, onClose, role, userName, session }) {
   const copy = CHAT_COPY_BY_ROLE[role] || CHAT_COPY_BY_ROLE.default;
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState(() => buildInitialMessages(copy));
-  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     setMessages(buildInitialMessages(copy));
     setQuestion("");
-    setSuggestionsOpen(true);
+    setSuggestionsOpen(false);
   }, [copy]);
 
   const greetingName = useMemo(() => {
@@ -135,9 +154,7 @@ export default function AssistantChatPanel({ isOpen, onClose, role, userName, se
         {
           id: `assistant-error-${Date.now() + 1}`,
           sender: "assistant",
-          text:
-            error.message ||
-            "No pude responder en este momento. Intenta de nuevo en unos segundos.",
+          text: buildAssistantErrorMessage(error),
         },
       ]);
     } finally {

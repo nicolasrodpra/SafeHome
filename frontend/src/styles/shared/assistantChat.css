@@ -31,8 +31,8 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at top left, rgba(111, 33, 155, 0.12), transparent 30%),
-    linear-gradient(180deg, #fdfbff 0%, #f6f1fa 100%);
+    radial-gradient(circle at top left, rgba(70, 6, 105, 0.1), transparent 30%),
+    linear-gradient(180deg, #fdfcff 0%, #f7f3fb 100%);
   border-left: 1px solid rgba(70, 6, 105, 0.12);
   box-shadow: -24px 0 50px rgba(25, 17, 41, 0.14);
   transform: translateX(100%);
@@ -61,8 +61,8 @@
   gap: 12px;
   padding: 8px 8px 8px 16px;
   border-radius: 18px;
-  background: rgba(111, 33, 155, 0.12);
-  border: 1px solid rgba(111, 33, 155, 0.1);
+  background: rgba(70, 6, 105, 0.08);
+  border: 1px solid rgba(70, 6, 105, 0.1);
 }
 
 .assistant-chat-header-copy h2 {
@@ -87,7 +87,7 @@
   min-height: 36px;
   padding: 0 4px;
   background: transparent;
-  color: #6f219b;
+  color: #460669;
   font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -99,10 +99,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(111, 33, 155, 0.1);
+  border: 1px solid rgba(70, 6, 105, 0.1);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.72);
-  color: #7a5e8c;
+  color: #6d6481;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
@@ -110,8 +110,8 @@
 
 .assistant-chat-close:hover {
   background: rgba(255, 255, 255, 0.92);
-  color: #6f219b;
-  border-color: rgba(111, 33, 155, 0.16);
+  color: #460669;
+  border-color: rgba(70, 6, 105, 0.16);
 }
 
 .assistant-chat-close i {
@@ -134,10 +134,10 @@
   gap: 8px;
   min-height: 38px;
   padding: 0 14px;
-  border: 1px solid rgba(111, 33, 155, 0.1);
+  border: 1px solid rgba(70, 6, 105, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
-  color: #5a4b73;
+  color: #574e69;
   font-family: "Poppins", sans-serif;
   font-size: 0.78rem;
   font-weight: 700;
@@ -154,14 +154,14 @@
 }
 
 .assistant-chat-suggestions-toggle:hover {
-  border-color: rgba(111, 33, 155, 0.18);
-  color: #6f219b;
+  border-color: rgba(70, 6, 105, 0.18);
+  color: #460669;
 }
 
 .assistant-chat-suggestions {
   margin-top: 12px;
   padding: 16px;
-  border: 1px solid rgba(111, 33, 155, 0.08);
+  border: 1px solid rgba(70, 6, 105, 0.08);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 14px 24px rgba(31, 22, 48, 0.04);
@@ -185,7 +185,7 @@
 
 .assistant-chat-suggestion {
   padding: 10px 14px;
-  border: 1px solid rgba(111, 33, 155, 0.1);
+  border: 1px solid rgba(70, 6, 105, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.88);
   color: #46395d;
@@ -199,7 +199,7 @@
 
 .assistant-chat-suggestion:hover {
   transform: translateY(-1px);
-  border-color: rgba(111, 33, 155, 0.2);
+  border-color: rgba(70, 6, 105, 0.2);
   background: #ffffff;
 }
 
@@ -249,12 +249,12 @@
 .assistant-chat-message.is-assistant p {
   background: rgba(255, 255, 255, 0.94);
   color: #2f2741;
-  border: 1px solid rgba(111, 33, 155, 0.08);
+  border: 1px solid rgba(70, 6, 105, 0.08);
   border-top-left-radius: 10px;
 }
 
 .assistant-chat-message.is-user p {
-  background: linear-gradient(135deg, #5d1886 0%, #7a2ba4 100%);
+  background: #460669;
   color: #ffffff;
   border-top-right-radius: 10px;
 }
@@ -284,7 +284,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 14px;
-  border: 1px solid rgba(111, 33, 155, 0.08);
+  border: 1px solid rgba(70, 6, 105, 0.08);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 14px 26px rgba(31, 22, 48, 0.04);
@@ -315,17 +315,17 @@
   padding: 0 20px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #5d1886 0%, #77259e 100%);
+  background: #460669;
   color: #ffffff;
   font-family: "Poppins", sans-serif;
   font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 14px 22px rgba(111, 33, 155, 0.2);
+  box-shadow: 0 14px 22px rgba(70, 6, 105, 0.2);
 }
 
 .assistant-chat-submit:hover {
-  background: linear-gradient(135deg, #54147a 0%, #6e2292 100%);
+  background: #5b0a87;
 }
 
 @media (max-width: 640px) {

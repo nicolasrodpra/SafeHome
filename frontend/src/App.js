@@ -25,7 +25,7 @@ import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
 
 const privateRoutes = [
   { path: "/registroUsuario", element: <AdminRegister />, roles: ["Administrador"] },
-  { path: "/adminComunicados", element: <AdminComunicados />, roles: ["Administrador"] },
+  { path: "/adminComunicados", element: <AdminComunicados />, roles: ["Administrador", "Vigilante"] },
   { path: "/adminMensajeria", element: <AdminMensajeriaPage />, roles: ["Administrador"] },
   { path: "/adminResidentes", element: <AdminResidentes />, roles: ["Administrador"] },
   { path: "/adminReservas", element: <AdminReservas />, roles: ["Administrador"] },
@@ -65,6 +65,7 @@ const privateRoutes = [
   { path: "/registroCorrespondencia", element: <RegistroCorrespondencia />, roles: ["Vigilante"] },
   { path: "/registroVisitantes", element: <RegistroVisitantes />, roles: ["Vigilante"] },
   { path: "/registroVehiculos", element: <RegistroVehiculos />, roles: ["Vigilante"] },
+  { path: "/vigilanteComunicados", element: <AdminComunicados />, roles: ["Vigilante"] },
 ];
 
 function App() {
