@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import illustration from "../../assets/login.png";
+import illustration from "../../assets/loginFamily.jpg";
 import { loginUser } from "../../services/modules/authApi";
 import { saveSession } from "../../services/sessionService";
 import "../../styles/general/login.css";
@@ -29,7 +29,7 @@ export default function Login() {
 
       if (!session?.rol) {
         throw new Error(
-          "No se pudo identificar el rol del usuario. Reinicia el backend e inténtalo de nuevo."
+          "No se pudo identificar el rol del usuario. Reinicia el backend e intentalo de nuevo."
         );
       }
 
@@ -38,7 +38,7 @@ export default function Login() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "No se pudo iniciar sesión.",
+        text: error.message || "No se pudo iniciar sesion.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -49,7 +49,7 @@ export default function Login() {
     <div className="register-wrapper">
       <div className="left-panel">
         <div className="circle"></div>
-        <img className="illustration" src={illustration} alt="Ilustración de inicio de sesión" />
+        <img className="illustration" src={illustration} alt="Ilustracion de inicio de sesion" />
         <Link to="/" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
         </Link>
@@ -58,7 +58,7 @@ export default function Login() {
       <div className="right-panel">
         <div className="form-box">
           <p className="welcome">Bienvenido</p>
-          <h1 className="title">Inicia sesión</h1>
+          <h1 className="title">Inicia sesion</h1>
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
@@ -74,14 +74,14 @@ export default function Login() {
             <i className="bi bi-lock"></i>
             <input
               type="password"
-              placeholder="Contraseña"
+              placeholder="Contrasena"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </div>
 
           <button type="button" className="btn-register" onClick={handleLogin}>
-            Iniciar sesión
+            Iniciar sesion
           </button>
         </div>
       </div>

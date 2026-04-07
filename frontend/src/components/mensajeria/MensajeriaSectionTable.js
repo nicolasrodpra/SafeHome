@@ -16,8 +16,6 @@ const MailIcon = () => (
   </svg>
 );
 
-// Convertimos el texto del estado a una clase CSS segura
-// para aplicar el color correcto del chip.
 const getStatusClassName = (status) =>
   String(status || "")
     .toLowerCase()
@@ -28,8 +26,6 @@ export function MensajeriaStatusBadge({ status }) {
   return <span className={`mensajeria-status-chip ${getStatusClassName(status)}`}>{status}</span>;
 }
 
-// En la vista del residente no siempre hay respuesta disponible.
-// Este bloque resume ese estado en una palabra corta.
 function ResidentResponseState({ item }) {
   if (!isMessageRespondable(item.type)) {
     return <span className="mensajeria-response-state neutral">No aplica</span>;
@@ -42,8 +38,6 @@ function ResidentResponseState({ item }) {
   return <span className="mensajeria-response-state pending">Pendiente</span>;
 }
 
-// Esta tabla se reutiliza tanto en administración como en residente.
-// Por eso algunas columnas cambian según el modo recibido.
 export default function MensajeriaSectionTable({
   title,
   description,
@@ -52,6 +46,8 @@ export default function MensajeriaSectionTable({
   mode = "admin",
   onOpen,
 }) {
+  const usesAdminLayout = mode === "admin" || mode === "viewer";
+
   return (
     <section className="mensajeria-section-card">
       <div className="mensajeria-section-head">
@@ -75,11 +71,11 @@ export default function MensajeriaSectionTable({
             <thead>
               <tr>
                 <th>Estado</th>
-                {mode === "admin" ? <th>Información</th> : <th>Asunto</th>}
-                <th>{mode === "admin" ? "Asunto" : "Fecha"}</th>
-                <th>{mode === "admin" ? "Fecha" : "Hora"}</th>
-                <th>{mode === "admin" ? "Hora" : "Respuesta"}</th>
-                <th>Acción</th>
+                {usesAdminLayout ? <th>Informacion</th> : <th>Asunto</th>}
+                <th>{usesAdminLayout ? "Asunto" : "Fecha"}</th>
+                <th>{usesAdminLayout ? "Fecha" : "Hora"}</th>
+                <th>{usesAdminLayout ? "Hora" : "Respuesta"}</th>
+                <th>Accion</th>
               </tr>
             </thead>
             <tbody>
@@ -89,7 +85,7 @@ export default function MensajeriaSectionTable({
                     <MensajeriaStatusBadge status={item.status} />
                   </td>
 
-                  {mode === "admin" ? (
+                  {usesAdminLayout ? (
                     <td>
                       <div className="mensajeria-info-cell">
                         <span className="mensajeria-info-name">{item.residentName}</span>
@@ -100,14 +96,14 @@ export default function MensajeriaSectionTable({
                     <td className="mensajeria-asunto-cell">{item.subject}</td>
                   )}
 
-                  {mode === "admin" ? (
+                  {usesAdminLayout ? (
                     <td className="mensajeria-asunto-cell">{item.subject}</td>
                   ) : (
                     <td>{item.dateLabel}</td>
                   )}
 
-                  {mode === "admin" ? <td>{item.dateLabel}</td> : <td>{item.timeLabel}</td>}
-                  {mode === "admin" ? (
+                  {usesAdminLayout ? <td>{item.dateLabel}</td> : <td>{item.timeLabel}</td>}
+                  {usesAdminLayout ? (
                     <td>{item.timeLabel}</td>
                   ) : (
                     <td>

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import Swal from "sweetalert2";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
+import { getMensajeria, getMessageTypeLabel } from "../services/modules/mensajeriaApi";
 import { getUserProfile } from "../services/modules/userApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
@@ -34,6 +36,7 @@ const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
+  { icon: "ph-megaphone", label: "Quejas", to: "/vigilanteQuejas", notificationKey: "quejas" },
   { icon: "ph-bell", label: "Comunicados", to: "/vigilanteComunicados" },
 ];
 
@@ -146,8 +149,10 @@ function SidebarItem({ item, pathname }) {
 
     return (
       <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
-        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-        <span>{item.label}</span>
+        <span className="internal-nav-link-copy">
+          <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
+          <span>{item.label}</span>
+        </span>
       </Link>
     );
   }
@@ -163,7 +168,11 @@ export default function InternalLayout({ children }) {
   const [profileRole, setProfileRole] = useState(session?.rol || null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [pendingQuejasCount, setPendingQuejasCount] = useState(0);
+  const [hasNewQuejas, setHasNewQuejas] = useState(false);
   const userMenuRef = useRef(null);
+  const hasInitializedQuejasRef = useRef(false);
+  const lastPendingQuejasRef = useRef(0);
   const fechaActual = getFechaActual();
 
   useEffect(() => {
@@ -208,6 +217,128 @@ export default function InternalLayout({ children }) {
   }, [session]);
 
   useEffect(() => {
+    if (profileRole !== "Vigilante" || !session?.uid) {
+      setPendingQuejasCount(0);
+      setHasNewQuejas(false);
+      hasInitializedQuejasRef.current = false;
+      lastPendingQuejasRef.current = 0;
+      return undefined;
+    }
+
+    const storageKey = `safehome_vigilante_seen_quejas_${session.uid}`;
+    let cancelled = false;
+
+    const showNewQuejasNotification = async (newCount) => {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: newCount === 1 ? "Tienes una nueva queja" : `Tienes ${newCount} nuevas quejas`,
+        text: "Revisa la campana para abrir la bandeja de quejas.",
+        showConfirmButton: false,
+        timer: 4500,
+        timerProgressBar: true,
+      });
+
+      if (!("Notification" in window)) {
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        const notification = new Notification("SafeHome", {
+          body:
+            newCount === 1
+              ? "Llego una nueva queja al panel de vigilancia."
+              : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
+        });
+
+        notification.onclick = () => {
+          window.focus();
+          navigate("/vigilanteQuejas");
+          notification.close();
+        };
+
+        return;
+      }
+
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          const notification = new Notification("SafeHome", {
+            body:
+              newCount === 1
+                ? "Llego una nueva queja al panel de vigilancia."
+                : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
+          });
+
+          notification.onclick = () => {
+            window.focus();
+            navigate("/vigilanteQuejas");
+            notification.close();
+          };
+        }
+      }
+    };
+
+    const syncQuejas = async () => {
+      try {
+        const messages = await getMensajeria();
+        if (cancelled) return;
+
+        const pendingQuejas = messages.filter(
+          (item) => getMessageTypeLabel(item.type) === "Queja" && item.status === "Pendiente"
+        );
+        const nextCount = pendingQuejas.length;
+        const storedSeenValue = window.localStorage.getItem(storageKey);
+
+        if (!hasInitializedQuejasRef.current) {
+          hasInitializedQuejasRef.current = true;
+          lastPendingQuejasRef.current = nextCount;
+          if (storedSeenValue === null) {
+            window.localStorage.setItem(storageKey, String(nextCount));
+          }
+        }
+
+        const seenCount = Number(window.localStorage.getItem(storageKey) || "0");
+        const newCount = Math.max(nextCount - Math.max(seenCount, lastPendingQuejasRef.current), 0);
+
+        setPendingQuejasCount(nextCount);
+        setHasNewQuejas(nextCount > seenCount);
+
+        if (newCount > 0) {
+          await showNewQuejasNotification(newCount);
+        }
+
+        lastPendingQuejasRef.current = nextCount;
+      } catch (error) {
+        if (!cancelled) {
+          setPendingQuejasCount(0);
+          setHasNewQuejas(false);
+        }
+      }
+    };
+
+    syncQuejas();
+    const intervalId = window.setInterval(syncQuejas, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [navigate, profileRole, session?.uid]);
+
+  useEffect(() => {
+    if (profileRole !== "Vigilante" || pathname !== "/vigilanteQuejas" || !session?.uid) {
+      return;
+    }
+
+    const storageKey = `safehome_vigilante_seen_quejas_${session.uid}`;
+    window.localStorage.setItem(storageKey, String(pendingQuejasCount));
+    lastPendingQuejasRef.current = pendingQuejasCount;
+    setHasNewQuejas(false);
+  }, [pathname, pendingQuejasCount, profileRole, session?.uid]);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
@@ -239,13 +370,13 @@ export default function InternalLayout({ children }) {
           SafeHome
         </Link>
 
-        <ul className="internal-nav-menu">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <SidebarItem item={item} pathname={pathname} />
-            </li>
-          ))}
-        </ul>
+          <ul className="internal-nav-menu">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <SidebarItem item={item} pathname={pathname} />
+              </li>
+            ))}
+          </ul>
 
         <div className="internal-sidebar-assistant">
           <img src={asistenteVirtual} alt="Asistente virtual" />
@@ -272,7 +403,6 @@ export default function InternalLayout({ children }) {
 
           <div className="internal-topbar-right">
             <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
-            <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
             <button
               type="button"
               className="internal-icon-button"
@@ -281,6 +411,18 @@ export default function InternalLayout({ children }) {
               title="Cerrar sesion"
             >
               <i className="ph-light ph-sign-out internal-topbar-icon"></i>
+            </button>
+            <button
+              type="button"
+              className="internal-topbar-alert"
+              onClick={() => navigate("/vigilanteQuejas")}
+              aria-label="Ver quejas"
+              title="Ver quejas"
+            >
+              <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
+              {profileRole === "Vigilante" && hasNewQuejas && pendingQuejasCount > 0 && (
+                <span className="internal-topbar-alert-badge">{pendingQuejasCount}</span>
+              )}
             </button>
             <div className="internal-user-menu" ref={userMenuRef}>
               <button

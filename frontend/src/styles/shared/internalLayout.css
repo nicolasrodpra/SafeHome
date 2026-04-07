@@ -72,6 +72,7 @@
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 10px 11px;
   border: none;
@@ -311,6 +312,39 @@
   align-items: center;
   gap: 10px;
   font-family: "Poppins", sans-serif;
+}
+
+.internal-topbar-alert {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.internal-topbar-alert-badge {
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: #e33d68;
+  color: #ffffff;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .internal-topbar-right > .internal-topbar-icon,

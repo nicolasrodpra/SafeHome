@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import ilustracionMenu from "../../assets/inicioHero.png";
+import ilustracionMenu from "../../assets/adminHero.png";
 import AdminVigilanciaModal from "../../components/admin/AdminVigilanciaModal";
 import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminMenu.css";

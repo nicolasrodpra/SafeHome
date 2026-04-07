@@ -4,6 +4,7 @@ import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
+import { getComunicados } from "../services/modules/comunicadosApi";
 import { getUserProfile } from "../services/modules/userApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
@@ -26,16 +27,20 @@ function SidebarItem({ item, pathname }) {
 
     return (
       <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
-        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-        <span>{item.label}</span>
+        <span className="internal-nav-link-copy">
+          <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
+          <span>{item.label}</span>
+        </span>
       </Link>
     );
   }
 
   return (
     <button type="button" className="internal-nav-link internal-nav-placeholder" disabled>
-      <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-      <span>{item.label}</span>
+      <span className="internal-nav-link-copy">
+        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
+        <span>{item.label}</span>
+      </span>
     </button>
   );
 }
@@ -48,7 +53,11 @@ export default function InternalLayoutResidente({ children }) {
   const [profileRole, setProfileRole] = useState(session?.rol || "Residente");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [newComunicadosCount, setNewComunicadosCount] = useState(0);
+  const [hasNewComunicados, setHasNewComunicados] = useState(false);
   const userMenuRef = useRef(null);
+  const hasInitializedComunicadosRef = useRef(false);
+  const lastComunicadosCountRef = useRef(0);
   const fechaActual = getFechaActual();
 
   useEffect(() => {
@@ -91,6 +100,69 @@ export default function InternalLayoutResidente({ children }) {
       active = false;
     };
   }, [session]);
+
+  useEffect(() => {
+    if (!session?.uid) {
+      setNewComunicadosCount(0);
+      setHasNewComunicados(false);
+      hasInitializedComunicadosRef.current = false;
+      lastComunicadosCountRef.current = 0;
+      return undefined;
+    }
+
+    const storageKey = `safehome_residente_seen_comunicados_${session.uid}`;
+    let cancelled = false;
+
+    const syncComunicados = async () => {
+      try {
+        const comunicados = await getComunicados();
+        if (cancelled) return;
+
+        const nextCount = comunicados.length;
+        const storedSeenValue = window.localStorage.getItem(storageKey);
+
+        if (!hasInitializedComunicadosRef.current) {
+          hasInitializedComunicadosRef.current = true;
+          lastComunicadosCountRef.current = nextCount;
+          if (storedSeenValue === null) {
+            window.localStorage.setItem(storageKey, String(nextCount));
+          }
+        }
+
+        const seenCount = Number(window.localStorage.getItem(storageKey) || "0");
+        const unseenCount = Math.max(nextCount - seenCount, 0);
+
+        setNewComunicadosCount(unseenCount);
+        setHasNewComunicados(nextCount > seenCount);
+        lastComunicadosCountRef.current = nextCount;
+      } catch (error) {
+        if (!cancelled) {
+          setNewComunicadosCount(0);
+          setHasNewComunicados(false);
+        }
+      }
+    };
+
+    syncComunicados();
+    const intervalId = window.setInterval(syncComunicados, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [session?.uid]);
+
+  useEffect(() => {
+    if (pathname !== "/residenteComunicados" || !session?.uid) {
+      return;
+    }
+
+    const storageKey = `safehome_residente_seen_comunicados_${session.uid}`;
+    const totalSeen = lastComunicadosCountRef.current;
+    window.localStorage.setItem(storageKey, String(totalSeen));
+    setNewComunicadosCount(0);
+    setHasNewComunicados(false);
+  }, [pathname, session?.uid]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -154,7 +226,18 @@ export default function InternalLayoutResidente({ children }) {
 
           <div className="internal-topbar-right">
             <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
-            <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
+            <button
+              type="button"
+              className="internal-topbar-alert"
+              onClick={() => navigate("/residenteComunicados")}
+              aria-label="Ver comunicados"
+              title="Ver comunicados"
+            >
+              <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
+              {hasNewComunicados && newComunicadosCount > 0 && (
+                <span className="internal-topbar-alert-badge">{newComunicadosCount}</span>
+              )}
+            </button>
             <button
               type="button"
               className="internal-icon-button"

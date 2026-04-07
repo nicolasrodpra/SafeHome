@@ -22,6 +22,7 @@ import RegistroCorrespondencia from "./pages/vigilante/registroCorrespondencia.j
 import RegistroVehiculos from "./pages/vigilante/registroVehiculos.js";
 import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
+import VigilanteQuejasPage from "./pages/vigilante/vigilanteQuejas.js";
 
 const privateRoutes = [
   { path: "/registroUsuario", element: <AdminRegister />, roles: ["Administrador"] },
@@ -66,6 +67,7 @@ const privateRoutes = [
   { path: "/registroVisitantes", element: <RegistroVisitantes />, roles: ["Vigilante"] },
   { path: "/registroVehiculos", element: <RegistroVehiculos />, roles: ["Vigilante"] },
   { path: "/vigilanteComunicados", element: <AdminComunicados />, roles: ["Vigilante"] },
+  { path: "/vigilanteQuejas", element: <VigilanteQuejasPage />, roles: ["Vigilante"] },
 ];
 
 function App() {
