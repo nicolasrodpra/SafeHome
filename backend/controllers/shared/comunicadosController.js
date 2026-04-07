@@ -1,5 +1,5 @@
 // Controlador de comunicados.
-// Implementa el CRUD de avisos institucionales publicados por administracion.
+// Implementa el CRUD de avisos institucionales publicados por administración.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 const { normalizeText } = require("../../utils/text");

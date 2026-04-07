@@ -1,6 +1,6 @@
-// Modulo operativo de vehiculos visitantes.
+// Módulo operativo de vehículos visitantes.
 // Permite registrar ingreso, editar datos y registrar la salida
-// con calculo de cobro segun la tarifa del vigilante.
+// con cálculo de cobro según la tarifa del vigilante.
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";
@@ -146,11 +146,11 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             </div>
             <div>
               <p className="modal-title">
-                {editingVehicle ? "Editar vehiculo" : "Registrar vehiculo"}
+                {editingVehicle ? "Editar vehículo" : "Registrar vehículo"}
               </p>
               <p className="modal-subtitle">
                 {editingVehicle
-                  ? "Modifica los datos del vehiculo"
+                  ? "Modifica los datos del vehículo"
                   : "Completa los datos del propietario"}
               </p>
             </div>
@@ -190,7 +190,7 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, documento: event.target.value }))
                 }
-                placeholder="Numero de documento"
+                placeholder="Número de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
             </div>
@@ -209,13 +209,13 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
             </div>
 
             <div className="form-group">
-              <label>Telefono</label>
+              <label>Teléfono</label>
               <input
                 value={form.telefono}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, telefono: event.target.value }))
                 }
-                placeholder="Numero de contacto"
+                placeholder="Número de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
             </div>
@@ -245,7 +245,7 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Tipo de vehiculo</label>
+              <label>Tipo de vehículo</label>
               <select
                 value={form.tipo}
                 onChange={(event) => setForm((prev) => ({ ...prev, tipo: event.target.value }))}
@@ -396,7 +396,7 @@ export default function RegistroVehiculos() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "Ocurrio un error al guardar.",
+        text: error.message || "Ocurrió un error al guardar.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -408,7 +408,7 @@ export default function RegistroVehiculos() {
   const handleExit = async (vehicle) => {
     if (!session?.uid) {
       Swal.fire({
-        title: "Sesion no disponible",
+        title: "Sesión no disponible",
         text: "No se pudo identificar al vigilante que registra la salida.",
         icon: "warning",
         confirmButtonColor: "#460669",
@@ -422,17 +422,17 @@ export default function RegistroVehiculos() {
       title: "Registrar salida",
       html: `
         <div style="text-align:left">
-          <p><strong>Vehiculo:</strong> ${vehicle.placa}</p>
+          <p><strong>Vehículo:</strong> ${vehicle.placa}</p>
           <p><strong>Propietario:</strong> ${vehicle.propietario}</p>
           <p><strong>Tarifa por hora:</strong> ${
-            tarifaHoraActual > 0 ? formatCurrency(tarifaHoraActual) : "Se validara en el servidor"
+            tarifaHoraActual > 0 ? formatCurrency(tarifaHoraActual) : "Se validará en el servidor"
           }</p>
           <p><strong>Tiempo parqueado:</strong> ${
-            preview?.duracionTexto || "Se calculara al confirmar"
+            preview?.duracionTexto || "Se calculará al confirmar"
           }</p>
           <p><strong>Horas a cobrar:</strong> ${preview?.horasCobradas || "-"}</p>
           <p><strong>Valor a cobrar:</strong> ${
-            preview ? formatCurrency(preview.valorCobrado) : "Se calculara al confirmar"
+            preview ? formatCurrency(preview.valorCobrado) : "Se calculará al confirmar"
           }</p>
         </div>
       `,
@@ -460,7 +460,7 @@ export default function RegistroVehiculos() {
         title: "Salida registrada",
         html: `
           <div style="text-align:left">
-            <p><strong>Vehiculo:</strong> ${response.vehiculo?.placa || vehicle.placa}</p>
+            <p><strong>Vehículo:</strong> ${response.vehiculo?.placa || vehicle.placa}</p>
             <p><strong>Tiempo cobrado:</strong> ${response.cobro?.duracionTexto || "-"}</p>
             <p><strong>Horas cobradas:</strong> ${response.cobro?.horasCobradas || "-"}</p>
             <p><strong>Total recibido:</strong> ${formatCurrency(response.cobro?.valorCobrado)}</p>
@@ -486,7 +486,7 @@ export default function RegistroVehiculos() {
       <main className="content guard-module-page">
         <header className="guard-module-page-header">
           <div>
-            <h1 className="internal-page-title">Registro de vehiculos visitantes</h1>
+            <h1 className="internal-page-title">Registro de vehículos visitantes</h1>
             <p className="guard-module-page-copy">
               Controla el ingreso, la salida y el cobro de carros y motos desde una vista clara y
               operativa para tu turno.
@@ -494,7 +494,7 @@ export default function RegistroVehiculos() {
           </div>
 
           <div className="guard-module-summary">
-            <span>Vehiculos visibles</span>
+            <span>Vehículos visibles</span>
             <strong>{filteredVehicles.length}</strong>
           </div>
         </header>
@@ -504,7 +504,7 @@ export default function RegistroVehiculos() {
             <div className="guard-module-head-copy">
               <h2 className="card-title">Resumen operativo</h2>
               <p className="guard-module-card-copy">
-                Consulta, crea, edita y registra la salida de los vehiculos visitantes con su
+                Consulta, crea, edita y registra la salida de los vehículos visitantes con su
                 cobro correspondiente.
               </p>
             </div>
@@ -546,7 +546,7 @@ export default function RegistroVehiculos() {
                 <span>
                   Registrar nuevo
                   <br />
-                  vehiculo
+                  vehículo
                 </span>
                 <span className="plus-sq"></span>
               </button>
@@ -567,8 +567,8 @@ export default function RegistroVehiculos() {
 
           {!tarifaHoraActual && (
             <div className="cash-close-alert">
-              El vigilante no tiene una tarifa por hora cargada en la sesion. Si acabas de
-              configurarla, vuelve a iniciar sesion para aplicar el cobro correctamente.
+              El vigilante no tiene una tarifa por hora cargada en la sesión. Si acabas de
+              configurarla, vuelve a iniciar sesión para aplicar el cobro correctamente.
             </div>
           )}
 
@@ -580,21 +580,21 @@ export default function RegistroVehiculos() {
                   <th>Propietario</th>
                   <th>Documento</th>
                   <th>Placa</th>
-                  <th>Telefono</th>
+                  <th>Teléfono</th>
                   <th>Torre</th>
                   <th>Apartamento</th>
                   <th>Ingreso</th>
                   <th>Salida</th>
                   <th>Estado</th>
                   <th>Cobro</th>
-                  <th>Accion</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredVehicles.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="guard-module-empty-row">
-                      No hay vehiculos que coincidan con la busqueda.
+                      No hay vehículos que coincidan con la búsqueda.
                     </td>
                   </tr>
                 ) : (
@@ -627,7 +627,7 @@ export default function RegistroVehiculos() {
                             vehicle.estado === "Salio" ? "is-exited" : "is-active"
                           }`}
                         >
-                          {vehicle.estado === "Salio" ? "Salio" : "Activo"}
+                          {vehicle.estado === "Salio" ? "Salió" : "Activo"}
                         </span>
                       </td>
                       <td className="vehicle-cobro">
@@ -643,7 +643,7 @@ export default function RegistroVehiculos() {
                               setEditingVehicle(vehicle);
                               setModalOpen(true);
                             }}
-                            title="Editar vehiculo"
+                            title="Editar vehículo"
                           >
                             <i className="ph-light ph-pencil-simple"></i>
                           </button>
@@ -681,9 +681,9 @@ export default function RegistroVehiculos() {
         <section className="card guard-module-surface cash-close-surface">
           <div className="card-header guard-module-card-header">
             <div className="guard-module-head-copy">
-              <h2 className="card-title">Cuadre de caja del dia</h2>
+              <h2 className="card-title">Cuadre de caja del día</h2>
               <p className="guard-module-card-copy">
-                Este resumen se reinicia automaticamente cada dia y solo muestra las salidas que
+                Este resumen se reinicia automáticamente cada día y solo muestra las salidas que
                 registraste en tu turno.
               </p>
             </div>
@@ -717,7 +717,7 @@ export default function RegistroVehiculos() {
                 <tr>
                   <th>Placa</th>
                   <th>Propietario</th>
-                  <th>Duracion</th>
+                  <th>Duración</th>
                   <th>Horas cobradas</th>
                   <th>Tarifa</th>
                   <th>Valor pagado</th>
@@ -728,7 +728,7 @@ export default function RegistroVehiculos() {
                 {cashCloseItems.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="guard-module-empty-row">
-                      Aun no has registrado salidas con cobro hoy.
+                      Aún no has registrado salidas con cobro hoy.
                     </td>
                   </tr>
                 ) : (

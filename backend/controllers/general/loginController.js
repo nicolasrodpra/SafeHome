@@ -1,6 +1,6 @@
 // Controlador de login.
 // Valida credenciales con Firebase Auth, verifica el correo y luego
-// completa la sesion con el perfil almacenado en Firestore.
+// completa la sesión con el perfil almacenado en Firestore.
 const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 
@@ -45,7 +45,7 @@ const login = async (req, res) => {
     if (!authUser.emailVerified) {
       return res.status(403).json({
         mensaje:
-          "Debes verificar tu correo electronico antes de iniciar sesion. Revisa tu bandeja de entrada.",
+          "Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.",
       });
     }
 

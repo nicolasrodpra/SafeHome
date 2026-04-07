@@ -1,5 +1,5 @@
 // Layout interno exclusivo del residente.
-// Reutiliza la misma idea del panel general, pero con un menu
+// Reutiliza la misma idea del panel general, pero con un menú
 // y accesos ajustados a las acciones permitidas para este rol.
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";

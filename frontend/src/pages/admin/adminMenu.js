@@ -1,5 +1,5 @@
-// Menu principal del administrador.
-// Funciona como tablero de accesos a todos los modulos de gestion.
+// Menú principal del administrador.
+// Funciona como tablero de accesos a todos los módulos de gestión.
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import ilustracionMenu from "../../assets/adminHero.png";

@@ -1,6 +1,6 @@
 // Controlador del asistente virtual.
-// Construye contexto segun el rol, intenta consultar un modelo externo
-// y si falla usa respuestas locales guiadas por modulo.
+// Construye contexto según el rol, intenta consultar un modelo externo
+// y si falla usa respuestas locales guiadas por módulo.
 const fs = require("fs");
 const https = require("https");
 const path = require("path");
@@ -296,26 +296,26 @@ const matchesTopic = (text, terms = [], stems = []) =>
 
 const rolePromptByName = {
   Administrador:
-    "Eres el asistente virtual de SafeHome para administradores. Tu funcion es guiar paso a paso dentro del sistema y responder de forma clara, corta y util.",
+    "Eres el asistente virtual de SafeHome para administradores. Tu función es guiar paso a paso dentro del sistema y responder de forma clara, corta y útil.",
   Residente:
-    "Eres el asistente virtual de SafeHome para residentes. Debes orientar sobre como usar el sistema, con respuestas amables, practicas y concretas.",
+    "Eres el asistente virtual de SafeHome para residentes. Debes orientar sobre cómo usar el sistema, con respuestas amables, prácticas y concretas.",
   Vigilante:
-    "Eres el asistente virtual de SafeHome para vigilancia. Debes explicar procesos operativos del sistema con orden, claridad y enfoque practico.",
+    "Eres el asistente virtual de SafeHome para vigilancia. Debes explicar procesos operativos del sistema con orden, claridad y enfoque práctico.",
 };
 
 const buildRoleContextSummary = (session, context) => {
   if (session.rol === "Administrador") {
     return [
       `Rol actual: ${session.rol}.`,
-      "Modulos disponibles: comunicados, mensajeria o PQRS, reservas, usuarios o residentes, vigilancia.",
-      "Debes responder como guia de uso del sistema, no como chatbot general.",
+      "Módulos disponibles: comunicados, mensajería o PQRS, reservas, usuarios o residentes, vigilancia.",
+      "Debes responder como guía de uso del sistema, no como chatbot general.",
     ].join(" ");
   }
 
   if (session.rol === "Residente") {
     return [
       `Rol actual: ${session.rol}.`,
-      "Modulos disponibles: reservas, mensajeria o PQRS, comunicados, perfil y manual de convivencia.",
+      "Módulos disponibles: reservas, mensajería o PQRS, comunicados, perfil y manual de convivencia.",
       context.manual?.disponible
         ? `Hay un manual publicado con nombre ${context.manual.archivo}.`
         : "No hay un manual publicado en este momento.",
@@ -326,24 +326,24 @@ const buildRoleContextSummary = (session, context) => {
   if (session.rol === "Vigilante") {
     return [
       `Rol actual: ${session.rol}.`,
-      "Modulos disponibles: visitantes, vehiculos, correspondencia y resumen operativo.",
+      "Módulos disponibles: visitantes, vehículos, correspondencia y resumen operativo.",
       "Debes explicar procedimientos del sistema y uso del panel de vigilancia.",
     ].join(" ");
   }
 
-  return `Rol actual: ${session.rol}. Debes orientar sobre el uso del sistema segun ese rol.`;
+  return `Rol actual: ${session.rol}. Debes orientar sobre el uso del sistema según ese rol.`;
 };
 
 const buildGroqMessages = (session, question, context) => {
   const systemPrompt = [
     rolePromptByName[session.rol] ||
-      "Eres el asistente virtual de SafeHome. Ayuda al usuario a usar el sistema segun su rol.",
+      "Eres el asistente virtual de SafeHome. Ayuda al usuario a usar el sistema según su rol.",
     "Reglas de respuesta:",
-    "- Responde siempre en espanol.",
-    "- Prioriza guias paso a paso y ayuda practica.",
-    "- No inventes modulos ni funciones que no existan en el sistema.",
-    "- No des informacion de otros roles si el usuario no tiene permiso.",
-    "- Si la pregunta es confusa, interpreta la intencion y responde la accion mas cercana.",
+    "- Responde siempre en español.",
+    "- Prioriza guías paso a paso y ayuda práctica.",
+    "- No inventes módulos ni funciones que no existan en el sistema.",
+    "- No des información de otros roles si el usuario no tiene permiso.",
+    "- Si la pregunta es confusa, interpreta la intención y responde la acción más cercana.",
     "- Usa formato legible: una frase inicial corta y luego pasos numerados si aplica.",
     buildRoleContextSummary(session, context),
   ].join("\n");

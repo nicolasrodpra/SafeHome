@@ -1,4 +1,4 @@
-// Rutas operativas de vehiculos visitantes.
+// Rutas operativas de vehículos visitantes.
 const express = require("express");
 const {
   obtenerVehiculos,

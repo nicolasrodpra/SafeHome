@@ -93,7 +93,7 @@ export default function VigilanteQuejasPage() {
             <article className="mensajeria-summary-card">
               <span>Pendientes</span>
               <strong>{pendingCount}</strong>
-              <p>Quejas que aun no registran una respuesta de administracion.</p>
+              <p>Quejas que aún no registran una respuesta de administración.</p>
             </article>
           </div>
         </header>
@@ -101,7 +101,7 @@ export default function VigilanteQuejasPage() {
         <section className="mensajeria-toolbar">
           <div className="mensajeria-toolbar-copy">
             <span>Quejas para vigilancia</span>
-            <strong>Revisa el detalle de cada caso sin editar la informacion</strong>
+            <strong>Revisa el detalle de cada caso sin editar la información</strong>
           </div>
 
           <div className="mensajeria-sort-block" ref={dropdownRef}>

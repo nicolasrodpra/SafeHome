@@ -1,5 +1,5 @@
-// Menu principal del residente.
-// Resume los modulos que puede usar dentro de su panel.
+// Menú principal del residente.
+// Resume los módulos que puede usar dentro de su panel.
 import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/inicioHeroResidente.png";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";

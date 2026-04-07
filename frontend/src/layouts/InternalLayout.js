@@ -1,6 +1,6 @@
 // Layout interno compartido por administrador y vigilante.
 // Este archivo arma la estructura comun del panel: sidebar, topbar,
-// menu de usuario y acceso al asistente virtual.
+// menú de usuario y acceso al asistente virtual.
 import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -40,7 +40,7 @@ const ADMIN_NAV_ITEMS = [
 
 // Opciones principales del vigilante dentro del panel.
 const VIGILANTE_NAV_ITEMS = [
-  { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
+  { icon: "ph-car", label: "Registro de vehículos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
   { icon: "ph-megaphone", label: "Quejas", to: "/vigilanteQuejas", notificationKey: "quejas" },
@@ -255,7 +255,7 @@ export default function InternalLayout({ children }) {
         const notification = new Notification("SafeHome", {
           body:
             newCount === 1
-              ? "Llego una nueva queja al panel de vigilancia."
+              ? "Llegó una nueva queja al panel de vigilancia."
               : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
         });
 
@@ -274,7 +274,7 @@ export default function InternalLayout({ children }) {
           const notification = new Notification("SafeHome", {
             body:
               newCount === 1
-                ? "Llego una nueva queja al panel de vigilancia."
+                ? "Llegó una nueva queja al panel de vigilancia."
                 : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
           });
 
@@ -404,7 +404,7 @@ export default function InternalLayout({ children }) {
       <div className="internal-main">
         <div className="internal-topbar">
           <div className="internal-topbar-left">
-            <h2>Abundara</h2>
+            <h2>Abundará</h2>
             <span>{fechaActual}</span>
           </div>
 
@@ -414,8 +414,8 @@ export default function InternalLayout({ children }) {
               type="button"
               className="internal-icon-button"
               onClick={() => cerrarSesion(navigate)}
-              aria-label="Cerrar sesion"
-              title="Cerrar sesion"
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
             >
               <i className="ph-light ph-sign-out internal-topbar-icon"></i>
             </button>
@@ -466,7 +466,7 @@ export default function InternalLayout({ children }) {
                     }}
                   >
                     <i className="ph-light ph-sign-out"></i>
-                    <span>Cerrar sesion</span>
+                    <span>Cerrar sesión</span>
                   </button>
                 </div>
               )}

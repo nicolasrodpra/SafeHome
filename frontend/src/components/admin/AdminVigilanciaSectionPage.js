@@ -1,5 +1,5 @@
-// Pagina generica de consulta para vigilancia en modo administrador.
-// Usa una configuracion externa para decidir columnas, filtros,
+// Página genérica de consulta para vigilancia en modo administrador.
+// Usa una configuración externa para decidir columnas, filtros,
 // contadores y detalle del registro.
 import { useEffect, useMemo, useState } from "react";
 import InternalLayout from "../../layouts/InternalLayout";
@@ -196,7 +196,7 @@ export default function AdminVigilanciaSectionPage({ config }) {
                   <tr>
                     <td colSpan={config.columns.length + 1} className="admin-vigilancia-empty-row">
                       {items.length > 0
-                        ? "No hay registros que coincidan con la busqueda."
+                        ? "No hay registros que coincidan con la búsqueda."
                         : config.emptyMessage}
                     </td>
                   </tr>

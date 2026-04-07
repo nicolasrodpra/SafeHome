@@ -1,4 +1,4 @@
-// Servicio pequeño para acciones de autenticacion del lado cliente.
+// Servicio pequeño para acciones de autenticación del lado cliente.
 import Swal from "sweetalert2";
 import { clearSession } from "./sessionService";
 

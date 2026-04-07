@@ -1,4 +1,4 @@
-// Modulo de autenticacion del frontend.
+// Módulo de autenticación del frontend.
 // Traduce la pantalla de login a una llamada concreta contra /api/login.
 import { apiPost } from "../apiClient";
 

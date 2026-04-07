@@ -1,5 +1,5 @@
-// Rutas del modulo de usuarios.
-// Exponen creacion, consulta de perfil, actualizacion y lista de residentes.
+// Rutas del módulo de usuarios.
+// Exponen creación, consulta de perfil, actualización y lista de residentes.
 const express = require("express");
 const { crearUsuario } = require("../../controllers/shared/crearUsuarioController");
 const {

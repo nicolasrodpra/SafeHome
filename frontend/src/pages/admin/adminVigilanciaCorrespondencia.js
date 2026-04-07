@@ -1,5 +1,5 @@
 // Vista administrativa de correspondencia.
-// Solo describe la configuracion que consumira la pagina generica
+// Solo describe la configuración que consumirá la página genérica
 // de vigilancia para construir filtros, columnas y detalle.
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
 import { getCorrespondencia } from "../../services/modules/vigilanciaApi";
@@ -12,8 +12,8 @@ const config = {
   filters: [
     {
       key: "documento",
-      label: "Cedula",
-      placeholder: "Buscar por cedula",
+      label: "Cédula",
+      placeholder: "Buscar por cédula",
       icon: "ph-identification-card",
     },
   ],

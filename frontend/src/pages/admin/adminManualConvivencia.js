@@ -1,5 +1,5 @@
 // Vista administrativa del manual de convivencia.
-// Reutiliza el modulo compartido en modo "admin".
+// Reutiliza el módulo compartido en modo "admin".
 import ManualConvivenciaModule from "../../components/manual/ManualConvivenciaModule";
 import InternalLayout from "../../layouts/InternalLayout";
 

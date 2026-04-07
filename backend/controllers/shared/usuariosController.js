@@ -1,5 +1,5 @@
 // Controlador de usuarios.
-// Permite consultar perfil, actualizarlo y listar residentes para otros modulos.
+// Permite consultar perfil, actualizarlo y listar residentes para otros módulos.
 const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 const { normalizeText } = require("../../utils/text");

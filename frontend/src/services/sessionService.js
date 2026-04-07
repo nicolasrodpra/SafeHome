@@ -1,5 +1,5 @@
-// Servicio de almacenamiento de sesion.
-// Guarda, lee, limpia y sincroniza la sesion del usuario en localStorage.
+// Servicio de almacenamiento de sesión.
+// Guarda, lee, limpia y sincroniza la sesión del usuario en localStorage.
 const SESSION_STORAGE_KEY = "safehome_session";
 export const SESSION_UPDATED_EVENT = "safehome-session-updated";
 

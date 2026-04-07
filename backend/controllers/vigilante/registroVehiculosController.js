@@ -1,5 +1,5 @@
-// Controlador de vehiculos visitantes.
-// Gestiona ingreso, edicion, salida con cobro y limpieza automatica
+// Controlador de vehículos visitantes.
+// Gestiona ingreso, edición, salida con cobro y limpieza automática
 // de registros antiguos ya finalizados.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
@@ -222,7 +222,7 @@ const crearVehiculo = async (req, res) => {
 
     if (vehiculoActivo) {
       return res.status(400).json({
-        mensaje: "Ya existe un vehiculo activo con esa placa. Registra la salida antes de volverlo a ingresar.",
+        mensaje: "Ya existe un vehículo activo con esa placa. Registra la salida antes de volverlo a ingresar.",
       });
     }
 
@@ -246,7 +246,7 @@ const crearVehiculo = async (req, res) => {
     const ref = await vehiculosCollection().add(registro);
 
     return res.status(201).json({
-      mensaje: "Vehiculo registrado",
+      mensaje: "Vehículo registrado",
       vehiculo: mapVehiculo({
         id: ref.id,
         data: () => registro,
@@ -272,12 +272,12 @@ const actualizarVehiculo = async (req, res) => {
     const vehicleDoc = await vehiculosCollection().doc(id).get();
 
     if (!vehicleDoc.exists) {
-      return res.status(404).json({ mensaje: "No se encontro el vehiculo." });
+      return res.status(404).json({ mensaje: "No se encontró el vehículo." });
     }
 
     if (vehicleDoc.data()?.estado === "Salio") {
       return res.status(400).json({
-        mensaje: "No puedes editar un vehiculo que ya registro su salida.",
+        mensaje: "No puedes editar un vehículo que ya registró su salida.",
       });
     }
 
@@ -285,7 +285,7 @@ const actualizarVehiculo = async (req, res) => {
 
     if (vehiculoActivo) {
       return res.status(400).json({
-        mensaje: "Ya existe un vehiculo activo con esa placa. Usa otra placa o registra primero su salida.",
+        mensaje: "Ya existe un vehículo activo con esa placa. Usa otra placa o registra primero su salida.",
       });
     }
 
@@ -297,7 +297,7 @@ const actualizarVehiculo = async (req, res) => {
     const updatedDoc = await vehiculosCollection().doc(id).get();
 
     return res.status(200).json({
-      mensaje: "Vehiculo actualizado",
+      mensaje: "Vehículo actualizado",
       vehiculo: mapVehiculo(updatedDoc),
     });
   } catch (error) {
@@ -315,26 +315,26 @@ const registrarSalidaVehiculo = async (req, res) => {
     const vehicleDoc = await vehicleRef.get();
 
     if (!vehicleDoc.exists) {
-      return res.status(404).json({ mensaje: "No se encontro el vehiculo." });
+      return res.status(404).json({ mensaje: "No se encontró el vehículo." });
     }
 
     const vehicleData = vehicleDoc.data() || {};
 
     if (vehicleData.estado === "Salio") {
-      return res.status(400).json({ mensaje: "Este vehiculo ya registro su salida." });
+      return res.status(400).json({ mensaje: "Este vehículo ya registró su salida." });
     }
 
     const vigilante = await obtenerPerfilVigilante(req.body?.vigilanteUid);
 
     if (!vigilante) {
       return res.status(400).json({
-        mensaje: "No se pudo identificar al vigilante que esta registrando la salida.",
+        mensaje: "No se pudo identificar al vigilante que está registrando la salida.",
       });
     }
 
     if (!Number.isFinite(vigilante.tarifaHora) || vigilante.tarifaHora <= 0) {
       return res.status(400).json({
-        mensaje: "El vigilante no tiene una tarifa por hora valida configurada.",
+        mensaje: "El vigilante no tiene una tarifa por hora válida configurada.",
       });
     }
 
@@ -342,7 +342,7 @@ const registrarSalidaVehiculo = async (req, res) => {
 
     if (!ingresoDate) {
       return res.status(400).json({
-        mensaje: "No se pudo calcular la salida porque el vehiculo no tiene una fecha de ingreso valida.",
+        mensaje: "No se pudo calcular la salida porque el vehículo no tiene una fecha de ingreso válida.",
       });
     }
 

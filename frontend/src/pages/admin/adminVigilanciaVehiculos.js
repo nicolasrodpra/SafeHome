@@ -1,6 +1,6 @@
-// Vista administrativa de vehiculos.
-// Se apoya en una configuracion declarativa para reutilizar
-// la misma pagina generica de consulta de vigilancia.
+// Vista administrativa de vehículos.
+// Se apoya en una configuración declarativa para reutilizar
+// la misma página genérica de consulta de vigilancia.
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
 import { getVehiculos } from "../../services/modules/vigilanciaApi";
 
@@ -13,10 +13,10 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 const formatCurrency = (value) => (Number(value) ? currencyFormatter.format(value) : "$0");
 
 const config = {
-  title: "Ingreso de vehiculos",
+  title: "Ingreso de vehículos",
   icon: "ph-car",
   loadItems: getVehiculos,
-  emptyMessage: "No hay vehiculos registrados.",
+  emptyMessage: "No hay vehículos registrados.",
   filters: [
     {
       key: "placa",
@@ -58,11 +58,11 @@ const config = {
   ],
   detailFields: [
     { key: "estado", label: "Estado" },
-    { key: "tipo", label: "Tipo de vehiculo" },
+    { key: "tipo", label: "Tipo de vehículo" },
     { key: "propietario", label: "Propietario" },
     { key: "documento", label: "Documento" },
     { key: "placa", label: "Placa" },
-    { key: "telefono", label: "Telefono" },
+    { key: "telefono", label: "Teléfono" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
     { key: "fechaIngreso", label: "Fecha de ingreso" },

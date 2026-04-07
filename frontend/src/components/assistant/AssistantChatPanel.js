@@ -1,6 +1,6 @@
 // Panel lateral del asistente virtual.
-// Cambia su texto, sugerencias y comportamiento segun el rol
-// para guiar al usuario dentro de los modulos correctos.
+// Cambia su texto, sugerencias y comportamiento según el rol
+// para guiar al usuario dentro de los módulos correctos.
 import { useEffect, useMemo, useState } from "react";
 import { askAssistant } from "../../services/modules/assistantApi";
 import "../../styles/shared/assistantChat.css";
@@ -10,46 +10,46 @@ const CHAT_COPY_BY_ROLE = {
   Administrador: {
     badge: "Modo administrativo",
     title: "Asistente Virtual SafeHome",
-    subtitle: "Guia rapida para usar mejor los modulos de administracion.",
+    subtitle: "Guía rápida para usar mejor los módulos de administración.",
     welcome:
       "Hola. Puedo guiarte paso a paso para publicar comunicados, responder mensajes, revisar reservas y gestionar usuarios.",
     suggestions: [
-      "Como publico un comunicado?",
-      "Como respondo una solicitud?",
-      "Como registro un usuario?",
-      "Como reviso las reservas?",
-      "Donde veo a los residentes?",
-      "Como entro al modulo de vigilancia?",
+      "¿Cómo publico un comunicado?",
+      "¿Cómo respondo una solicitud?",
+      "¿Cómo registro un usuario?",
+      "¿Cómo reviso las reservas?",
+      "¿Dónde veo a los residentes?",
+      "¿Cómo entro al módulo de vigilancia?",
     ],
   },
   Residente: {
     badge: "Modo residente",
     title: "Asistente Virtual SafeHome",
-    subtitle: "Ayuda practica para realizar tareas dentro de tu panel.",
+    subtitle: "Ayuda práctica para realizar tareas dentro de tu panel.",
     welcome:
       "Hola. Puedo ayudarte paso a paso con reservas, solicitudes, comunicados y el uso general de tu panel.",
     suggestions: [
-      "Como reservo la piscina?",
-      "Como envio una solicitud?",
-      "Donde veo el manual de convivencia?",
-      "Como reviso mis comunicados?",
-      "Como actualizo mis datos?",
-      "Donde veo mis reservas?",
+      "¿Cómo reservo la piscina?",
+      "¿Cómo envío una solicitud?",
+      "¿Dónde veo el manual de convivencia?",
+      "¿Cómo reviso mis comunicados?",
+      "¿Cómo actualizo mis datos?",
+      "¿Dónde veo mis reservas?",
     ],
   },
   Vigilante: {
     badge: "Modo vigilancia",
     title: "Asistente Virtual SafeHome",
-    subtitle: "Apoyo operativo para registrar y ubicar funciones del dia.",
+    subtitle: "Apoyo operativo para registrar y ubicar funciones del día.",
     welcome:
-      "Hola. Puedo orientarte paso a paso para registrar visitantes, vehiculos, correspondencia y revisar modulos de vigilancia.",
+      "Hola. Puedo orientarte paso a paso para registrar visitantes, vehículos, correspondencia y revisar módulos de vigilancia.",
     suggestions: [
-      "Como registro un visitante?",
-      "Como registro un vehiculo?",
-      "Como registro correspondencia?",
-      "Como edito un registro?",
-      "Donde veo el resumen del dia?",
-      "Como reviso los visitantes registrados?",
+      "¿Cómo registro un visitante?",
+      "¿Cómo registro un vehículo?",
+      "¿Cómo registro correspondencia?",
+      "¿Cómo edito un registro?",
+      "¿Dónde veo el resumen del día?",
+      "¿Cómo reviso los visitantes registrados?",
     ],
   },
   default: {
@@ -57,13 +57,13 @@ const CHAT_COPY_BY_ROLE = {
     title: "Asistente Virtual SafeHome",
     subtitle: "Haz una pregunta para recibir ayuda dentro del sistema.",
     welcome:
-      "Hola. Estoy listo para guiarte dentro del sistema segun tu rol.",
+      "Hola. Estoy listo para guiarte dentro del sistema según tu rol.",
     suggestions: [
-      "Como funciona este asistente?",
-      "En que modulos me puedes ayudar?",
-      "Como hago una tarea dentro del sistema?",
-      "Como encuentro el modulo que necesito?",
-      "Como usar mejor mi panel?",
+      "¿Cómo funciona este asistente?",
+      "¿En qué módulos me puedes ayudar?",
+      "¿Cómo hago una tarea dentro del sistema?",
+      "¿Cómo encuentro el módulo que necesito?",
+      "¿Cómo usar mejor mi panel?",
     ],
   },
 };
@@ -234,7 +234,7 @@ export default function AssistantChatPanel({ isOpen, onClose, role, userName, se
                 hasConversationStarted ? " is-floating" : ""
               }`}
             >
-              <span>Pruebas rapidas</span>
+              <span>Pruebas rápidas</span>
               <div className="assistant-chat-suggestion-list">
                 {copy.suggestions.map((suggestion) => (
                   <button

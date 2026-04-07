@@ -1,6 +1,6 @@
 // Punto de entrada del backend.
-// Aqui se inicializa Express, se registra Firebase, se montan las rutas
-// y se programan las limpiezas automaticas de registros temporales.
+// Aquí se inicializa Express, se registra Firebase, se montan las rutas
+// y se programan las limpiezas automáticas de registros temporales.
 require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
@@ -60,7 +60,7 @@ const PORT = process.env.PORT || 5000;
 const DAILY_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
 
 limpiarVehiculosFinalizadosAntiguos().catch((error) => {
-  console.error("No se pudo ejecutar la limpieza inicial de vehiculos:", error.message);
+  console.error("No se pudo ejecutar la limpieza inicial de vehículos:", error.message);
 });
 
 limpiarVisitantesAntiguos().catch((error) => {
@@ -69,7 +69,7 @@ limpiarVisitantesAntiguos().catch((error) => {
 
 setInterval(() => {
   limpiarVehiculosFinalizadosAntiguos().catch((error) => {
-    console.error("No se pudo ejecutar la limpieza programada de vehiculos:", error.message);
+    console.error("No se pudo ejecutar la limpieza programada de vehículos:", error.message);
   });
 
   limpiarVisitantesAntiguos().catch((error) => {

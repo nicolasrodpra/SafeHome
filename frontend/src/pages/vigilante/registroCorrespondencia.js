@@ -370,7 +370,7 @@ export default function RegistroCorrespondencia() {
           <div>
             <h1 className="internal-page-title">Registro de correspondencia</h1>
             <p className="guard-module-page-copy">
-              Lleva el control de paquetes, sobres y documentos con una vista mas limpia y
+              Lleva el control de paquetes, sobres y documentos con una vista más limpia y
               operativa para vigilancia.
             </p>
           </div>
@@ -386,7 +386,7 @@ export default function RegistroCorrespondencia() {
             <div className="guard-module-head-copy">
               <h2 className="card-title">Resumen operativo</h2>
               <p className="guard-module-card-copy">
-                Organiza las entregas registradas, busca por cedula y confirma cuando la
+                Organiza las entregas registradas, busca por cédula y confirma cuando la
                 correspondencia ya fue entregada al residente.
               </p>
             </div>
@@ -442,7 +442,7 @@ export default function RegistroCorrespondencia() {
                 type="text"
                 value={searchCedula}
                 onChange={(event) => setSearchCedula(event.target.value)}
-                placeholder="Buscar por cedula"
+                placeholder="Buscar por cédula"
               />
             </div>
           </div>

@@ -1,5 +1,5 @@
-// Pantalla de mensajeria del residente.
-// Permite crear mensajes para administracion y revisar el historial propio.
+// Pantalla de mensajería del residente.
+// Permite crear mensajes para administración y revisar el historial propio.
 import { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import MensajeriaDetailModal from "../../components/mensajeria/MensajeriaDetailModal";

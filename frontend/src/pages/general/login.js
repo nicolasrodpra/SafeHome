@@ -1,13 +1,15 @@
-// Pantalla de inicio de sesion.
-// Recibe correo y contrasena, llama al backend y guarda la sesion
-// para redirigir al menu principal segun el rol.
+// Pantalla de inicio de sesión.
+// Recibe correo y contraseña, llama al backend y guarda la sesión
+// para redirigir al menú principal según el rol.
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import illustration from "../../assets/loginFamily.jpg";
 import { loginUser } from "../../services/modules/authApi";
 import { saveSession } from "../../services/sessionService";
 import "../../styles/general/login.css";
+
+const LOGIN_ILLUSTRATION_URL =
+  "https://conjuntolacascada.com.co/wp-content/uploads/2023/02/La_Cascada_new_117-scaled.jpeg";
 
 const getRouteByRole = (role) => {
   if (role === "Vigilante") return "/vigilanteMenu";
@@ -32,7 +34,7 @@ export default function Login() {
 
       if (!session?.rol) {
         throw new Error(
-          "No se pudo identificar el rol del usuario. Reinicia el backend e intentalo de nuevo."
+          "No se pudo identificar el rol del usuario. Reinicia el backend e inténtalo de nuevo."
         );
       }
 
@@ -41,7 +43,7 @@ export default function Login() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "No se pudo iniciar sesion.",
+        text: error.message || "No se pudo iniciar sesión.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -52,7 +54,11 @@ export default function Login() {
     <div className="register-wrapper">
       <div className="left-panel">
         <div className="circle"></div>
-        <img className="illustration" src={illustration} alt="Ilustracion de inicio de sesion" />
+        <img
+          className="illustration"
+          src={LOGIN_ILLUSTRATION_URL}
+          alt="Familia revisando un teléfono móvil"
+        />
         <Link to="/" className="btn-back">
           <i className="bi bi-arrow-left"></i> Regresar
         </Link>
@@ -61,7 +67,7 @@ export default function Login() {
       <div className="right-panel">
         <div className="form-box">
           <p className="welcome">Bienvenido</p>
-          <h1 className="title">Inicia sesion</h1>
+          <h1 className="title">Inicia sesión</h1>
 
           <div className="input-wrap">
             <i className="bi bi-envelope"></i>
@@ -77,14 +83,14 @@ export default function Login() {
             <i className="bi bi-lock"></i>
             <input
               type="password"
-              placeholder="Contrasena"
+              placeholder="Contraseña"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </div>
 
           <button type="button" className="btn-register" onClick={handleLogin}>
-            Iniciar sesion
+            Iniciar sesión
           </button>
         </div>
       </div>

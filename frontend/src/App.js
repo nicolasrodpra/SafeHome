@@ -1,6 +1,6 @@
-// Archivo raiz de navegacion del frontend.
-// Aqui se define que pagina se muestra segun la URL y que rutas
-// requieren sesion y rol valido antes de entrar.
+// Archivo raíz de navegación del frontend.
+// Aquí se define qué página se muestra según la URL y qué rutas
+// requieren sesión y rol válido antes de entrar.
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminComunicados from "./pages/admin/adminComunicados.js";
 import AdminManualConvivencia from "./pages/admin/adminManualConvivencia.js";
@@ -81,7 +81,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        {/* Recorremos las rutas privadas y las protegemos con validacion de sesion y rol. */}
+        {/* Recorremos las rutas privadas y las protegemos con validación de sesión y rol. */}
         {privateRoutes.map((route) => (
           <Route
             key={route.path}

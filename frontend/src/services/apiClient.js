@@ -1,5 +1,5 @@
 // Cliente HTTP base del frontend.
-// Todas las peticiones pasan por aqui para compartir URL base,
+// Todas las peticiones pasan por aquí para compartir URL base,
 // timeout, cabeceras y manejo uniforme de errores.
 import { readApiResponse } from "../utils/readApiResponse";
 

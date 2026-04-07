@@ -1,5 +1,5 @@
 // Punto de entrada del frontend.
-// React monta aqui la aplicacion dentro del div "root" del HTML base.
+// React monta aquí la aplicación dentro del div "root" del HTML base.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";

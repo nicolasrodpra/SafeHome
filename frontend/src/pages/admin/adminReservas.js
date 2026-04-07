@@ -1,4 +1,4 @@
-// Vista administrativa del modulo de reservas.
+// Vista administrativa del módulo de reservas.
 // Reutiliza el mismo calendario del residente, pero en modo consulta.
 import ReservasCalendarModule from "../../components/reservas/ReservasCalendarModule";
 import InternalLayout from "../../layouts/InternalLayout";

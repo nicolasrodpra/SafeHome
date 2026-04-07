@@ -1,5 +1,5 @@
 // Pantalla administrativa para consultar el listado de residentes.
-// Muestra informacion basica de ubicacion y datos de contacto.
+// Muestra información básica de ubicación y datos de contacto.
 import { useEffect, useState } from "react";
 import InternalLayout from "../../layouts/InternalLayout";
 import { getResidents } from "../../services/modules/userApi";

@@ -1,6 +1,6 @@
 // Esta función interpreta la respuesta del backend y convierte los errores
 // en mensajes claros para mostrarlos con alertas en el frontend.
-// Utilidad comun para interpretar respuestas HTTP.
+// Utilidad común para interpretar respuestas HTTP.
 // Convierte errores del backend en mensajes entendibles para la interfaz.
 export async function readApiResponse(res, fallbackMessage) {
   const contentType = res.headers.get("content-type") || "";

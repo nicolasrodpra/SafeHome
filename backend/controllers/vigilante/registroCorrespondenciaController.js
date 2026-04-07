@@ -161,7 +161,7 @@ const actualizarCorrespondencia = async (req, res) => {
     const currentDoc = await docRef.get();
 
     if (!currentDoc.exists) {
-      return res.status(404).json({ mensaje: "No se encontro la correspondencia." });
+      return res.status(404).json({ mensaje: "No se encontró la correspondencia." });
     }
 
     if (currentDoc.data()?.estado === "Entregado") {
@@ -194,7 +194,7 @@ const marcarCorrespondenciaEntregada = async (req, res) => {
     const currentDoc = await docRef.get();
 
     if (!currentDoc.exists) {
-      return res.status(404).json({ mensaje: "No se encontro la correspondencia." });
+      return res.status(404).json({ mensaje: "No se encontró la correspondencia." });
     }
 
     if (currentDoc.data()?.estado === "Entregado") {

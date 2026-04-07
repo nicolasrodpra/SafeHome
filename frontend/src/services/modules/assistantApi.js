@@ -1,6 +1,6 @@
-// Modulo del asistente virtual.
-// Envia la pregunta y la sesion actual al backend para obtener
-// una respuesta contextual segun el rol del usuario.
+// Módulo del asistente virtual.
+// Envía la pregunta y la sesión actual al backend para obtener
+// una respuesta contextual según el rol del usuario.
 import { apiPost } from "../apiClient";
 
 export const askAssistant = async ({ message, history, session }) => {
@@ -15,7 +15,7 @@ export const askAssistant = async ({ message, history, session }) => {
   );
 
   if (!data?.answer) {
-    throw new Error("El asistente no devolvio una respuesta valida.");
+    throw new Error("El asistente no devolvió una respuesta válida.");
   }
 
   return data.answer;

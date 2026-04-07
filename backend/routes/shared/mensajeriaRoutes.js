@@ -1,4 +1,4 @@
-// Rutas del modulo de mensajeria o PQRS.
+// Rutas del módulo de mensajería o PQRS.
 const express = require("express");
 const {
   crearMensaje,

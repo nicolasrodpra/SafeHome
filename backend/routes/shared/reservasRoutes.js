@@ -1,4 +1,4 @@
-// Rutas del modulo de reservas.
+// Rutas del módulo de reservas.
 const express = require("express");
 const {
   crearReserva,

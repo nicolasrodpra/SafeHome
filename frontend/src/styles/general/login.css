@@ -27,7 +27,7 @@
   width: 100%;
   height: 100vh;
   object-fit: cover;
-  object-position: center 48%;
+  object-position: center center;
 }
 
 .btn-back {
@@ -104,14 +104,17 @@
   width: 100%;
   height: 53px;
   padding: 0 18px 0 50px;
-  border: 1px solid #c9d7ee;
+  border: 1px solid #d7ddea;
   border-radius: 8px;
-  background: #dfe9f8;
+  background: #ffffff;
   color: #312a42;
   font-family: "Poppins", sans-serif;
   font-size: 1rem;
   font-weight: 500;
   outline: none;
+  appearance: none;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .input-wrap input::placeholder {
@@ -120,6 +123,18 @@
 
 .input-wrap input:focus {
   border-color: #460669;
+  box-shadow: 0 0 0 4px rgba(70, 6, 105, 0.12);
+  background: #ffffff;
+}
+
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:hover,
+.input-wrap input:-webkit-autofill:focus,
+.input-wrap input:-webkit-autofill:active {
+  -webkit-text-fill-color: #312a42;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #312a42;
 }
 
 .btn-register {

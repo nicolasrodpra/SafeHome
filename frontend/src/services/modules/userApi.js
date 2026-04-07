@@ -1,5 +1,5 @@
-// Modulo de usuarios del frontend.
-// Aqui se agrupan perfil, actualizacion y listado de residentes.
+// Módulo de usuarios del frontend.
+// Aquí se agrupan perfil, actualización y listado de residentes.
 import { apiGet, apiPut } from "../apiClient";
 
 // El backend puede devolver el perfil dentro de `profile`

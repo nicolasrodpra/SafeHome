@@ -1,5 +1,5 @@
 // Modal reutilizable para ver el detalle de un mensaje.
-// En administracion tambien habilita la respuesta del caso.
+// En administración también habilita la respuesta del caso.
 import { useEffect } from "react";
 import {
   getMessageTypeLabel,
@@ -103,7 +103,7 @@ export default function MensajeriaDetailModal({
 
             {isResidentView && (
               <div className="mensajeria-modal-field">
-                <span>Ubicacion</span>
+                <span>Ubicación</span>
                 <strong>{item.residentInfo}</strong>
                 <small>{item.residentEmail || "Sin correo registrado"}</small>
               </div>
@@ -124,7 +124,7 @@ export default function MensajeriaDetailModal({
                 <span>Respuesta</span>
                 <textarea
                   className="mensajeria-reply-box"
-                  placeholder="Escribe aqui la respuesta para el residente..."
+                  placeholder="Escribe aquí la respuesta para el residente..."
                   rows="6"
                   value={replyText}
                   onChange={(event) => onReplyChange(event.target.value)}
@@ -134,20 +134,20 @@ export default function MensajeriaDetailModal({
 
             {!canReply && isMessageRespondable(item.type) && (isResidentView || isViewerMode) && (
               <div className="mensajeria-modal-field full">
-                <span>{isViewerMode ? "Respuesta de administracion" : "Respuesta de administracion"}</span>
+                <span>{isViewerMode ? "Respuesta de administración" : "Respuesta de administración"}</span>
                 {hasResponse ? (
                   <>
                     <p>{item.response}</p>
                     <small>
-                      {item.respondedByName || "Administracion"} - {item.respondedDateLabel} -{" "}
+                      {item.respondedByName || "Administración"} - {item.respondedDateLabel} -{" "}
                       {item.respondedTimeLabel}
                     </small>
                   </>
                 ) : (
                   <p>
                     {isViewerMode
-                      ? "Administracion aun no ha respondido esta queja."
-                      : "Administracion aun no ha respondido este registro."}
+                      ? "Administración aún no ha respondido esta queja."
+                      : "Administración aún no ha respondido este registro."}
                   </p>
                 )}
               </div>
@@ -156,7 +156,7 @@ export default function MensajeriaDetailModal({
             {!canReply && isViewerMode && (
               <div className="mensajeria-modal-field full mensajeria-modal-note">
                 <span>Acceso del vigilante</span>
-                <p>Esta vista es solo de consulta. El seguimiento y la respuesta quedan a cargo de administracion.</p>
+                <p>Esta vista es solo de consulta. El seguimiento y la respuesta quedan a cargo de administración.</p>
               </div>
             )}
 

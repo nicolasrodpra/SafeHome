@@ -1,5 +1,5 @@
 // Pantalla administrativa para publicar, editar y eliminar comunicados.
-// Todo el CRUD se consume desde el modulo de comunicados del frontend.
+// Todo el CRUD se consume desde el módulo de comunicados del frontend.
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";

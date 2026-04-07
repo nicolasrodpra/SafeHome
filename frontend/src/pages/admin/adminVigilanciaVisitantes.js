@@ -1,5 +1,5 @@
 // Vista administrativa de visitantes.
-// Define el esquema de tabla y contadores de la pagina generica de vigilancia.
+// Define el esquema de tabla y contadores de la página genérica de vigilancia.
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
 import { getVisitantes } from "../../services/modules/vigilanciaApi";
 
