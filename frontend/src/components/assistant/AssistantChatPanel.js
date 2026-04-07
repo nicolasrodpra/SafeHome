@@ -1,7 +1,11 @@
+// Panel lateral del asistente virtual.
+// Cambia su texto, sugerencias y comportamiento segun el rol
+// para guiar al usuario dentro de los modulos correctos.
 import { useEffect, useMemo, useState } from "react";
 import { askAssistant } from "../../services/modules/assistantApi";
 import "../../styles/shared/assistantChat.css";
 
+// Mensajes base del chat para cada tipo de usuario.
 const CHAT_COPY_BY_ROLE = {
   Administrador: {
     badge: "Modo administrativo",

@@ -1,3 +1,5 @@
+// Menu principal del administrador.
+// Funciona como tablero de accesos a todos los modulos de gestion.
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import ilustracionMenu from "../../assets/adminHero.png";
@@ -5,6 +7,7 @@ import AdminVigilanciaModal from "../../components/admin/AdminVigilanciaModal";
 import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminMenu.css";
 
+// Tarjetas del dashboard administrativo.
 const dashboardCards = [
   {
     icon: "ph-megaphone",

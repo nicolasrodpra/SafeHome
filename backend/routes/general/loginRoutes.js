@@ -1,3 +1,5 @@
+// Ruta de autenticacion.
+// Conecta POST /login con el controlador de inicio de sesion.
 const express = require("express");
 const { login } = require("../../controllers/general/loginController");
 

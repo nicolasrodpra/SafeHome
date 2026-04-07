@@ -1,3 +1,6 @@
+// Formulario administrativo de registro de usuarios.
+// Desde aqui el administrador crea cuentas de administrador,
+// residente o vigilante con campos dinamicos por rol.
 import { useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";

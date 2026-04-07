@@ -1,3 +1,6 @@
+// Vista administrativa de vehiculos.
+// Se apoya en una configuracion declarativa para reutilizar
+// la misma pagina generica de consulta de vigilancia.
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
 import { getVehiculos } from "../../services/modules/vigilanciaApi";
 

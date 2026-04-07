@@ -1,3 +1,5 @@
+// Hook para consumir la sesion actual desde cualquier componente.
+// Lee localStorage y se vuelve a sincronizar cuando cambia la sesion.
 import { useEffect, useState } from "react";
 import { getSession, SESSION_UPDATED_EVENT } from "../services/sessionService";
 

@@ -1,3 +1,5 @@
+// Menu principal del vigilante.
+// Resume los registros operativos del dia y los accesos a sus modulos.
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/vigilanteHero.png";

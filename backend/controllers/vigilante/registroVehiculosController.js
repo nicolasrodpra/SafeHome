@@ -1,3 +1,6 @@
+// Controlador de vehiculos visitantes.
+// Gestiona ingreso, edicion, salida con cobro y limpieza automatica
+// de registros antiguos ya finalizados.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 

@@ -1,3 +1,4 @@
+// Ruta del asistente virtual.
 const express = require("express");
 const { chatWithAssistant } = require("../../controllers/shared/assistantController");
 

@@ -1,3 +1,6 @@
+// Modulo operativo de vehiculos visitantes.
+// Permite registrar ingreso, editar datos y registrar la salida
+// con calculo de cobro segun la tarifa del vigilante.
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";

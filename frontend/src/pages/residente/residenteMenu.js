@@ -1,3 +1,5 @@
+// Menu principal del residente.
+// Resume los modulos que puede usar dentro de su panel.
 import { Link } from "react-router-dom";
 import ilustracionMenu from "../../assets/inicioHeroResidente.png";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
@@ -33,11 +35,6 @@ const dashboardCards = [
     title: "Actualizar datos",
     description: "Mantén tu información personal actualizada para una mejor comunicación.",
     to: "/perfil",
-  },
-  {
-    icon: "ph-hand",
-    title: "Botón de pánico",
-    description: "Usa este botón en caso de emergencia para alertar al personal de seguridad.",
   },
 ];
 

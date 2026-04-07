@@ -1,3 +1,6 @@
+// Pagina generica de consulta para vigilancia en modo administrador.
+// Usa una configuracion externa para decidir columnas, filtros,
+// contadores y detalle del registro.
 import { useEffect, useMemo, useState } from "react";
 import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminVigilanciaSection.css";

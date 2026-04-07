@@ -1,3 +1,6 @@
+// Layout interno compartido por administrador y vigilante.
+// Este archivo arma la estructura comun del panel: sidebar, topbar,
+// menu de usuario y acceso al asistente virtual.
 import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -11,6 +14,8 @@ import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/internalLayout.css";
 
+// Submenu de vigilancia que usa el administrador para consultar
+// los registros operativos en modo solo lectura.
 const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-car", label: "Vehiculos", to: "/adminVigilanciaVehiculos" },
   {
@@ -21,6 +26,7 @@ const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-users-three", label: "Visitantes", to: "/adminVigilanciaVisitantes" },
 ];
 
+// Opciones principales del administrador dentro del panel.
 const ADMIN_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Mensajeria", to: "/adminMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
@@ -32,6 +38,7 @@ const ADMIN_NAV_ITEMS = [
   { icon: "ph-user-plus", label: "Registrar usuario", to: "/registroUsuario" },
 ];
 
+// Opciones principales del vigilante dentro del panel.
 const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },

@@ -1,7 +1,10 @@
+// Pagina publica de presentacion del proyecto.
+// Su objetivo es explicar que hace SafeHome y dirigir al login.
 import { Link } from "react-router-dom";
 import homeHeroFamily from "../../assets/homeHeroFamily.jpg";
 import "../../styles/general/home.css";
 
+// Enlaces internos del landing para movernos entre secciones informativas.
 const navLinks = [
   { href: "#features", label: "Objetivos" },
   { href: "#roles", label: "Roles" },

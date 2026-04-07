@@ -1,3 +1,6 @@
+// Controlador del asistente virtual.
+// Construye contexto segun el rol, intenta consultar un modelo externo
+// y si falla usa respuestas locales guiadas por modulo.
 const fs = require("fs");
 const https = require("https");
 const path = require("path");

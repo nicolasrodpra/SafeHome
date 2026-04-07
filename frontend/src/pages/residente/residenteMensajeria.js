@@ -1,3 +1,5 @@
+// Pantalla de mensajeria del residente.
+// Permite crear mensajes para administracion y revisar el historial propio.
 import { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import MensajeriaDetailModal from "../../components/mensajeria/MensajeriaDetailModal";
@@ -84,7 +86,7 @@ export default function ResidenteMensajeriaPage() {
     [residentMessages, sortValue]
   );
 
-  const handleInputChange = (event) => {
+  const handleInputChange = (event) => { 
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
   };

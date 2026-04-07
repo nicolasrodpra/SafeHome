@@ -1,3 +1,6 @@
+// Modulo del asistente virtual.
+// Envia la pregunta y la sesion actual al backend para obtener
+// una respuesta contextual segun el rol del usuario.
 import { apiPost } from "../apiClient";
 
 export const askAssistant = async ({ message, history, session }) => {

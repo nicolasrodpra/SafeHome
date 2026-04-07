@@ -1,3 +1,6 @@
+// Modulo compartido del manual de convivencia.
+// En modo admin permite subir o eliminar el PDF; en modo resident
+// solo permite consultarlo y abrirlo.
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";

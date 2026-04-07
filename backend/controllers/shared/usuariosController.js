@@ -1,8 +1,82 @@
+// Controlador de usuarios.
+// Permite consultar perfil, actualizarlo y listar residentes para otros modulos.
 const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 const { normalizeText } = require("../../utils/text");
 
 const usersCollection = () => admin.firestore().collection("users");
+
+const compareByText = (firstValue = "", secondValue = "") =>
+  firstValue.localeCompare(secondValue, "es", {
+    numeric: true,
+    sensitivity: "base",
+  });
+
+const getSortableNumber = (value) => {
+  const normalizedValue = normalizeText(value);
+  const match = normalizedValue.match(/\d+/);
+
+  return match ? Number.parseInt(match[0], 10) : Number.POSITIVE_INFINITY;
+};
+
+const compareSortableNumbers = (firstValue, secondValue) => {
+  if (firstValue === secondValue) {
+    return 0;
+  }
+
+  if (!Number.isFinite(firstValue)) {
+    return 1;
+  }
+
+  if (!Number.isFinite(secondValue)) {
+    return -1;
+  }
+
+  return firstValue - secondValue;
+};
+
+const compareResidentsByLocation = (firstResident, secondResident) => {
+  const towerDiff = compareSortableNumbers(
+    getSortableNumber(firstResident.torre),
+    getSortableNumber(secondResident.torre)
+  );
+
+  if (towerDiff !== 0) {
+    return towerDiff;
+  }
+
+  const apartmentDiff = compareSortableNumbers(
+    getSortableNumber(firstResident.apartamento),
+    getSortableNumber(secondResident.apartamento)
+  );
+
+  if (apartmentDiff !== 0) {
+    return apartmentDiff;
+  }
+
+  const towerTextDiff = compareByText(firstResident.torre, secondResident.torre);
+
+  if (towerTextDiff !== 0) {
+    return towerTextDiff;
+  }
+
+  const apartmentTextDiff = compareByText(
+    firstResident.apartamento,
+    secondResident.apartamento
+  );
+
+  if (apartmentTextDiff !== 0) {
+    return apartmentTextDiff;
+  }
+
+  const nameDiff = compareByText(firstResident.nombre, secondResident.nombre);
+
+  if (nameDiff !== 0) {
+    return nameDiff;
+  }
+
+  return compareByText(firstResident.uid, secondResident.uid);
+};
 
 // Esta función lee el documento del usuario y lo transforma
 // al formato estable que usa todo el frontend.
@@ -86,9 +160,7 @@ const listarResidentes = async (req, res) => {
     const snapshot = await usersCollection().where("rol", "==", "Residente").get();
     const residentes = snapshot.docs
       .map((docSnapshot) => buildUserProfile(docSnapshot.id, docSnapshot.data()))
-      .sort((firstResident, secondResident) =>
-        firstResident.nombre.localeCompare(secondResident.nombre, "es")
-      );
+      .sort(compareResidentsByLocation);
 
     return res.status(200).json(residentes);
   } catch (error) {

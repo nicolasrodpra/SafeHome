@@ -1,3 +1,6 @@
+// Componente reutilizable para proteger rutas privadas.
+// Si no hay sesion envia al login y si el rol no coincide redirige
+// al menu principal correspondiente al usuario.
 import { Navigate } from "react-router-dom";
 import useSession from "../hooks/useSession";
 

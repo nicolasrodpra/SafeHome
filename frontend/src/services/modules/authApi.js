@@ -1,3 +1,5 @@
+// Modulo de autenticacion del frontend.
+// Traduce la pantalla de login a una llamada concreta contra /api/login.
 import { apiPost } from "../apiClient";
 
 // Algunos controladores devuelven la sesión dentro de `session`

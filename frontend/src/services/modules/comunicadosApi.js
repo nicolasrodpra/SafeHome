@@ -1,3 +1,5 @@
+// Modulo de comunicados del frontend.
+// Expone operaciones CRUD simples para no repetir rutas HTTP en las paginas.
 import { apiDelete, apiGet, apiPost, apiPut } from "../apiClient";
 
 // Todas estas funciones son envoltorios pequeños del backend.

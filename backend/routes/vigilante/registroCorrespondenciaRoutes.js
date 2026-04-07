@@ -1,3 +1,4 @@
+// Rutas operativas de correspondencia.
 const express = require("express");
 const {
   obtenerCorrespondencia,

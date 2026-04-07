@@ -1,3 +1,6 @@
+// Componente principal del modulo de reservas.
+// Muestra calendario, detalle por dia, formulario de reserva
+// y, si es residente, sus proximas reservas.
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";

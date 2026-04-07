@@ -1,3 +1,6 @@
+// Controlador del manual de convivencia.
+// Administra el PDF en disco y un archivo de metadatos para saber
+// cual es el manual publicado actualmente.
 const fs = require("fs");
 const path = require("path");
 

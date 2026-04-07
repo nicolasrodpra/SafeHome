@@ -1,5 +1,7 @@
 // Esta función convierte un timestamp de Firestore en un objeto Date normal.
 // Así el resto del código puede trabajar con fechas de JavaScript sin complicarse.
+// Utilidades de fecha para Firestore.
+// Traducen timestamps a Date y formatean texto listo para frontend.
 const toDate = (timestamp) => {
   if (timestamp?.toDate) {
     return timestamp.toDate();

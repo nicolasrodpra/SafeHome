@@ -1,3 +1,6 @@
+// Constructor de perfil estable para el frontend.
+// Toma datos heterogeneos de Firestore y devuelve siempre
+// el mismo formato de sesion o perfil.
 const { normalizeText } = require("./text");
 
 // Esta función arma un perfil consistente porque en la base actual

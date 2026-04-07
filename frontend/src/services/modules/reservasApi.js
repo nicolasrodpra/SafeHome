@@ -1,3 +1,5 @@
+// Modulo de reservas del frontend.
+// Sirve como puente entre el calendario React y el backend de reservas.
 import { apiDelete, apiGet, apiPost } from "../apiClient";
 
 // Aquí dejamos las operaciones de reservas juntas para reutilizarlas

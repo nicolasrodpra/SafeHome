@@ -1,3 +1,5 @@
+// Modulo de vigilancia del frontend.
+// Agrupa las operaciones de resumen, vehiculos, correspondencia y visitantes.
 import { apiDelete, apiGet, apiPost, apiPut } from "../apiClient";
 
 export const getResumenVigilancia = async () =>

@@ -1,3 +1,5 @@
+// Controlador del resumen de vigilancia.
+// Cuenta registros del dia para alimentar el tablero del vigilante.
 const admin = require("../../config/firebaseAdmin");
 const { toDate } = require("../../utils/firestoreDates");
 

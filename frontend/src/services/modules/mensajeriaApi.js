@@ -1,3 +1,6 @@
+// Modulo de mensajeria del frontend.
+// Reune llamadas al backend y utilidades de orden y agrupacion
+// para que las vistas solo se concentren en mostrar datos.
 import { apiGet, apiPost, apiPut } from "../apiClient";
 
 const DEFAULT_SORT = "Fecha de creación";
@@ -20,8 +23,8 @@ export const MENSAJERIA_SECTION_TYPES = [
   },
 ];
 
-export const MENSAJERIA_SORT_OPTIONS_ADMIN = [DEFAULT_SORT, "Nombre", "Estado", "Asunto"];
-export const MENSAJERIA_SORT_OPTIONS_RESIDENT = [DEFAULT_SORT, "Estado", "Asunto"];
+export const MENSAJERIA_SORT_OPTIONS_ADMIN = [DEFAULT_SORT, "Estado"];
+export const MENSAJERIA_SORT_OPTIONS_RESIDENT = [DEFAULT_SORT, "Estado"];
 
 const normalizeText = (value) => String(value || "").trim();
 

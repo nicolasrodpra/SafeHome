@@ -1,3 +1,4 @@
+// Ruta del resumen de vigilancia para el dashboard del vigilante.
 const express = require("express");
 const {
   obtenerResumenVigilancia,

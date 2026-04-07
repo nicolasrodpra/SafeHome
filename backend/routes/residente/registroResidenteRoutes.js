@@ -1,3 +1,4 @@
+// Ruta especializada para registrar residentes.
 const express = require("express");
 const { registrarResidente } = require("../../controllers/residente/registroResidenteController");
 

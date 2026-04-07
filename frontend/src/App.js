@@ -1,3 +1,6 @@
+// Archivo raiz de navegacion del frontend.
+// Aqui se define que pagina se muestra segun la URL y que rutas
+// requieren sesion y rol valido antes de entrar.
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminComunicados from "./pages/admin/adminComunicados.js";
 import AdminManualConvivencia from "./pages/admin/adminManualConvivencia.js";
@@ -24,6 +27,8 @@ import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
 import VigilanteQuejasPage from "./pages/vigilante/vigilanteQuejas.js";
 
+// Esta tabla centraliza las rutas privadas del sistema.
+// Cada entrada conecta una URL con su componente y con los roles permitidos.
 const privateRoutes = [
   { path: "/registroUsuario", element: <AdminRegister />, roles: ["Administrador"] },
   { path: "/adminComunicados", element: <AdminComunicados />, roles: ["Administrador", "Vigilante"] },
@@ -76,6 +81,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        {/* Recorremos las rutas privadas y las protegemos con validacion de sesion y rol. */}
         {privateRoutes.map((route) => (
           <Route
             key={route.path}

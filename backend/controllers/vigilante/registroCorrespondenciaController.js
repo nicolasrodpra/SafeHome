@@ -1,3 +1,6 @@
+// Controlador de correspondencia.
+// Registra paquetes, permite editar mientras sigan pendientes
+// y marca la entrega con trazabilidad del vigilante.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 

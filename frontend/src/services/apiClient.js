@@ -1,3 +1,6 @@
+// Cliente HTTP base del frontend.
+// Todas las peticiones pasan por aqui para compartir URL base,
+// timeout, cabeceras y manejo uniforme de errores.
 import { readApiResponse } from "../utils/readApiResponse";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";

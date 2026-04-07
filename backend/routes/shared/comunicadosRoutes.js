@@ -1,3 +1,4 @@
+// Rutas del modulo de comunicados.
 const express = require("express");
 const {
   actualizarComunicado,

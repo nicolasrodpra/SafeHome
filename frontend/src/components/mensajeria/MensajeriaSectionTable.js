@@ -1,3 +1,6 @@
+// Tabla reutilizable para mostrar bandejas de mensajeria.
+// La misma estructura sirve para administracion y residente,
+// cambiando algunas columnas segun el modo recibido.
 import { isMessageRespondable } from "../../services/modules/mensajeriaApi";
 
 const MailIcon = () => (

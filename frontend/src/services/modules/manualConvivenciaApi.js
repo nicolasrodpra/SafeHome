@@ -1,3 +1,5 @@
+// Modulo del manual de convivencia.
+// Desde aqui se consulta, publica o elimina el PDF en el backend.
 import { apiDelete, apiGet, apiPost } from "../apiClient";
 
 // Este módulo reúne las acciones del manual en un solo lugar:

@@ -1,3 +1,5 @@
+// Modal de acceso rapido a los submodulos de vigilancia del administrador.
+// No edita datos: solo ayuda a navegar a vistas de consulta.
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,6 +9,7 @@ import {
 } from "../../services/modules/vigilanciaApi";
 import "../../styles/admin/adminVigilanciaModal.css";
 
+// Cada seccion describe un modulo de vigilancia y como cargar su conteo.
 const SECTIONS = [
   {
     key: "correspondencia",

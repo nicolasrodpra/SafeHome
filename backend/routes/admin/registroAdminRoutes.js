@@ -1,3 +1,4 @@
+// Ruta especializada para registrar administradores.
 const express = require("express");
 const { registrarAdmin } = require("../../controllers/admin/registroAdminController");
 

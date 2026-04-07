@@ -1,3 +1,6 @@
+// Pantalla de inicio de sesion.
+// Recibe correo y contrasena, llama al backend y guarda la sesion
+// para redirigir al menu principal segun el rol.
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";

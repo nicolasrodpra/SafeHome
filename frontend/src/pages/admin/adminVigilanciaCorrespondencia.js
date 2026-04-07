@@ -1,3 +1,6 @@
+// Vista administrativa de correspondencia.
+// Solo describe la configuracion que consumira la pagina generica
+// de vigilancia para construir filtros, columnas y detalle.
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
 import { getCorrespondencia } from "../../services/modules/vigilanciaApi";
 

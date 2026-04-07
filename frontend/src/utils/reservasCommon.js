@@ -1,3 +1,6 @@
+// Reglas compartidas del modulo de reservas.
+// Aqui vive la logica de negocio del calendario: horarios, zonas,
+// validaciones, formatos y reglas de cancelacion.
 export const OPENING_HOUR = 7;
 export const CLOSING_HOUR = 22;
 

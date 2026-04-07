@@ -1,3 +1,5 @@
+// Modulo operativo de correspondencia.
+// Vigilancia registra paquetes, los edita si hace falta y marca la entrega.
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";

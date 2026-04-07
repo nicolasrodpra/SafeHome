@@ -1,3 +1,6 @@
+// Controlador de login.
+// Valida credenciales con Firebase Auth, verifica el correo y luego
+// completa la sesion con el perfil almacenado en Firestore.
 const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 

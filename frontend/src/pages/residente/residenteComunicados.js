@@ -1,3 +1,5 @@
+// Vista de comunicados para residente.
+// Solo consulta y muestra los avisos publicados por administracion.
 import { useEffect, useState } from "react";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
 import { getComunicados } from "../../services/modules/comunicadosApi";

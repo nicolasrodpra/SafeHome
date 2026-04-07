@@ -1,3 +1,4 @@
+// Rutas del manual de convivencia.
 const express = require("express");
 const {
   deleteManualConvivencia,

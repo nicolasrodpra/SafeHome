@@ -1,3 +1,5 @@
+// Modulo operativo de visitantes.
+// Permite registrar, editar y eliminar ingresos autorizados del dia.
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";

@@ -1,3 +1,5 @@
+// Inicializacion central de Firebase Admin.
+// Se reutiliza en todo el backend para acceder a Auth y Firestore.
 const admin = require("firebase-admin");
 const serviceAccount = require("../firebaseKey.json");
 

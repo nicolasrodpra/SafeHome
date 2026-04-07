@@ -1,3 +1,5 @@
+// Modal reutilizable para ver el detalle de un mensaje.
+// En administracion tambien habilita la respuesta del caso.
 import { useEffect } from "react";
 import {
   getMessageTypeLabel,

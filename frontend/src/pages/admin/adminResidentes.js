@@ -1,3 +1,5 @@
+// Pantalla administrativa para consultar el listado de residentes.
+// Muestra informacion basica de ubicacion y datos de contacto.
 import { useEffect, useState } from "react";
 import InternalLayout from "../../layouts/InternalLayout";
 import { getResidents } from "../../services/modules/userApi";
@@ -17,6 +19,78 @@ const getTemporaryLocation = (index) => {
   };
 };
 
+const compareByText = (firstValue = "", secondValue = "") =>
+  firstValue.localeCompare(secondValue, "es", {
+    numeric: true,
+    sensitivity: "base",
+  });
+
+const getSortableNumber = (value) => {
+  const normalizedValue = typeof value === "string" ? value.trim() : "";
+  const match = normalizedValue.match(/\d+/);
+
+  return match ? Number.parseInt(match[0], 10) : Number.POSITIVE_INFINITY;
+};
+
+const compareSortableNumbers = (firstValue, secondValue) => {
+  if (firstValue === secondValue) {
+    return 0;
+  }
+
+  if (!Number.isFinite(firstValue)) {
+    return 1;
+  }
+
+  if (!Number.isFinite(secondValue)) {
+    return -1;
+  }
+
+  return firstValue - secondValue;
+};
+
+const compareResidentsByLocation = (firstResident, secondResident) => {
+  const towerDiff = compareSortableNumbers(
+    getSortableNumber(firstResident?.torre),
+    getSortableNumber(secondResident?.torre)
+  );
+
+  if (towerDiff !== 0) {
+    return towerDiff;
+  }
+
+  const apartmentDiff = compareSortableNumbers(
+    getSortableNumber(firstResident?.apartamento),
+    getSortableNumber(secondResident?.apartamento)
+  );
+
+  if (apartmentDiff !== 0) {
+    return apartmentDiff;
+  }
+
+  const towerTextDiff = compareByText(firstResident?.torre || "", secondResident?.torre || "");
+
+  if (towerTextDiff !== 0) {
+    return towerTextDiff;
+  }
+
+  const apartmentTextDiff = compareByText(
+    firstResident?.apartamento || "",
+    secondResident?.apartamento || ""
+  );
+
+  if (apartmentTextDiff !== 0) {
+    return apartmentTextDiff;
+  }
+
+  const nameDiff = compareByText(firstResident?.nombre || "", secondResident?.nombre || "");
+
+  if (nameDiff !== 0) {
+    return nameDiff;
+  }
+
+  return compareByText(firstResident?.uid || "", secondResident?.uid || "");
+};
+
 function ResidentCell({ label, children, className = "" }) {
   const classes = className ? `resident-cell ${className}` : "resident-cell";
   return (
@@ -34,7 +108,7 @@ export default function AdminResidentes() {
     const loadResidents = async () => {
       try {
         const residents = await getResidents();
-        setResidentes(residents);
+        setResidentes([...residents].sort(compareResidentsByLocation));
       } catch (error) {
         setResidentes([]);
       } finally {

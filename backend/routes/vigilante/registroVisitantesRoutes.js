@@ -1,3 +1,4 @@
+// Rutas operativas de visitantes.
 const express = require("express");
 const {
   obtenerVisitantes,

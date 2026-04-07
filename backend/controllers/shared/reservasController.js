@@ -1,3 +1,6 @@
+// Controlador de reservas de zonas comunes.
+// Guarda y consulta reservas; la mayor parte de las reglas del negocio
+// vive en el frontend para dar feedback inmediato al usuario.
 const admin = require("../../config/firebaseAdmin");
 const { normalizeText } = require("../../utils/text");
 

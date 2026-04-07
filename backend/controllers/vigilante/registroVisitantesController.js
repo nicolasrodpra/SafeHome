@@ -1,3 +1,6 @@
+// Controlador de visitantes.
+// Guarda ingresos del dia, permite actualizarlos y elimina automaticamente
+// los registros de dias anteriores para mantener limpio el modulo.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 

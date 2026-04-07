@@ -1,3 +1,6 @@
+// Pagina de perfil compartida por todos los roles.
+// Consulta el perfil real en backend, permite editar campos validos
+// y sincroniza los cambios con la sesion local.
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";

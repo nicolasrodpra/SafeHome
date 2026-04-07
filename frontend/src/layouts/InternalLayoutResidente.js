@@ -1,3 +1,6 @@
+// Layout interno exclusivo del residente.
+// Reutiliza la misma idea del panel general, pero con un menu
+// y accesos ajustados a las acciones permitidas para este rol.
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
@@ -10,13 +13,13 @@ import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/InternalLayoutResidente.css";
 
+// Opciones principales del residente dentro de su panel.
 const RESIDENTE_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Mensajería", to: "/residenteMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/residentesReservas" },
   { icon: "ph-bell", label: "Comunicados", to: "/residenteComunicados" },
   { icon: "ph-book-bookmark", label: "Manual de convivencia", to: "/residenteManualConvivencia" },
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
-  { icon: "ph-hand", label: "Botón de pánico" },
 ];
 
 // En residente tenemos dos tipos de opción: una que navega
