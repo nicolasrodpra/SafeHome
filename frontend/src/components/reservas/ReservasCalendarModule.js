@@ -1,7 +1,7 @@
 // Componente principal del módulo de reservas.
 // Muestra calendario, detalle por día, formulario de reserva
 // y, si es residente, sus próximas reservas.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";
 import { getUserProfile } from "../../services/modules/userApi";
@@ -9,6 +9,7 @@ import {
   createReserva,
   deleteReserva,
   getReservas,
+  updateReserva,
 } from "../../services/modules/reservasApi";
 import {
   CALENDAR_DAY_NAMES,
@@ -27,9 +28,10 @@ import {
   getMonthLabel,
   getReservationValidation,
   getZoneMeta,
+  isSharedCapacityZone,
   isDateKeyInMonth,
   isPastDateKey,
-  isUpcomingReservation,
+  MAX_SHARED_ZONE_RESIDENTS,
   parseDateKey,
   sortReservationsByTime,
   startOfMonth,
@@ -56,23 +58,39 @@ function SelectedDayReservationItem({
   reservation,
   isResidentMode,
   isOwner,
+  canEdit,
   canCancel,
+  isEditing,
+  onEdit,
   onCancel,
 }) {
   const zoneMeta = getZoneMeta(reservation.zoneKey);
   const zoneClassName = zoneMeta ? `is-${zoneMeta.colorToken}` : "";
-  const itemClassName = zoneClassName
-    ? `reservas-day-item ${zoneClassName}`
-    : "reservas-day-item";
+  const itemClassName = ["reservas-day-item", zoneClassName, isEditing ? "is-editing" : ""]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <article className={itemClassName}>
       <div className="reservas-day-item-top">
-        <div>
+        <div className="reservas-day-item-top-copy">
           <strong>{reservation.zoneLabel}</strong>
           <span>{formatReservationRange(reservation.startHour, reservation.endHour)}</span>
         </div>
-        {isResidentMode && isOwner ? <em>Mi reserva</em> : null}
+        <div className="reservas-day-item-top-right">
+          {isResidentMode && isOwner ? <em>Mi reserva</em> : null}
+          {canEdit ? (
+            <button
+              type="button"
+              className="reservas-icon-button"
+              onClick={() => onEdit(reservation)}
+              aria-label={`Editar reserva de ${reservation.zoneLabel}`}
+              title="Editar reserva"
+            >
+              <i className="ph-light ph-pencil-simple" aria-hidden="true"></i>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {isResidentMode ? null : (
@@ -86,13 +104,15 @@ function SelectedDayReservationItem({
       )}
 
       {canCancel ? (
-        <button
-          type="button"
-          className="reservas-inline-button"
-          onClick={() => onCancel(reservation)}
-        >
-          Cancelar
-        </button>
+        <div className="reservas-day-item-actions">
+          <button
+            type="button"
+            className="reservas-inline-button"
+            onClick={() => onCancel(reservation)}
+          >
+            Cancelar
+          </button>
+        </div>
       ) : null}
     </article>
   );
@@ -101,14 +121,18 @@ function SelectedDayReservationItem({
 export default function ReservasCalendarModule({ mode }) {
   const isResidentMode = mode === "resident";
   const session = useSession();
+  const formSectionRef = useRef(null);
   const [reservas, setReservas] = useState([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [profileLoading, setProfileLoading] = useState(isResidentMode);
   const [userProfile, setUserProfile] = useState(null);
+  const [editingReservation, setEditingReservation] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState(formatDateKey(new Date()));
   const [selectedZoneKey, setSelectedZoneKey] = useState(RESERVA_ZONAS[0].key);
+  const [residentNameInput, setResidentNameInput] = useState("");
+  const [cedulaInput, setCedulaInput] = useState("");
   const [startHour, setStartHour] = useState("");
   const [duration, setDuration] = useState("");
 
@@ -182,6 +206,15 @@ export default function ReservasCalendarModule({ mode }) {
     };
   }, [isResidentMode, session]);
 
+  useEffect(() => {
+    if (editingReservation) {
+      return;
+    }
+
+    setResidentNameInput(userProfile?.nombre || "");
+    setCedulaInput(userProfile?.cedula || "");
+  }, [editingReservation, userProfile]);
+
   const monthCells = useMemo(() => buildMonthCells(currentMonth), [currentMonth]);
   const miniCalendarDays = useMemo(() => buildMiniCalendarDays(currentMonth), [currentMonth]);
 
@@ -221,20 +254,6 @@ export default function ReservasCalendarModule({ mode }) {
     [reservas, selectedDateKey]
   );
 
-  const upcomingUserReservations = useMemo(() => {
-    if (!session?.uid) {
-      return [];
-    }
-
-    return reservas
-      .filter(
-        (reservation) =>
-          reservation.userId === session.uid && isUpcomingReservation(reservation, new Date())
-      )
-      .sort(sortReservationsByTime)
-      .slice(0, 5);
-  }, [reservas, session]);
-
   const availableStartHours = useMemo(
     () => getAvailableStartHours(selectedDateKey, new Date()),
     [selectedDateKey]
@@ -272,6 +291,7 @@ export default function ReservasCalendarModule({ mode }) {
   }, [availableDurations, duration]);
 
   const selectedZone = getZoneMeta(selectedZoneKey);
+  const isEditingReservation = Boolean(editingReservation);
   const selectedDate = parseDateKey(selectedDateKey);
   const selectedDateIsPast = isPastDateKey(selectedDateKey, new Date());
   const canSubmitReservation =
@@ -282,6 +302,39 @@ export default function ReservasCalendarModule({ mode }) {
     !!startHour &&
     !!duration &&
     !selectedDateIsPast;
+
+  const selectedZoneHeaderCopy = selectedZone
+    ? isSharedCapacityZone(selectedZone.key)
+      ? `Hasta ${MAX_SHARED_ZONE_RESIDENTS} residentes por horario`
+      : `Máx. ${selectedZone.maxHours} hora(s)`
+    : "Selecciona una zona";
+
+  const selectedZonePolicyCopy = selectedZone
+    ? isSharedCapacityZone(selectedZone.key)
+      ? `${selectedZone.maxHours} hora(s) máximas por residente y ${MAX_SHARED_ZONE_RESIDENTS} cupos simultáneos`
+      : `${selectedZone.maxHours} hora(s) máximas por residente`
+    : "Sin zona seleccionada";
+
+  const focusReservationForm = () => {
+    window.requestAnimationFrame(() => {
+      formSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  const clearEditingReservation = ({ resetForm = false } = {}) => {
+    setEditingReservation(null);
+
+    if (resetForm) {
+      setSelectedZoneKey(RESERVA_ZONAS[0].key);
+      setStartHour("");
+      setDuration("");
+      setResidentNameInput(userProfile?.nombre || "");
+      setCedulaInput(userProfile?.cedula || "");
+    }
+  };
 
   const handleChangeMonth = (direction) => {
     const nextMonth = addMonths(currentMonth, direction);
@@ -299,21 +352,59 @@ export default function ReservasCalendarModule({ mode }) {
     setSelectedDateKey(formatDateKey(nextSelectedDate));
   };
 
-  const handleCreateReservation = async (event) => {
-    event.preventDefault();
-
-    if (!session?.uid || !userProfile || userProfile.rol !== "Residente") {
+  const handleStartEditing = (reservation) => {
+    if (!session?.uid || !canManageReservation(reservation, session.uid, new Date())) {
       Swal.fire({
-        title: "Acceso no permitido",
-        text: "Solo los residentes pueden crear reservas.",
+        title: "No disponible",
+        text: "Solo puedes editar tus propias reservas futuras.",
         icon: "warning",
         confirmButtonColor: "#460669",
       });
       return;
     }
 
+    setEditingReservation(reservation);
+    setCurrentMonth(startOfMonth(parseDateKey(reservation.dateKey)));
+    setSelectedDateKey(reservation.dateKey);
+    setSelectedZoneKey(reservation.zoneKey);
+    setResidentNameInput(reservation.residentName || userProfile?.nombre || "");
+    setCedulaInput(reservation.cedula || userProfile?.cedula || "");
+    setStartHour(String(reservation.startHour));
+    setDuration(String(reservation.duration));
+    focusReservationForm();
+  };
+
+  const handleSubmitReservation = async (event) => {
+    event.preventDefault();
+
+    if (!session?.uid || !userProfile || userProfile.rol !== "Residente") {
+      Swal.fire({
+        title: "Acceso no permitido",
+        text: "Solo los residentes pueden gestionar reservas.",
+        icon: "warning",
+        confirmButtonColor: "#460669",
+      });
+      return;
+    }
+
+    if (
+      isEditingReservation &&
+      !canManageReservation(editingReservation, session.uid, new Date())
+    ) {
+      Swal.fire({
+        title: "No disponible",
+        text: "La reserva que intentas editar ya no puede modificarse.",
+        icon: "warning",
+        confirmButtonColor: "#460669",
+      });
+      clearEditingReservation({ resetForm: true });
+      return;
+    }
+
     const startHourValue = Number(startHour);
     const durationValue = Number(duration);
+    const residentNameValue = residentNameInput.trim() || userProfile?.nombre || "Residente";
+    const cedulaValue = cedulaInput.trim() || userProfile?.cedula || "";
     const validation = getReservationValidation({
       reservations: reservas,
       dateKey: selectedDateKey,
@@ -321,12 +412,13 @@ export default function ReservasCalendarModule({ mode }) {
       startHour: startHourValue,
       duration: durationValue,
       userId: session.uid,
+      reservationId: editingReservation?.id,
       baseDate: new Date(),
     });
 
     if (!validation.valid) {
       Swal.fire({
-        title: "No se pudo reservar",
+        title: isEditingReservation ? "No se pudo actualizar" : "No se pudo reservar",
         text: validation.message,
         icon: "warning",
         confirmButtonColor: "#460669",
@@ -337,7 +429,7 @@ export default function ReservasCalendarModule({ mode }) {
     setSubmitting(true);
 
     try {
-      await createReserva({
+      const payload = {
         dateKey: selectedDateKey,
         zoneKey: selectedZoneKey,
         zoneLabel: selectedZone.label,
@@ -345,25 +437,37 @@ export default function ReservasCalendarModule({ mode }) {
         endHour: startHourValue + durationValue,
         duration: durationValue,
         userId: session.uid,
-        residentName: userProfile.nombre,
+        residentName: residentNameValue,
         residentEmail: userProfile.email,
-        cedula: userProfile.cedula,
+        cedula: cedulaValue,
         torre: userProfile.torre,
         apartamento: userProfile.apartamento,
-      });
+      };
+
+      if (isEditingReservation) {
+        await updateReserva(editingReservation.id, payload);
+      } else {
+        await createReserva(payload);
+      }
 
       await loadReservas();
 
+      if (isEditingReservation) {
+        clearEditingReservation({ resetForm: true });
+      }
+
       Swal.fire({
-        title: "Reserva creada",
-        text: `Tu reserva de ${selectedZone.label} quedó registrada correctamente.`,
+        title: isEditingReservation ? "Reserva actualizada" : "Reserva creada",
+        text: isEditingReservation
+          ? `Tu reserva de ${selectedZone.label} se actualizó correctamente.`
+          : `Tu reserva de ${selectedZone.label} quedó registrada correctamente.`,
         icon: "success",
         confirmButtonColor: "#460669",
       });
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "No se pudo crear la reserva.",
+        text: error.message || "No se pudo guardar la reserva.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
@@ -404,6 +508,10 @@ export default function ReservasCalendarModule({ mode }) {
       await deleteReserva(reservation.id);
       await loadReservas();
 
+      if (editingReservation?.id === reservation.id) {
+        clearEditingReservation({ resetForm: true });
+      }
+
       Swal.fire({
         title: "Reserva cancelada",
         text: "La reserva se eliminó correctamente.",
@@ -432,20 +540,22 @@ export default function ReservasCalendarModule({ mode }) {
           </p>
         </div>
 
-        <div className="reservas-hero-stats">
-          <article className="reservas-hero-stat">
-            <span>Reservas del mes</span>
-            <strong>{totalMonthReservations}</strong>
-          </article>
-          <article className="reservas-hero-stat">
-            <span>Días ocupados</span>
-            <strong>{occupiedDaysCount}</strong>
-          </article>
-          <article className="reservas-hero-stat">
-            <span>Seleccionado</span>
-            <strong>{selectedDayReservations.length}</strong>
-          </article>
-        </div>
+        {isResidentMode ? null : (
+          <div className="reservas-hero-stats">
+            <article className="reservas-hero-stat">
+              <span>Reservas del mes</span>
+              <strong>{totalMonthReservations}</strong>
+            </article>
+            <article className="reservas-hero-stat">
+              <span>Días ocupados</span>
+              <strong>{occupiedDaysCount}</strong>
+            </article>
+            <article className="reservas-hero-stat">
+              <span>Seleccionado</span>
+              <strong>{selectedDayReservations.length}</strong>
+            </article>
+          </div>
+        )}
       </header>
 
       <div className="reservas-shell">
@@ -603,10 +713,16 @@ export default function ReservasCalendarModule({ mode }) {
                     reservation={reservation}
                     isResidentMode={isResidentMode}
                     isOwner={reservation.userId === session?.uid}
+                    canEdit={
+                      isResidentMode &&
+                      canManageReservation(reservation, session?.uid, new Date())
+                    }
                     canCancel={
                       isResidentMode &&
                       canManageReservation(reservation, session?.uid, new Date())
                     }
+                    isEditing={editingReservation?.id === reservation.id}
+                    onEdit={handleStartEditing}
                     onCancel={handleCancelReservation}
                   />
                 ))
@@ -615,15 +731,34 @@ export default function ReservasCalendarModule({ mode }) {
           </section>
 
           {isResidentMode ? (
-            <section className="reservas-side-section">
+            <section className="reservas-side-section" ref={formSectionRef}>
               <div className="reservas-side-section-head">
-                <h3>Crear reserva</h3>
+                <h3>{isEditingReservation ? "Editar reserva" : "Crear reserva"}</h3>
                 <span>
                   {selectedZone ? `Máx. ${selectedZone.maxHours} hora(s)` : "Selecciona una zona"}
                 </span>
               </div>
 
-              <form className="reservas-form" onSubmit={handleCreateReservation}>
+              <p className="reservas-form-note">{selectedZoneHeaderCopy}</p>
+
+              <form className="reservas-form" onSubmit={handleSubmitReservation}>
+                {isEditingReservation ? (
+                  <div className="reservas-edit-banner">
+                    <div>
+                      <strong>Editando tu reserva</strong>
+                      <p>Actualiza la fecha, la zona o el horario y luego guarda los cambios.</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="reservas-text-button"
+                      onClick={() => clearEditingReservation({ resetForm: true })}
+                    >
+                      Cancelar edición
+                    </button>
+                  </div>
+                ) : null}
+
                 <div className="reservas-zone-selector">
                   {RESERVA_ZONAS.map((zone) => {
                     const isActive = zone.key === selectedZoneKey;
@@ -651,30 +786,36 @@ export default function ReservasCalendarModule({ mode }) {
                 <div className="reservas-readonly-grid">
                   <label>
                     Fecha
-                    <input type="text" value={getFullDateLabel(selectedDateKey)} readOnly />
+                    <input type="text" value={getFullDateLabel(selectedDateKey)} disabled />
                   </label>
                   <label>
                     Nombre
-                    <input type="text" value={profileLoading ? "Cargando..." : userProfile?.nombre || ""} readOnly />
-                  </label>
-                  <label>
-                    Torre
-                    <input type="text" value={profileLoading ? "Cargando..." : userProfile?.torre || ""} readOnly />
-                  </label>
-                  <label>
-                    Apartamento
                     <input
                       type="text"
-                      value={profileLoading ? "Cargando..." : userProfile?.apartamento || ""}
-                      readOnly
+                      value={profileLoading ? "Cargando..." : residentNameInput}
+                      onChange={(event) => setResidentNameInput(event.target.value)}
+                      disabled={profileLoading}
                     />
                   </label>
                   <label>
                     Cédula
                     <input
                       type="text"
-                      value={profileLoading ? "Cargando..." : userProfile?.cedula || ""}
-                      readOnly
+                      value={profileLoading ? "Cargando..." : cedulaInput}
+                      onChange={(event) => setCedulaInput(event.target.value)}
+                      disabled={profileLoading}
+                    />
+                  </label>
+                  <label>
+                    Torre
+                    <input type="text" value={profileLoading ? "Cargando..." : userProfile?.torre || ""} disabled />
+                  </label>
+                  <label>
+                    Apartamento
+                    <input
+                      type="text"
+                      value={profileLoading ? "Cargando..." : userProfile?.apartamento || ""}
+                      disabled
                     />
                   </label>
                   <label>
@@ -682,7 +823,7 @@ export default function ReservasCalendarModule({ mode }) {
                     <input
                       type="text"
                       value={profileLoading ? "Cargando..." : userProfile?.email || ""}
-                      readOnly
+                      disabled
                     />
                   </label>
                 </div>
@@ -747,6 +888,8 @@ export default function ReservasCalendarModule({ mode }) {
                   </strong>
                 </div>
 
+                <p className="reservas-form-note">{selectedZonePolicyCopy}</p>
+
                 <button
                   type="submit"
                   className="reservas-submit-button"
@@ -755,36 +898,14 @@ export default function ReservasCalendarModule({ mode }) {
                   {selectedDateIsPast
                     ? "Fecha bloqueada"
                     : submitting
-                    ? "Guardando..."
+                    ? isEditingReservation
+                      ? "Actualizando..."
+                      : "Guardando..."
+                    : isEditingReservation
+                    ? "Actualizar reserva"
                     : "Reservar"}
                 </button>
               </form>
-            </section>
-          ) : null}
-
-          {isResidentMode ? (
-            <section className="reservas-side-section">
-              <div className="reservas-side-section-head">
-                <h3>Mis próximas reservas</h3>
-                <span>{upcomingUserReservations.length}</span>
-              </div>
-
-              <div className="reservas-day-list">
-                {upcomingUserReservations.length === 0 ? (
-                  <p className="reservas-empty-state">Aún no tienes reservas activas para mostrar.</p>
-                ) : (
-                  upcomingUserReservations.map((reservation) => (
-                    <SelectedDayReservationItem
-                      key={reservation.id}
-                      reservation={reservation}
-                      isResidentMode
-                      isOwner
-                      canCancel={canManageReservation(reservation, session?.uid, new Date())}
-                      onCancel={handleCancelReservation}
-                    />
-                  ))
-                )}
-              </div>
             </section>
           ) : null}
         </aside>
