@@ -9,6 +9,11 @@ const ESTADO_PENDIENTE = "Pendiente";
 
 const mensajeriaCollection = () => admin.firestore().collection(MENSAJERIA_COLLECTION); // Función para obtener la referencia a la colección de mensajería en Firestore, lo que nos permite hacer consultas y modificaciones sobre esa colección.
 
+const isLegacyCorrespondenciaNotification = (mensaje = {}) =>
+  normalizeComparableText(mensaje.subject) ===
+    normalizeComparableText("Nueva correspondencia recibida") &&
+  normalizeComparableText(mensaje.type) === normalizeComparableText("Solicitud");
+
 // Ordenamos del más reciente al más antiguo para mostrar primero
 const sortByCreatedAtDesc = (firstItem, secondItem) => {
   const firstDate = firstItem.createdAt?.getTime?.() || 0;
@@ -67,7 +72,10 @@ const mapMensaje = (snapshotDoc) => {
 const listarMensajeria = async (req, res) => {
   try {
     const snapshot = await mensajeriaCollection().get();
-    const mensajes = snapshot.docs.map(mapMensaje).sort(sortByCreatedAtDesc); // Ordenamos los mensajes para que el más reciente aparezca primero en la lista.
+    const mensajes = snapshot.docs
+      .map(mapMensaje)
+      .filter((mensaje) => !isLegacyCorrespondenciaNotification(mensaje))
+      .sort(sortByCreatedAtDesc); // Ordenamos los mensajes para que el más reciente aparezca primero en la lista.
 
     return res.status(200).json(
       mensajes.map(({ createdAt, ...mensaje }) => mensaje) // map para eliminar el campo createdAt de la respuesta, ya que el frontend no lo necesita y así evitamos enviar datos innecesarios.

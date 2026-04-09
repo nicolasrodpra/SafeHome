@@ -31,6 +31,7 @@ const normalizarVehiculo = (payload) => ({
   telefono: limpiarTexto(payload.telefono),
   torre: limpiarTexto(payload.torre),
   apartamento: limpiarTexto(payload.apartamento),
+  parqueadero: limpiarTexto(payload.parqueadero),
   tipo: limpiarTexto(payload.tipo),
 });
 
@@ -115,6 +116,7 @@ const mapVehiculo = (snapshotDoc) => {
       typeof data.valorCobrado === "number" && Number.isFinite(data.valorCobrado)
         ? data.valorCobrado
         : 0,
+    parqueadero: limpiarTexto(data.parqueadero),
     vigilanteRegistroNombre: limpiarTexto(data.vigilanteRegistroNombre),
     vigilanteSalidaNombre: limpiarTexto(data.vigilanteSalidaNombre),
     vigilanteRegistroUid: limpiarTexto(data.vigilanteRegistroUid),

@@ -18,6 +18,7 @@ const initialForm = {
   zonaVigilancia: "",
   tipoSangre: "",
   tarifaHora: "",
+  cantidadParqueaderos: "",
   password: "",
   confirmPassword: "",
 };
@@ -154,6 +155,7 @@ export default function RegistroAdminPage() {
         zonaVigilancia: value === "Vigilante" ? currentForm.zonaVigilancia : "",
         tipoSangre: value === "Vigilante" ? currentForm.tipoSangre : "",
         tarifaHora: value === "Vigilante" ? currentForm.tarifaHora : "",
+        cantidadParqueaderos: value === "Vigilante" ? currentForm.cantidadParqueaderos : "",
       };
     });
   };
@@ -180,16 +182,22 @@ export default function RegistroAdminPage() {
       currentForm.rol === "Vigilante" &&
       (!currentForm.zonaVigilancia.trim() ||
         !currentForm.tipoSangre.trim() ||
-        !currentForm.tarifaHora.trim())
+        !currentForm.tarifaHora.trim() ||
+        !currentForm.cantidadParqueaderos.trim())
     ) {
-      return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre y tarifa por hora.";
+      return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre, tarifa por hora y cantidad de parqueaderos.";
     }
 
     if (currentForm.rol === "Vigilante") {
       const tarifaHora = parseTarifaHora(currentForm.tarifaHora);
+      const cantidadParqueaderos = Number(currentForm.cantidadParqueaderos);
 
       if (Number.isNaN(tarifaHora) || tarifaHora <= 0) {
         return "La tarifa por hora del vigilante debe ser mayor a 0.";
+      }
+
+      if (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0) {
+        return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
       }
     }
 
@@ -232,6 +240,8 @@ export default function RegistroAdminPage() {
       zonaVigilancia: form.rol === "Vigilante" ? form.zonaVigilancia.trim() : "",
       tipoSangre: form.rol === "Vigilante" ? form.tipoSangre.trim() : "",
       tarifaHora: form.rol === "Vigilante" ? parseTarifaHora(form.tarifaHora) : "",
+      cantidadParqueaderos:
+        form.rol === "Vigilante" ? Number(form.cantidadParqueaderos) : "",
     };
 
     setLoading(true);
@@ -460,6 +470,21 @@ export default function RegistroAdminPage() {
                         min="1"
                         step="0.01"
                         inputMode="decimal"
+                        disabled={loading}
+                      />
+
+                      <FormField
+                        id="cantidadParqueaderos"
+                        type="number"
+                        name="cantidadParqueaderos"
+                        label="Cantidad de parqueaderos"
+                        value={form.cantidadParqueaderos}
+                        onChange={handleChange}
+                        placeholder="Ej. 20"
+                        required
+                        min="1"
+                        step="1"
+                        inputMode="numeric"
                         disabled={loading}
                       />
                     </>

@@ -160,6 +160,11 @@
   flex-shrink: 0;
 }
 
+.counter-icon.parking {
+  background: #f3eff8;
+  color: #460669;
+}
+
 .counter-info {
   display: flex;
   flex-direction: column;
@@ -173,10 +178,35 @@
   line-height: 1;
 }
 
+.counter-number-shift {
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
 .counter-label {
   color: #8b8498;
   font-size: 0.74rem;
   font-weight: 600;
+}
+
+.shift-close-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid rgba(180, 35, 24, 0.14);
+  border-radius: 14px;
+  background: #fbefef;
+  color: #8d2b20;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shift-close-btn:hover {
+  background: #f8e3e3;
 }
 
 .register-btn {

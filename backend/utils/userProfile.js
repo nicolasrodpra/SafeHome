@@ -30,6 +30,10 @@ const buildUserProfile = (uid, data = {}) => {
       typeof data.tarifaHora === "number" && Number.isFinite(data.tarifaHora)
         ? data.tarifaHora
         : 0,
+    cantidadParqueaderos:
+      typeof data.cantidadParqueaderos === "number" && Number.isFinite(data.cantidadParqueaderos)
+        ? data.cantidadParqueaderos
+        : 0,
   };
 };
 

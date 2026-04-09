@@ -4,10 +4,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
+import ResidentNotificationsModal from "../components/residente/ResidentNotificationsModal";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
-import { getComunicados } from "../services/modules/comunicadosApi";
+import {
+  getNotificacionesResidente,
+  marcarNotificacionesResidenteComoVistas,
+} from "../services/modules/notificacionesResidenteApi";
 import { getUserProfile } from "../services/modules/userApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
@@ -56,11 +60,11 @@ export default function InternalLayoutResidente({ children }) {
   const [profileRole, setProfileRole] = useState(session?.rol || "Residente");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [newComunicadosCount, setNewComunicadosCount] = useState(0);
-  const [hasNewComunicados, setHasNewComunicados] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [residentNotifications, setResidentNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const userMenuRef = useRef(null);
-  const hasInitializedComunicadosRef = useRef(false);
-  const lastComunicadosCountRef = useRef(0);
   const fechaActual = getFechaActual();
 
   useEffect(() => {
@@ -105,49 +109,44 @@ export default function InternalLayoutResidente({ children }) {
   }, [session]);
 
   useEffect(() => {
-    if (!session?.uid) {
-      setNewComunicadosCount(0);
-      setHasNewComunicados(false);
-      hasInitializedComunicadosRef.current = false;
-      lastComunicadosCountRef.current = 0;
-      return undefined;
-    }
-
-    const storageKey = `safehome_residente_seen_comunicados_${session.uid}`;
     let cancelled = false;
 
-    const syncComunicados = async () => {
+    const loadNotifications = async (keepLoading = false) => {
+      if (!session?.uid) {
+        if (!cancelled) {
+          setResidentNotifications([]);
+          setUnreadNotificationsCount(0);
+          setNotificationsLoading(false);
+        }
+        return;
+      }
+
+      if (!keepLoading && !cancelled) {
+        setNotificationsLoading(true);
+      }
+
       try {
-        const comunicados = await getComunicados();
+        const nextNotifications = await getNotificacionesResidente(session.uid);
         if (cancelled) return;
 
-        const nextCount = comunicados.length;
-        const storedSeenValue = window.localStorage.getItem(storageKey);
-
-        if (!hasInitializedComunicadosRef.current) {
-          hasInitializedComunicadosRef.current = true;
-          lastComunicadosCountRef.current = nextCount;
-          if (storedSeenValue === null) {
-            window.localStorage.setItem(storageKey, String(nextCount));
-          }
-        }
-
-        const seenCount = Number(window.localStorage.getItem(storageKey) || "0");
-        const unseenCount = Math.max(nextCount - seenCount, 0);
-
-        setNewComunicadosCount(unseenCount);
-        setHasNewComunicados(nextCount > seenCount);
-        lastComunicadosCountRef.current = nextCount;
+        setResidentNotifications(nextNotifications);
+        setUnreadNotificationsCount(nextNotifications.filter((item) => !item.read).length);
       } catch (error) {
         if (!cancelled) {
-          setNewComunicadosCount(0);
-          setHasNewComunicados(false);
+          setResidentNotifications([]);
+          setUnreadNotificationsCount(0);
+        }
+      } finally {
+        if (!cancelled) {
+          setNotificationsLoading(false);
         }
       }
     };
 
-    syncComunicados();
-    const intervalId = window.setInterval(syncComunicados, 30000);
+    loadNotifications();
+    const intervalId = window.setInterval(() => {
+      loadNotifications(true);
+    }, 30000);
 
     return () => {
       cancelled = true;
@@ -156,16 +155,30 @@ export default function InternalLayoutResidente({ children }) {
   }, [session?.uid]);
 
   useEffect(() => {
-    if (pathname !== "/residenteComunicados" || !session?.uid) {
-      return;
+    if (!notificationsOpen || !session?.uid || unreadNotificationsCount === 0) {
+      return undefined;
     }
 
-    const storageKey = `safehome_residente_seen_comunicados_${session.uid}`;
-    const totalSeen = lastComunicadosCountRef.current;
-    window.localStorage.setItem(storageKey, String(totalSeen));
-    setNewComunicadosCount(0);
-    setHasNewComunicados(false);
-  }, [pathname, session?.uid]);
+    let active = true;
+
+    const markAsSeen = async () => {
+      try {
+        await marcarNotificacionesResidenteComoVistas(session.uid);
+        if (!active) return;
+
+        setResidentNotifications((current) => current.map((item) => ({ ...item, read: true })));
+        setUnreadNotificationsCount(0);
+      } catch (error) {
+        return;
+      }
+    };
+
+    markAsSeen();
+
+    return () => {
+      active = false;
+    };
+  }, [notificationsOpen, session?.uid, unreadNotificationsCount]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -232,13 +245,13 @@ export default function InternalLayoutResidente({ children }) {
             <button
               type="button"
               className="internal-topbar-alert"
-              onClick={() => navigate("/residenteComunicados")}
-              aria-label="Ver comunicados"
-              title="Ver comunicados"
+              onClick={() => setNotificationsOpen(true)}
+              aria-label="Ver notificaciones"
+              title="Ver notificaciones"
             >
               <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
-              {hasNewComunicados && newComunicadosCount > 0 && (
-                <span className="internal-topbar-alert-badge">{newComunicadosCount}</span>
+              {unreadNotificationsCount > 0 && (
+                <span className="internal-topbar-alert-badge">{unreadNotificationsCount}</span>
               )}
             </button>
             <button
@@ -303,6 +316,12 @@ export default function InternalLayoutResidente({ children }) {
           role={profileRole}
           userName={profileName}
           session={session}
+        />
+        <ResidentNotificationsModal
+          isOpen={notificationsOpen}
+          notifications={residentNotifications}
+          loading={notificationsLoading}
+          onClose={() => setNotificationsOpen(false)}
         />
       </div>
     </div>
