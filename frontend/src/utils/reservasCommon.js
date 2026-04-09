@@ -1,15 +1,24 @@
-// Reglas compartidas del módulo de reservas.
-// Aquí vive la lógica de negocio del calendario: horarios, zonas,
-// validaciones, formatos y reglas de cancelación.
-export const OPENING_HOUR = 7;
-export const CLOSING_HOUR = 22;
+// =====================================================
+// UTILIDADES COMPARTIDAS DEL MÓDULO DE RESERVAS
+// =====================================================
+// Contiene constantes, formatos de fecha/hora, y lógica
+// usada en componentes del calendario de reservas.
+// Esta lógica se replica en el backend para validar en servidor.
 
+// Horarios de operación de zonas comunes
+export const OPENING_HOUR = 7;     // 7 AM
+export const CLOSING_HOUR = 22;    // 10 PM
+// Límite de residentes simultáneos en zonas de capacidad compartida
+export const MAX_SHARED_ZONE_RESIDENTS = 10;
+
+// Lista de zonas comunes disponibles para reservar
+// Cada zona tiene reglas de duración máxima y un color para el calendario
 export const RESERVA_ZONAS = [
   {
     key: "piscina",
     label: "Piscina",
-    maxHours: 1,
-    colorToken: "pool",
+    maxHours: 1,        // Máximo 1 hora por residente
+    colorToken: "pool", // Color en la UI
   },
   {
     key: "zona_bbq",
@@ -37,9 +46,15 @@ export const RESERVA_ZONAS = [
   },
 ];
 
+// Nombres de días para el calendario completo y mini calendarios
 export const CALENDAR_DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sab"];
 export const MINI_CALENDAR_DAY_NAMES = ["D", "L", "M", "X", "J", "V", "S"];
 
+// Zonas donde múltiples residentes pueden estar simultáneamente
+// Las otras zonas son de uso exclusivo (solo un grupo por horario)
+const SHARED_CAPACITY_ZONE_KEYS = new Set(["piscina", "gimnasio"]);
+
+// Formateadores de fecha en español (colombiano)
 const monthFormatter = new Intl.DateTimeFormat("es-CO", {
   month: "short",
   year: "numeric",
@@ -52,46 +67,65 @@ const fullDateFormatter = new Intl.DateTimeFormat("es-CO", {
   year: "numeric",
 });
 
+// ======== UTILIDADES DE FECHA ========
+
+// Rellena números con cero a la izquierda (1 -> "01")
 const padNumber = (value) => String(value).padStart(2, "0");
 
+// Convierte una Date a formato string "YYYY-MM-DD" (clave de reserva)
 export const formatDateKey = (date) =>
   `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`;
 
+// Convierte un string "YYYY-MM-DD" de vuelta a Date
 export const parseDateKey = (dateKey) => {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Date(year, month - 1, day);
 };
 
+// Obtiene el nombre del mes con el año (Ej: "abr. 2026")
 export const getMonthLabel = (date) => {
   const formatted = monthFormatter.format(date);
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
+// Obtiene la fecha completa legible (Ej: "Miércoles, 8 de abril de 2026")
 export const getFullDateLabel = (dateKey) => {
   const formatted = fullDateFormatter.format(parseDateKey(dateKey));
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
+// Retorna el primer día del mes
 export const startOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1);
 
+// Suma meses a una fecha
 export const addMonths = (date, amount) =>
   new Date(date.getFullYear(), date.getMonth() + amount, 1);
 
+// Calcula la cantidad de días en un mes
 export const getDaysInMonth = (year, monthIndex) =>
   new Date(year, monthIndex + 1, 0).getDate();
 
+// Obtiene los metadatos de una zona (label, colores, reglas)
 export const getZoneMeta = (zoneKey) =>
   RESERVA_ZONAS.find((zone) => zone.key === zoneKey) || null;
 
+// Verifica si una zona permite múltiples residentes simultáneamente
+export const isSharedCapacityZone = (zoneKey) => SHARED_CAPACITY_ZONE_KEYS.has(zoneKey);
+
+// ======== UTILIDADES DE HORA ========
+
+// Formatea una hora en formato 12 horas (Ej: 14 -> "2:00 PM")
 export const formatHourLabel = (hour) => {
   const normalizedHour = hour % 12 || 12;
   const suffix = hour >= 12 ? "PM" : "AM";
   return `${normalizedHour}:00 ${suffix}`;
 };
 
+// Formatea un rango de horas (Ej: "2:00 PM - 3:00 PM")
 export const formatReservationRange = (startHour, endHour) =>
   `${formatHourLabel(startHour)} - ${formatHourLabel(endHour)}`;
 
+// Ordena reservas por fecha y luego por hora de inicio
 export const sortReservationsByTime = (reservationA, reservationB) => {
   if (reservationA.dateKey !== reservationB.dateKey) {
     return reservationA.dateKey.localeCompare(reservationB.dateKey);
@@ -104,18 +138,23 @@ export const sortReservationsByTime = (reservationA, reservationB) => {
   return reservationA.zoneLabel.localeCompare(reservationB.zoneLabel, "es");
 };
 
-// Esta función arma todas las casillas del calendario mensual.
-// También crea los espacios vacíos para que la grilla siempre conserve su forma.
+// ======== UTILIDADES DE CALENDARIO ========
+
+// Construye todas las celdas de un mes para renderizar en un grid
+// Incluye espacios vacíos del mes anterior y siguiente para mantener una grilla rectangular
 export const buildMonthCells = (monthDate) => {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
+  // Día de la semana en que empieza el mes (0 = domingo, 6 = sábado)
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = getDaysInMonth(year, month);
+  // Total de celdas para un grid rectangular (múltiplo de 7)
   const totalCells = Math.ceil((firstDayOfMonth + daysInMonth) / 7) * 7;
 
   return Array.from({ length: totalCells }, (_, index) => {
     const dayNumber = index - firstDayOfMonth + 1;
 
+    // null para espacios vacíos (días del mes anterior/siguiente)
     if (dayNumber < 1 || dayNumber > daysInMonth) {
       return null;
     }
@@ -130,6 +169,7 @@ export const buildMonthCells = (monthDate) => {
   });
 };
 
+// Construye los días del mes para un mini calendario (sin espacios vacíos)
 export const buildMiniCalendarDays = (monthDate) => {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -139,6 +179,7 @@ export const buildMiniCalendarDays = (monthDate) => {
   return Array.from({ length: firstDayOfMonth + daysInMonth }, (_, index) => {
     const dayNumber = index - firstDayOfMonth + 1;
 
+    // Retornar null para los días antes del primer día del mes
     if (index < firstDayOfMonth) {
       return null;
     }
@@ -153,6 +194,7 @@ export const buildMiniCalendarDays = (monthDate) => {
   });
 };
 
+// Verifica si una fecha pertenece al mes especificado
 export const isDateKeyInMonth = (dateKey, monthDate) => {
   const date = parseDateKey(dateKey);
 
@@ -162,6 +204,7 @@ export const isDateKeyInMonth = (dateKey, monthDate) => {
   );
 };
 
+// Verifica si una fecha en formato "YYYY-MM-DD" ya pasó
 export const isPastDateKey = (dateKey, baseDate = new Date()) => {
   const reservationDate = parseDateKey(dateKey);
   const today = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
@@ -169,6 +212,8 @@ export const isPastDateKey = (dateKey, baseDate = new Date()) => {
   return reservationDate < today;
 };
 
+// Calcula la próxima hora completa reservable
+// Si es en medio de una hora, devuelve la siguiente hora completa
 export const getCurrentBookableHour = (baseDate = new Date()) => {
   const currentHour = baseDate.getHours();
   const needsNextHour =
@@ -177,17 +222,27 @@ export const getCurrentBookableHour = (baseDate = new Date()) => {
   return currentHour + (needsNextHour ? 1 : 0);
 };
 
+// ======== UTILIDADES DE DISPONIBILIDAD ========
+
+// Calcula las horas disponibles para iniciar una reserva
+// Para hoy, excluye las horas que ya pasaron
+// Para fechas futuras, devuelve todas las horas de operación
 export const getAvailableStartHours = (dateKey, baseDate = new Date()) => {
+  // Si no hay fecha o la fecha ya pasó, no hay horas disponibles.
   if (!dateKey || isPastDateKey(dateKey, baseDate)) {
     return [];
   }
 
   const hours = [];
+  // Verifica si la fecha corresponde al día actual.
   const isToday = dateKey === formatDateKey(baseDate);
+  // Para hoy, la hora mínima es la siguiente hora disponible.
+  // Para fechas futuras, usamos la hora de apertura.
   const minimumHour = isToday
     ? Math.max(OPENING_HOUR, getCurrentBookableHour(baseDate))
     : OPENING_HOUR;
 
+  // Acumula todas las horas disponibles desde el mínimo hasta el cierre.
   for (let hour = minimumHour; hour < CLOSING_HOUR; hour += 1) {
     hours.push(hour);
   }
@@ -235,6 +290,12 @@ export const isUpcomingReservation = (reservation, baseDate = new Date()) => {
   return reservation.endHour > baseDate.getHours();
 };
 
+const hasReservationOverlap = (reservation, { dateKey, zoneKey, startHour, endHour }) =>
+  reservation.dateKey === dateKey &&
+  reservation.zoneKey === zoneKey &&
+  startHour < reservation.endHour &&
+  endHour > reservation.startHour;
+
 // Aquí reunimos las reglas del negocio para avisarle al usuario, paso a paso,
 // por qué una reserva es válida o qué condición le falta cumplir.
 export const getReservationValidation = ({
@@ -244,6 +305,7 @@ export const getReservationValidation = ({
   startHour,
   duration,
   userId,
+  reservationId,
   baseDate = new Date(),
 }) => {
   if (!dateKey) {
@@ -254,7 +316,7 @@ export const getReservationValidation = ({
     return { valid: false, message: "Selecciona una zona común." };
   }
 
-  if (!Number.isFinite(startHour) || !Number.isFinite(duration)) {
+  if (!Number.isFinite(startHour) || !Number.isFinite(duration) || duration <= 0) {
     return { valid: false, message: "Selecciona una hora de inicio y una duración válidas." };
   }
 
@@ -287,7 +349,7 @@ export const getReservationValidation = ({
   if (duration > zone.maxHours) {
     return {
       valid: false,
-      message: `La zona ${zone.label} solo permite ${zone.maxHours} hora(s) por usuario.`,
+      message: `La zona ${zone.label} solo permite ${zone.maxHours} hora(s) por residente.`,
     };
   }
 
@@ -301,22 +363,33 @@ export const getReservationValidation = ({
     };
   }
 
-  const conflictingReservation = reservations.find(
-    (reservation) =>
-      reservation.dateKey === dateKey &&
-      reservation.zoneKey === zoneKey &&
-      startHour < reservation.endHour &&
-      endHour > reservation.startHour
+  const comparableReservations = reservations.filter(
+    (reservation) => reservation.id !== reservationId
   );
 
-  if (conflictingReservation) {
+  const overlappingReservations = comparableReservations.filter((reservation) =>
+    hasReservationOverlap(reservation, { dateKey, zoneKey, startHour, endHour })
+  );
+
+  if (isSharedCapacityZone(zoneKey)) {
+    const overlappingUsers = new Set(
+      overlappingReservations.map((reservation) => reservation.userId).filter(Boolean)
+    );
+
+    if (!overlappingUsers.has(userId) && overlappingUsers.size >= MAX_SHARED_ZONE_RESIDENTS) {
+      return {
+        valid: false,
+        message: `La ${zone.label.toLowerCase()} ya alcanzó el límite de ${MAX_SHARED_ZONE_RESIDENTS} residentes en ese horario.`,
+      };
+    }
+  } else if (overlappingReservations.length > 0) {
     return {
       valid: false,
       message: "Esa zona ya está reservada en ese horario. Elige otra hora.",
     };
   }
 
-  const ownReservationsForZoneAndDay = reservations.filter(
+  const ownReservationsForZoneAndDay = comparableReservations.filter(
     (reservation) =>
       reservation.userId === userId &&
       reservation.dateKey === dateKey &&
@@ -327,7 +400,7 @@ export const getReservationValidation = ({
     return {
       valid: false,
       message:
-        "Solo puedes tener una reserva por zona en el mismo día. Si necesitas otro horario, cancela la actual y crea una nueva.",
+        "Solo puedes tener una reserva por zona en el mismo día. Si necesitas otro horario, edita la actual o cancélala y crea una nueva.",
     };
   }
 
@@ -339,7 +412,7 @@ export const getReservationValidation = ({
   if (currentReservedHours + duration > zone.maxHours) {
     return {
       valid: false,
-      message: `No puedes superar ${zone.maxHours} hora(s) en ${zone.label} para el mismo día.`,
+      message: `No puedes superar ${zone.maxHours} hora(s) en ${zone.label} durante el mismo día.`,
     };
   }
 
