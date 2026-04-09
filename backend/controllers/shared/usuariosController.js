@@ -12,6 +12,25 @@ const compareByText = (firstValue = "", secondValue = "") =>
     sensitivity: "base",
   });
 
+const parsePositiveNumber = (value) => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  const normalizedValue = normalizeText(value).replace(",", ".");
+  const parsedValue = Number(normalizedValue);
+
+  return Number.isFinite(parsedValue) ? parsedValue : NaN;
+};
+
+const hasProvidedNumberValue = (value) => {
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  return normalizeText(value) !== "";
+};
+
 const getSortableNumber = (value) => {
   const normalizedValue = normalizeText(value);
   const match = normalizedValue.match(/\d+/);
@@ -123,6 +142,36 @@ const actualizarPerfilUsuario = async (req, res) => {
     const apellidos = normalizeText(req.body?.apellidos);
     const nombreCompleto =
       [nombres, apellidos].filter(Boolean).join(" ").trim() || currentProfile.nombre;
+    const tarifaHoraValue = req.body?.tarifaHora;
+    const cantidadParqueaderosValue = req.body?.cantidadParqueaderos;
+    const tarifaHora =
+      currentProfile.rol === "Vigilante"
+        ? tarifaHoraValue === undefined || !hasProvidedNumberValue(tarifaHoraValue)
+          ? currentProfile.tarifaHora
+          : parsePositiveNumber(tarifaHoraValue)
+        : currentProfile.tarifaHora;
+    const cantidadParqueaderos =
+      currentProfile.rol === "Vigilante"
+        ? cantidadParqueaderosValue === undefined ||
+          !hasProvidedNumberValue(cantidadParqueaderosValue)
+          ? currentProfile.cantidadParqueaderos
+          : parsePositiveNumber(cantidadParqueaderosValue)
+        : currentProfile.cantidadParqueaderos;
+
+    if (currentProfile.rol === "Vigilante" && (!Number.isFinite(tarifaHora) || tarifaHora <= 0)) {
+      return res.status(400).json({
+        mensaje: "La tarifa por hora del vigilante debe ser mayor a 0.",
+      });
+    }
+
+    if (
+      currentProfile.rol === "Vigilante" &&
+      (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0)
+    ) {
+      return res.status(400).json({
+        mensaje: "La cantidad de parqueaderos del vigilante debe ser mayor a 0.",
+      });
+    }
 
     const payload = {
       nombre: nombreCompleto,
@@ -134,6 +183,8 @@ const actualizarPerfilUsuario = async (req, res) => {
       apartamento: normalizeText(req.body?.apartamento),
       zonaVigilancia: normalizeText(req.body?.zonaVigilancia),
       tipoSangre: normalizeText(req.body?.tipoSangre),
+      tarifaHora: currentProfile.rol === "Vigilante" ? tarifaHora : 0,
+      cantidadParqueaderos: currentProfile.rol === "Vigilante" ? cantidadParqueaderos : 0,
       correo: currentProfile.email,
       email: currentProfile.email,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),

@@ -6,6 +6,17 @@ const TIPOS_SANGRE_VALIDOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const FIREBASE_AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1"; // Lo usamos para las llamadas directas a Firebase Auth, como el envío de correo de verificación.
 const limpiarTexto = (value) => (typeof value === "string" ? value.trim() : "");
 
+const parseCantidadParqueaderos = (value) => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+
+  const textValue = limpiarTexto(value);
+  const parsedValue = Number(textValue);
+
+  return Number.isFinite(parsedValue) ? Math.trunc(parsedValue) : NaN;
+};
+
 const parseTarifaHora = (value) => {
   if (typeof value === "number" && Number.isFinite(value)) { 
     return value; // Si ya es un número válido, lo devolvemos tal cual.
@@ -28,13 +39,14 @@ const construirDatosPorRol = ({
   zonaVigilancia,
   tipoSangre,
   tarifaHora,
+  cantidadParqueaderos,
 }) => {
   if (rol === "Residente") { 
     return { torre, apartamento };
   }
 
   if (rol === "Vigilante") {
-    return { zonaVigilancia, tipoSangre, tarifaHora };
+    return { zonaVigilancia, tipoSangre, tarifaHora, cantidadParqueaderos };
   }
 
   return {};
@@ -49,13 +61,20 @@ const validarCamposPorRol = ({
   zonaVigilancia,
   tipoSangre,
   tarifaHora,
+  cantidadParqueaderos,
 }) => {
   if (rol === "Residente" && (!torre || !apartamento)) {
     return "Para registrar un residente debes completar torre y apartamento.";
   }
 
-  if (rol === "Vigilante" && (!zonaVigilancia || !tipoSangre || Number.isNaN(tarifaHora))) {
-    return "Para registrar un vigilante debes completar la zona de vigilancia, el tipo de sangre y la tarifa por hora.";
+  if (
+    rol === "Vigilante" &&
+    (!zonaVigilancia ||
+      !tipoSangre ||
+      Number.isNaN(tarifaHora) ||
+      Number.isNaN(cantidadParqueaderos))
+  ) {
+    return "Para registrar un vigilante debes completar la zona de vigilancia, el tipo de sangre, la tarifa por hora y la cantidad de parqueaderos.";
   }
 
   if (rol === "Vigilante" && !TIPOS_SANGRE_VALIDOS.includes(tipoSangre)) {
@@ -64,6 +83,10 @@ const validarCamposPorRol = ({
 
   if (rol === "Vigilante" && tarifaHora <= 0) {
     return "La tarifa por hora del vigilante debe ser mayor a 0.";
+  }
+
+  if (rol === "Vigilante" && cantidadParqueaderos <= 0) {
+    return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
   }
 
   return ""; // Si no hay errores, devolvemos una cadena vacía.
@@ -151,10 +174,12 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     zonaVigilancia,
     tipoSangre,
     tarifaHora,
+    cantidadParqueaderos,
   } = req.body;
   const rolFinal = rol || rolPorDefecto;
   const nombreCompleto = nombre || [nombres, apellidos].filter(Boolean).join(" ").trim(); // Si se envía un campo "nombre" se usa tal cual, sino se construye a partir de nombres y apellidos.
   const tarifaHoraNormalizada = parseTarifaHora(tarifaHora);
+  const cantidadParqueaderosNormalizada = parseCantidadParqueaderos(cantidadParqueaderos);
   const emailNormalizado = limpiarTexto(email).toLowerCase();
 
   if (!nombreCompleto || !emailNormalizado || !password || !confirmPassword || !rolFinal) {
@@ -172,6 +197,7 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     zonaVigilancia,
     tipoSangre,
     tarifaHora: tarifaHoraNormalizada,
+    cantidadParqueaderos: cantidadParqueaderosNormalizada,
   });
 
   if (mensajeCamposPorRol) {
@@ -192,11 +218,14 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
 
   if (
     rolFinal === "Vigilante" &&
-    (!zonaVigilancia || !tipoSangre || Number.isNaN(tarifaHoraNormalizada))
+    (!zonaVigilancia ||
+      !tipoSangre ||
+      Number.isNaN(tarifaHoraNormalizada) ||
+      Number.isNaN(cantidadParqueaderosNormalizada))
   ) {
     return res.status(400).json({
       mensaje:
-        "Para vigilante debes registrar la zona de vigilancia, el tipo de sangre y la tarifa por hora.",
+        "Para vigilante debes registrar la zona de vigilancia, el tipo de sangre, la tarifa por hora y la cantidad de parqueaderos.",
     });
   }
 
@@ -225,6 +254,7 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
         zonaVigilancia,
         tipoSangre,
         tarifaHora: tarifaHoraNormalizada,
+        cantidadParqueaderos: cantidadParqueaderosNormalizada,
       }),
       creadoEn: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -238,6 +268,7 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
       userData.zonaVigilancia = zonaVigilancia.trim();
       userData.tipoSangre = tipoSangre.trim();
       userData.tarifaHora = tarifaHoraNormalizada;
+      userData.cantidadParqueaderos = cantidadParqueaderosNormalizada;
     }
 
     await admin.firestore().collection("users").doc(userRecord.uid).set(userData); // Esperar a que se guarde el perfil en Firestore antes de continuar, para asegurarnos de que el usuario esté completamente registrado antes de enviar el correo de verificación.

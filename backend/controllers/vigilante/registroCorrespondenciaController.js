@@ -3,6 +3,9 @@
 // y marca la entrega con trazabilidad del vigilante.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
+const {
+  crearNotificacionCorrespondencia,
+} = require("../shared/notificacionesResidenteController");
 
 const correspondenciaCollection = () => admin.firestore().collection("correspondencia");
 const usersCollection = () => admin.firestore().collection("users");
@@ -89,6 +92,34 @@ const obtenerPerfilVigilante = async (uid) => {
   };
 };
 
+const buscarResidentePorDocumento = async (documento) => {
+  const residentDocument = limpiarTexto(documento);
+
+  if (!residentDocument) {
+    return null;
+  }
+
+  const snapshot = await usersCollection().where("cedula", "==", residentDocument).limit(1).get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const residentDoc = snapshot.docs[0];
+  const residentData = residentDoc.data() || {};
+
+  if (limpiarTexto(residentData.rol) !== "Residente") {
+    return null;
+  }
+
+  return {
+    uid: residentDoc.id,
+    nombre: limpiarTexto(residentData.nombre) || "Residente",
+    torre: limpiarTexto(residentData.torre),
+    apartamento: limpiarTexto(residentData.apartamento),
+  };
+};
+
 const obtenerCorrespondencia = async (req, res) => {
   try {
     const snapshot = await correspondenciaCollection().get();
@@ -129,6 +160,21 @@ const crearCorrespondencia = async (req, res) => {
     };
 
     const ref = await correspondenciaCollection().add(documento);
+
+    const residente = await buscarResidentePorDocumento(registro.documento);
+
+    if (residente) {
+      await crearNotificacionCorrespondencia({
+        residentId: residente.uid,
+        residentName: residente.nombre,
+        documento: registro.documento,
+        torre: residente.torre,
+        apartamento: residente.apartamento,
+        correspondenciaId: ref.id,
+        tipoEntrega: registro.tipoEntrega,
+        remitente: registro.remitente,
+      });
+    }
 
     return res.status(201).json({
       mensaje: "Correspondencia registrada",

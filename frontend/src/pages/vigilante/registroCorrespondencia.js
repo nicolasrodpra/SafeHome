@@ -35,13 +35,13 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
   useEffect(() => {
     if (editingItem) {
       setForm({
-        residente: editingItem.residente,
-        documento: editingItem.documento,
-        torre: editingItem.torre,
-        apartamento: editingItem.apartamento,
-        tipoEntrega: editingItem.tipoEntrega,
-        remitente: editingItem.remitente,
-        observacion: editingItem.observacion,
+        residente: editingItem.residente || "",
+        documento: editingItem.documento || "",
+        torre: editingItem.torre || "",
+        apartamento: editingItem.apartamento || "",
+        tipoEntrega: editingItem.tipoEntrega || "",
+        remitente: editingItem.remitente || "",
+        observacion: editingItem.observacion || "",
       });
     } else {
       setForm(EMPTY_FORM);
@@ -107,7 +107,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Residente</label>
               <input
                 name="residente"
-                value={form.residente}
+                value={form.residente || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, residente: event.target.value }))}
                 placeholder="Nombre completo"
               />
@@ -118,7 +118,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Documento</label>
               <input
                 name="documento"
-                value={form.documento}
+                value={form.documento || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, documento: event.target.value }))}
                 placeholder="Numero de documento"
               />
@@ -131,7 +131,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Torre</label>
               <input
                 name="torre"
-                value={form.torre}
+                value={form.torre || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, torre: event.target.value }))}
                 placeholder="Torre"
               />
@@ -142,7 +142,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Apartamento</label>
               <input
                 name="apartamento"
-                value={form.apartamento}
+                value={form.apartamento || ""}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, apartamento: event.target.value }))
                 }
@@ -157,7 +157,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Tipo de entrega</label>
               <select
                 name="tipoEntrega"
-                value={form.tipoEntrega}
+                value={form.tipoEntrega || ""}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, tipoEntrega: event.target.value }))
                 }
@@ -174,7 +174,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Remitente</label>
               <input
                 name="remitente"
-                value={form.remitente}
+                value={form.remitente || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, remitente: event.target.value }))}
                 placeholder="Empresa o persona"
               />
@@ -187,7 +187,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <label>Observacion</label>
               <input
                 name="observacion"
-                value={form.observacion}
+                value={form.observacion || ""}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, observacion: event.target.value }))
                 }
@@ -211,15 +211,132 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
   );
 }
 
+function CorrespondenciaDetailModal({ isOpen, onClose, item }) {
+  if (!isOpen || !item) return null;
+
+  return (
+    <div className="guard-modal-overlay" onClick={onClose}>
+      <div className="guard-modal-box" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-stripe" />
+        <div className="modal-header">
+          <div className="modal-header-left">
+            <div className="modal-icon">
+              <i className="ph-light ph-eye"></i>
+            </div>
+            <div>
+              <p className="modal-title">Observar correspondencia</p>
+              <p className="modal-subtitle">
+                Consulta el detalle completo del registro sin editarlo.
+              </p>
+            </div>
+
+          </div>
+          <button type="button" className="modal-close" onClick={onClose}>
+            <i className="ph-light ph-x"></i>
+          </button>
+        </div>
+
+        <hr className="modal-divider" />
+
+        <div className="modal-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label>Estado</label>
+              <input value={item.estado || "--"} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Tipo de entrega</label>
+              <input value={item.tipoEntrega || "--"} readOnly />
+            </div>
+
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Residente</label>
+              <input value={item.residente || "--"} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Documento</label>
+              <input value={item.documento || "--"} readOnly />
+            </div>
+
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Remitente</label>
+              <input value={item.remitente || "--"} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Vigilante</label>
+              <input value={item.vigilanteNombre || "Sin dato"} readOnly />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Torre</label>
+              <input value={item.torre || "--"} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Apartamento</label>
+              <input value={item.apartamento || "--"} readOnly />
+            </div>
+          </div>
+
+          <div className="form-row form-row-single">
+            <div className="form-group">
+              <label>Observacion</label>
+              <input value={item.observacion || "--"} readOnly />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Fecha de registro</label>
+              <input value={[item.fecha, item.hora].filter(Boolean).join(" ") || "--"} readOnly />
+            </div>
+
+            <div className="form-group">
+              <label>Entrega</label>
+              <input
+                value={
+                  item.estado === "Entregado"
+                    ? [item.fechaEntrega, item.horaEntrega].filter(Boolean).join(" ")
+                    : "--"
+                }
+                readOnly
+              />
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn-save" onClick={onClose}>
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RegistroCorrespondencia() {
   const session = useSession();
   const [items, setItems] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [observedItem, setObservedItem] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [deliveringId, setDeliveringId] = useState(null);
   const [searchCedula, setSearchCedula] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Todos");
 
   const loadItems = async () => {
     try {
@@ -237,12 +354,16 @@ export default function RegistroCorrespondencia() {
   const filteredItems = useMemo(() => {
     const cedulaBuscada = normalizeText(searchCedula);
 
-    if (!cedulaBuscada) {
-      return items;
-    }
+    return items.filter((item) => {
+      const matchesCedula = !cedulaBuscada || normalizeText(item.documento).includes(cedulaBuscada);
+      const matchesStatus =
+        statusFilter === "Todos" ||
+        (statusFilter === "Pendiente" && item.estado !== "Entregado") ||
+        item.estado === statusFilter;
 
-    return items.filter((item) => normalizeText(item.documento).includes(cedulaBuscada));
-  }, [items, searchCedula]);
+      return matchesCedula && matchesStatus;
+    });
+  }, [items, searchCedula, statusFilter]);
 
   const totalPaquetes = filteredItems.filter((item) => item.tipoEntrega === "Paquete").length;
   const totalSobres = filteredItems.filter((item) => item.tipoEntrega === "Sobre").length;
@@ -445,6 +566,29 @@ export default function RegistroCorrespondencia() {
                 placeholder="Buscar por cédula"
               />
             </div>
+            <div className="correspondencia-status-filter">
+              <button
+                type="button"
+                className={statusFilter === "Todos" ? "is-active" : ""}
+                onClick={() => setStatusFilter("Todos")}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                className={statusFilter === "Pendiente" ? "is-active" : ""}
+                onClick={() => setStatusFilter("Pendiente")}
+              >
+                Pendiente
+              </button>
+              <button
+                type="button"
+                className={statusFilter === "Entregado" ? "is-active" : ""}
+                onClick={() => setStatusFilter("Entregado")}
+              >
+                Entregado
+              </button>
+            </div>
           </div>
 
           <div className="guard-module-table-wrap">
@@ -455,7 +599,6 @@ export default function RegistroCorrespondencia() {
                   <th>Tipo</th>
                   <th>Residente</th>
                   <th>Documento</th>
-                  <th>Remitente</th>
                   <th>Vigilante</th>
                   <th>Torre</th>
                   <th>Apartamento</th>
@@ -468,7 +611,7 @@ export default function RegistroCorrespondencia() {
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="guard-module-empty-row">
+                    <td colSpan={11} className="guard-module-empty-row">
                       No hay correspondencia que coincida con los filtros.
                     </td>
                   </tr>
@@ -499,7 +642,6 @@ export default function RegistroCorrespondencia() {
                       </td>
                       <td>{item.residente}</td>
                       <td>{item.documento}</td>
-                      <td>{item.remitente}</td>
                       <td>{item.vigilanteNombre || "Sin dato"}</td>
                       <td>{item.torre}</td>
                       <td>{item.apartamento}</td>
@@ -514,6 +656,14 @@ export default function RegistroCorrespondencia() {
                       </td>
                       <td>
                         <div className="action-btns">
+                          <button
+                            type="button"
+                            className="action-icon-btn"
+                            onClick={() => setObservedItem(item)}
+                            title="Observar correspondencia"
+                          >
+                            <i className="ph-light ph-eye"></i>
+                          </button>
                           <button
                             type="button"
                             className="action-icon-btn delete"
@@ -576,6 +726,12 @@ export default function RegistroCorrespondencia() {
         onSave={handleSave}
         editingItem={editingItem}
         loading={loadingForm}
+      />
+
+      <CorrespondenciaDetailModal
+        isOpen={Boolean(observedItem)}
+        item={observedItem}
+        onClose={() => setObservedItem(null)}
       />
     </InternalLayout>
   );

@@ -31,6 +31,8 @@ const emptyForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
+  tarifaHora: "",
+  cantidadParqueaderos: "",
 };
 
 // Cuando la sesión solo trae el nombre completo, esta función lo separa
@@ -97,6 +99,12 @@ const buildProfileFromSource = (source = {}, session = null) => {
         : typeof session?.tarifaHora === "number"
           ? session.tarifaHora
           : 0,
+    cantidadParqueaderos:
+      typeof source.cantidadParqueaderos === "number"
+        ? source.cantidadParqueaderos
+        : typeof session?.cantidadParqueaderos === "number"
+          ? session.cantidadParqueaderos
+          : 0,
   };
 };
 
@@ -110,6 +118,8 @@ const buildFormFromProfile = (profile) => ({
   apartamento: profile?.apartamento || "",
   zonaVigilancia: profile?.zonaVigilancia || "",
   tipoSangre: profile?.tipoSangre || "",
+  tarifaHora: profile?.tarifaHora ? String(profile.tarifaHora) : "",
+  cantidadParqueaderos: profile?.cantidadParqueaderos ? String(profile.cantidadParqueaderos) : "",
 });
 
 export default function PerfilUsuarioPage() {
@@ -189,6 +199,7 @@ export default function PerfilUsuarioPage() {
         { label: "Zona de vigilancia", value: profile.zonaVigilancia },
         { label: "Tipo de sangre", value: profile.tipoSangre },
         { label: "Tarifa por hora", value: profile.tarifaHora ? `$${profile.tarifaHora}` : "" },
+        { label: "Cantidad de parqueaderos", value: profile.cantidadParqueaderos || "" },
       ];
     }
 
@@ -221,6 +232,10 @@ export default function PerfilUsuarioPage() {
         apartamento: form.apartamento.trim(),
         zonaVigilancia: form.zonaVigilancia.trim(),
         tipoSangre: form.tipoSangre.trim(),
+        tarifaHora: form.tarifaHora.trim() ? Number(form.tarifaHora) : "",
+        cantidadParqueaderos: form.cantidadParqueaderos.trim()
+          ? Number(form.cantidadParqueaderos)
+          : "",
       });
 
       const normalizedProfile = buildProfileFromSource(nextProfile, session);
@@ -292,7 +307,7 @@ export default function PerfilUsuarioPage() {
                     <label>Nombres</label>
                     <input
                       name="nombres"
-                      value={form.nombres}
+                      value={form.nombres || ""}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, nombres: event.target.value }))
                       }
@@ -304,7 +319,7 @@ export default function PerfilUsuarioPage() {
                     <label>Apellidos</label>
                     <input
                       name="apellidos"
-                      value={form.apellidos}
+                      value={form.apellidos || ""}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, apellidos: event.target.value }))
                       }
@@ -316,7 +331,7 @@ export default function PerfilUsuarioPage() {
                     <label>Cédula</label>
                     <input
                       name="cedula"
-                      value={form.cedula}
+                      value={form.cedula || ""}
                       onChange={(event) =>
                         setForm((current) => ({ ...current, cedula: event.target.value }))
                       }
@@ -326,12 +341,12 @@ export default function PerfilUsuarioPage() {
 
                   <div className="profile-field">
                     <label>Correo</label>
-                    <input name="email" value={form.email} disabled />
+                    <input name="email" value={form.email || ""} disabled />
                   </div>
 
                   <div className="profile-field">
                     <label>Rol</label>
-                    <input name="rol" value={form.rol} disabled />
+                    <input name="rol" value={form.rol || ""} disabled />
                   </div>
 
                   {isResidente && (
@@ -340,7 +355,7 @@ export default function PerfilUsuarioPage() {
                         <label>Torre</label>
                         <input
                           name="torre"
-                          value={form.torre}
+                          value={form.torre || ""}
                           onChange={(event) =>
                             setForm((current) => ({ ...current, torre: event.target.value }))
                           }
@@ -351,7 +366,7 @@ export default function PerfilUsuarioPage() {
                         <label>Apartamento</label>
                         <input
                           name="apartamento"
-                          value={form.apartamento}
+                          value={form.apartamento || ""}
                           onChange={(event) =>
                             setForm((current) => ({ ...current, apartamento: event.target.value }))
                           }
@@ -367,7 +382,7 @@ export default function PerfilUsuarioPage() {
                         <label>Zona de vigilancia</label>
                         <input
                           name="zonaVigilancia"
-                          value={form.zonaVigilancia}
+                          value={form.zonaVigilancia || ""}
                           onChange={(event) =>
                             setForm((current) => ({ ...current, zonaVigilancia: event.target.value }))
                           }
@@ -378,9 +393,40 @@ export default function PerfilUsuarioPage() {
                         <label>Tipo de sangre</label>
                         <input
                           name="tipoSangre"
-                          value={form.tipoSangre}
+                          value={form.tipoSangre || ""}
                           onChange={(event) =>
                             setForm((current) => ({ ...current, tipoSangre: event.target.value }))
+                          }
+                          disabled={!editMode || loading}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Tarifa por hora</label>
+                        <input
+                          name="tarifaHora"
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={form.tarifaHora || ""}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, tarifaHora: event.target.value }))
+                          }
+                          disabled={!editMode || loading}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Cantidad de parqueaderos</label>
+                        <input
+                          name="cantidadParqueaderos"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={form.cantidadParqueaderos || ""}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              cantidadParqueaderos: event.target.value,
+                            }))
                           }
                           disabled={!editMode || loading}
                         />

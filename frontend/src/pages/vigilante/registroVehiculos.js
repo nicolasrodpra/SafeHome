@@ -22,19 +22,29 @@ const EMPTY_FORM = {
   telefono: "",
   torre: "",
   apartamento: "",
+  parqueadero: "",
   tipo: "",
 };
 
 const MINUTES_PER_HOUR = 60;
 const MILLISECONDS_PER_MINUTE = 60 * 1000;
+const SHIFT_STORAGE_KEY_PREFIX = "safehome_vigilancia_turno_";
 const CURRENCY_FORMATTER = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
   maximumFractionDigits: 0,
 });
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("es-CO", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
 
 const formatCurrency = (value) => CURRENCY_FORMATTER.format(Number(value) || 0);
 const normalizeText = (value) => String(value || "").trim().toUpperCase();
+const createShiftState = () => ({
+  startIso: new Date().toISOString(),
+});
+const getShiftStorageKey = (uid) => `${SHIFT_STORAGE_KEY_PREFIX}${uid || "anon"}`;
 
 const getDateFromIso = (value) => {
   if (!value) {
@@ -80,36 +90,77 @@ const calculateExitPreview = (vehicle, tarifaHora) => {
   };
 };
 
-const isToday = (value) => {
+const formatDateTimeLabel = (value) => {
   const targetDate = getDateFromIso(value);
 
   if (!targetDate) {
+    return "--";
+  }
+
+  return DATE_TIME_FORMATTER.format(targetDate);
+};
+
+const readStoredShift = (uid) => {
+  if (!uid || typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(getShiftStorageKey(uid));
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    const startDate = getDateFromIso(parsedValue?.startIso);
+
+    if (!startDate) {
+      return null;
+    }
+
+    return {
+      startIso: startDate.toISOString(),
+    };
+  } catch (error) {
+    return null;
+  }
+};
+
+const persistShift = (uid, shift) => {
+  if (!uid || typeof window === "undefined" || !shift?.startIso) {
+    return;
+  }
+
+  window.localStorage.setItem(getShiftStorageKey(uid), JSON.stringify(shift));
+};
+
+const happenedDuringShift = (value, shiftStartIso) => {
+  const targetDate = getDateFromIso(value);
+  const shiftStartDate = getDateFromIso(shiftStartIso);
+
+  if (!targetDate || !shiftStartDate) {
     return false;
   }
 
-  const now = new Date();
-
-  return (
-    targetDate.getFullYear() === now.getFullYear() &&
-    targetDate.getMonth() === now.getMonth() &&
-    targetDate.getDate() === now.getDate()
-  );
+  return targetDate.getTime() >= shiftStartDate.getTime();
 };
 
-function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
+function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkingOptions }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (editingVehicle) {
       setForm({
-        propietario: editingVehicle.propietario,
-        documento: editingVehicle.documento,
-        placa: editingVehicle.placa,
-        telefono: editingVehicle.telefono,
-        torre: editingVehicle.torre,
-        apartamento: editingVehicle.apartamento,
-        tipo: editingVehicle.tipo,
+        propietario: editingVehicle.propietario || "",
+        documento: editingVehicle.documento || "",
+        placa: editingVehicle.placa || "",
+        telefono: editingVehicle.telefono || "",
+        torre: editingVehicle.torre || "",
+        apartamento: editingVehicle.apartamento || "",
+        parqueadero: editingVehicle.parqueadero || "",
+        tipo: editingVehicle.tipo || "",
       });
     } else {
       setForm(EMPTY_FORM);
@@ -127,6 +178,11 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
     if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
+    if (!form.parqueadero.trim()) {
+      nextErrors.parqueadero = "Requerido";
+    } else if (!parkingOptions.includes(form.parqueadero)) {
+      nextErrors.parqueadero = `Debe estar entre 1 y ${parkingOptions.length}`;
+    }
     if (!form.tipo) nextErrors.tipo = "Requerido";
 
     setErrors(nextErrors);
@@ -241,6 +297,24 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading }) {
               />
               {errors.apartamento && <span className="field-error">{errors.apartamento}</span>}
             </div>
+
+            <div className="form-group">
+              <label>Parqueadero</label>
+              <select
+                value={form.parqueadero}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, parqueadero: event.target.value }))
+                }
+              >
+                <option value="">Seleccionar...</option>
+                {parkingOptions.map((parkingOption) => (
+                  <option key={parkingOption} value={parkingOption}>
+                    {parkingOption}
+                  </option>
+                ))}
+              </select>
+              {errors.parqueadero && <span className="field-error">{errors.parqueadero}</span>}
+            </div>
           </div>
 
           <div className="form-row">
@@ -280,7 +354,11 @@ export default function RegistroVehiculos() {
   const [loadingForm, setLoadingForm] = useState(false);
   const [exitingId, setExitingId] = useState(null);
   const [tarifaHoraActual, setTarifaHoraActual] = useState(Number(session?.tarifaHora) || 0);
+  const [cantidadParqueaderosActual, setCantidadParqueaderosActual] = useState(
+    Number(session?.cantidadParqueaderos) || 0
+  );
   const [searchPlaca, setSearchPlaca] = useState("");
+  const [cashShift, setCashShift] = useState(null);
 
   const loadVehicles = async () => {
     try {
@@ -296,11 +374,31 @@ export default function RegistroVehiculos() {
   }, []);
 
   useEffect(() => {
+    if (!session?.uid) {
+      setCashShift(null);
+      return;
+    }
+
+    const storedShift = readStoredShift(session.uid);
+    const nextShift = storedShift || createShiftState();
+
+    setCashShift(nextShift);
+    persistShift(session.uid, nextShift);
+  }, [session?.uid]);
+
+  useEffect(() => {
     let active = true;
     const tarifaGuardada = Number(session?.tarifaHora);
+    const cantidadGuardada = Number(session?.cantidadParqueaderos);
 
-    if (Number.isFinite(tarifaGuardada) && tarifaGuardada > 0) {
+    if (
+      Number.isFinite(tarifaGuardada) &&
+      tarifaGuardada > 0 &&
+      Number.isFinite(cantidadGuardada) &&
+      cantidadGuardada > 0
+    ) {
       setTarifaHoraActual(tarifaGuardada);
+      setCantidadParqueaderosActual(cantidadGuardada);
       return () => {
         active = false;
       };
@@ -308,6 +406,7 @@ export default function RegistroVehiculos() {
 
     if (!session?.uid) {
       setTarifaHoraActual(0);
+      setCantidadParqueaderosActual(0);
       return () => {
         active = false;
       };
@@ -323,13 +422,18 @@ export default function RegistroVehiculos() {
         }
 
         setTarifaHoraActual(tarifaPerfil);
+        setCantidadParqueaderosActual(Number(profile?.cantidadParqueaderos) || 0);
 
-        if (tarifaPerfil > 0) {
-          updateSessionProfile({ tarifaHora: tarifaPerfil });
+        if (tarifaPerfil > 0 || Number(profile?.cantidadParqueaderos) > 0) {
+          updateSessionProfile({
+            tarifaHora: tarifaPerfil,
+            cantidadParqueaderos: Number(profile?.cantidadParqueaderos) || 0,
+          });
         }
       } catch (error) {
         if (active) {
           setTarifaHoraActual(0);
+          setCantidadParqueaderosActual(0);
         }
       }
     };
@@ -339,7 +443,7 @@ export default function RegistroVehiculos() {
     return () => {
       active = false;
     };
-  }, [session?.uid, session?.tarifaHora]);
+  }, [session?.uid, session?.tarifaHora, session?.cantidadParqueaderos]);
 
   const filteredVehicles = useMemo(() => {
     const placaBuscada = normalizeText(searchPlaca);
@@ -358,6 +462,17 @@ export default function RegistroVehiculos() {
 
   const totalCarros = activeVehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
   const totalMotos = activeVehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
+  const totalParqueaderosDisponibles = Math.max(
+    cantidadParqueaderosActual - activeVehicles.length,
+    0
+  );
+  const parkingOptions = useMemo(
+    () =>
+      Array.from({ length: Math.max(cantidadParqueaderosActual, 0) }, (_, index) =>
+        String(index + 1)
+      ),
+    [cantidadParqueaderosActual]
+  );
 
   const cashCloseItems = useMemo(
     () =>
@@ -365,15 +480,16 @@ export default function RegistroVehiculos() {
         (vehicle) =>
           vehicle.estado === "Salio" &&
           vehicle.vigilanteSalidaUid === session?.uid &&
-          isToday(vehicle.salidaIso)
+          happenedDuringShift(vehicle.salidaIso, cashShift?.startIso)
       ),
-    [vehicles, session?.uid]
+    [vehicles, session?.uid, cashShift?.startIso]
   );
 
   const totalRecaudadoHoy = cashCloseItems.reduce(
     (accumulator, vehicle) => accumulator + (Number(vehicle.valorCobrado) || 0),
     0
   );
+  const shiftStartedLabel = formatDateTimeLabel(cashShift?.startIso);
 
   const handleSave = async (formData) => {
     setLoadingForm(true);
@@ -481,6 +597,52 @@ export default function RegistroVehiculos() {
     }
   };
 
+  const handleFinishShift = async () => {
+    if (!session?.uid || !cashShift?.startIso) {
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Terminar turno",
+      html: `
+        <div style="text-align:left">
+          <p><strong>Inicio del turno:</strong> ${shiftStartedLabel}</p>
+          <p><strong>Salidas registradas:</strong> ${cashCloseItems.length}</p>
+          <p><strong>Total recaudado:</strong> ${formatCurrency(totalRecaudadoHoy)}</p>
+          <p>Al confirmar, el cuadre se reiniciar&aacute; y empezar&aacute; un nuevo turno.</p>
+        </div>
+      `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Terminar turno",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#b42318",
+      cancelButtonColor: "#460669",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    const nextShift = createShiftState();
+    persistShift(session.uid, nextShift);
+    setCashShift(nextShift);
+
+    Swal.fire({
+      title: "Turno finalizado",
+      html: `
+        <div style="text-align:left">
+          <p><strong>Salidas cerradas:</strong> ${cashCloseItems.length}</p>
+          <p><strong>Total cerrado:</strong> ${formatCurrency(totalRecaudadoHoy)}</p>
+          <p><strong>Nuevo turno iniciado:</strong> ${formatDateTimeLabel(nextShift.startIso)}</p>
+        </div>
+      `,
+      icon: "success",
+      confirmButtonColor: "#460669",
+    });
+  };
+
   return (
     <InternalLayout>
       <main className="content guard-module-page">
@@ -528,6 +690,16 @@ export default function RegistroVehiculos() {
                   <div className="counter-info">
                     <span className="counter-number">{totalMotos}</span>
                     <span className="counter-label">Motos activas</span>
+                  </div>
+                </div>
+
+                <div className="counter-card">
+                  <div className="counter-icon parking">
+                    <i className="ph-light ph-square-half"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{totalParqueaderosDisponibles}</span>
+                    <span className="counter-label">Parqueaderos disponibles</span>
                   </div>
                 </div>
 
@@ -582,7 +754,8 @@ export default function RegistroVehiculos() {
                   <th>Placa</th>
                   <th>Teléfono</th>
                   <th>Torre</th>
-                  <th>Apartamento</th>
+                  <th>Apto</th>
+                  <th>Parqueadero</th>
                   <th>Ingreso</th>
                   <th>Salida</th>
                   <th>Estado</th>
@@ -593,7 +766,7 @@ export default function RegistroVehiculos() {
               <tbody>
                 {filteredVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="guard-module-empty-row">
+                    <td colSpan={13} className="guard-module-empty-row">
                       No hay vehículos que coincidan con la búsqueda.
                     </td>
                   </tr>
@@ -615,6 +788,7 @@ export default function RegistroVehiculos() {
                       <td>{vehicle.telefono}</td>
                       <td>{vehicle.torre}</td>
                       <td>{vehicle.apartamento}</td>
+                      <td>{String(vehicle.parqueadero || "--")}</td>
                       <td>
                         {vehicle.fechaIngreso || vehicle.fecha} {vehicle.horaIngreso || vehicle.hora}
                       </td>
@@ -695,7 +869,17 @@ export default function RegistroVehiculos() {
                 </div>
                 <div className="counter-info">
                   <span className="counter-number">{cashCloseItems.length}</span>
-                  <span className="counter-label">Salidas de hoy</span>
+                  <span className="counter-label">Salidas del turno</span>
+                </div>
+              </div>
+
+              <div className="counter-card">
+                <div className="counter-icon">
+                  <i className="ph-light ph-clock-countdown"></i>
+                </div>
+                <div className="counter-info">
+                  <span className="counter-number counter-number-shift">{shiftStartedLabel}</span>
+                  <span className="counter-label">Inicio del turno</span>
                 </div>
               </div>
 
@@ -708,6 +892,10 @@ export default function RegistroVehiculos() {
                   <span className="counter-label">Total recaudado</span>
                 </div>
               </div>
+
+              <button type="button" className="shift-close-btn" onClick={handleFinishShift}>
+                Terminar turno
+              </button>
             </div>
           </div>
 
@@ -759,6 +947,7 @@ export default function RegistroVehiculos() {
         onSave={handleSave}
         editingVehicle={editingVehicle}
         loading={loadingForm}
+        parkingOptions={parkingOptions}
       />
     </InternalLayout>
   );
