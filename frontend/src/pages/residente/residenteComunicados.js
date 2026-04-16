@@ -55,6 +55,7 @@ export default function ResidenteComunicados() {
                   <div className="residente-comunicado-meta">
                     <span>{comunicado.fecha}</span>
                     <span>{comunicado.hora}</span>
+                    <span>{comunicado.senderLabel || "Administracion"}</span>
                   </div>
                 </div>
 

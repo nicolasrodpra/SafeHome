@@ -1,6 +1,5 @@
 // Layout interno exclusivo del residente.
-// Reutiliza la misma idea del panel general, pero con un menú
-// y accesos ajustados a las acciones permitidas para este rol.
+// Reúne el menú, el correo, las notificaciones y el acceso al asistente.
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
@@ -15,9 +14,10 @@ import {
 import { getUserProfile } from "../services/modules/userApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
+import { getUserInitials } from "../utils/userDisplay";
 import "../styles/shared/InternalLayoutResidente.css";
 
-// Opciones principales del residente dentro de su panel.
+// Navegación lateral del residente.
 const RESIDENTE_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Mensajería", to: "/residenteMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/residentesReservas" },
@@ -26,29 +26,25 @@ const RESIDENTE_NAV_ITEMS = [
   { icon: "ph-pencil-simple", label: "Actualizar datos", to: "/perfil" },
 ];
 
-// En residente tenemos dos tipos de opción: una que navega
-// y otra que todavía queda como marcador visual deshabilitado.
-function SidebarItem({ item, pathname }) {
-  if (item.to) {
-    const isActive = pathname === item.to;
+const getSessionIdentity = (session) => ({
+  name: session?.nombre || "Usuario",
+  role: session?.rol || "Residente",
+});
 
-    return (
-      <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
-        <span className="internal-nav-link-copy">
-          <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-          <span>{item.label}</span>
-        </span>
-      </Link>
-    );
+function SidebarItem({ item, pathname }) {
+  if (!item.to) {
+    return null;
   }
 
+  const isActive = pathname === item.to;
+
   return (
-    <button type="button" className="internal-nav-link internal-nav-placeholder" disabled>
+    <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
       <span className="internal-nav-link-copy">
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </span>
-    </button>
+    </Link>
   );
 }
 
@@ -56,48 +52,52 @@ export default function InternalLayoutResidente({ children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const session = useSession();
-  const [profileName, setProfileName] = useState(session?.nombre || "Usuario");
-  const [profileRole, setProfileRole] = useState(session?.rol || "Residente");
+  const sessionIdentity = getSessionIdentity(session);
+
+  const [profileName, setProfileName] = useState(sessionIdentity.name);
+  const [profileRole, setProfileRole] = useState(sessionIdentity.role);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [residentNotifications, setResidentNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
+  const userInitials = getUserInitials(profileName);
 
+  // Perfil mostrado en el encabezado.
   useEffect(() => {
     let active = true;
 
+    const applySessionIdentity = () => {
+      if (active) {
+        setProfileName(sessionIdentity.name);
+        setProfileRole(sessionIdentity.role);
+      }
+    };
+
     const loadProfile = async () => {
       if (!session?.uid) {
-        if (active) {
-          setProfileName("Usuario");
-          setProfileRole("Residente");
-        }
+        applySessionIdentity();
         return;
       }
 
-      if (active) {
-        setProfileName(session.nombre || "Usuario");
-        setProfileRole(session.rol || "Residente");
-      }
+      applySessionIdentity();
 
       try {
         const profile = await getUserProfile(session.uid);
 
-        if (active) {
-          setProfileName(profile.nombre || "Usuario");
-          setProfileRole(profile.rol || "Residente");
+        if (!active) {
+          return;
         }
 
+        setProfileName(profile.nombre || sessionIdentity.name);
+        setProfileRole(profile.rol || sessionIdentity.role);
         updateSessionProfile(profile);
       } catch (error) {
-        if (active) {
-          setProfileName(session.nombre || "Usuario");
-          setProfileRole(session.rol || "Residente");
-        }
+        applySessionIdentity();
       }
     };
 
@@ -106,8 +106,9 @@ export default function InternalLayoutResidente({ children }) {
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session, sessionIdentity.name, sessionIdentity.role]);
 
+  // Sincroniza las notificaciones del residente.
   useEffect(() => {
     let cancelled = false;
 
@@ -127,7 +128,9 @@ export default function InternalLayoutResidente({ children }) {
 
       try {
         const nextNotifications = await getNotificacionesResidente(session.uid);
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         setResidentNotifications(nextNotifications);
         setUnreadNotificationsCount(nextNotifications.filter((item) => !item.read).length);
@@ -154,6 +157,7 @@ export default function InternalLayoutResidente({ children }) {
     };
   }, [session?.uid]);
 
+  // Cuando el modal se abre, las pendientes pasan a vistas.
   useEffect(() => {
     if (!notificationsOpen || !session?.uid || unreadNotificationsCount === 0) {
       return undefined;
@@ -164,7 +168,9 @@ export default function InternalLayoutResidente({ children }) {
     const markAsSeen = async () => {
       try {
         await marcarNotificacionesResidenteComoVistas(session.uid);
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
         setResidentNotifications((current) => current.map((item) => ({ ...item, read: true })));
         setUnreadNotificationsCount(0);
@@ -180,6 +186,7 @@ export default function InternalLayoutResidente({ children }) {
     };
   }, [notificationsOpen, session?.uid, unreadNotificationsCount]);
 
+  // Cierra el menú de usuario al hacer clic fuera.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -193,14 +200,6 @@ export default function InternalLayoutResidente({ children }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const userInitials =
-    profileName
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join("") || "U";
 
   return (
     <div className="internal-shell">
@@ -241,7 +240,15 @@ export default function InternalLayoutResidente({ children }) {
           </div>
 
           <div className="internal-topbar-right">
-            <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
+            <button
+              type="button"
+              className="internal-topbar-action"
+              onClick={() => navigate("/residenteMensajeria")}
+              aria-label="Ir a mensajeria"
+              title="Ir a mensajeria"
+            >
+              <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
+            </button>
             <button
               type="button"
               className="internal-topbar-alert"
@@ -250,9 +257,9 @@ export default function InternalLayoutResidente({ children }) {
               title="Ver notificaciones"
             >
               <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
-              {unreadNotificationsCount > 0 && (
+              {unreadNotificationsCount > 0 ? (
                 <span className="internal-topbar-alert-badge">{unreadNotificationsCount}</span>
-              )}
+              ) : null}
             </button>
             <button
               type="button"
@@ -277,7 +284,7 @@ export default function InternalLayoutResidente({ children }) {
                 <i className="ph-light ph-caret-down internal-user-caret"></i>
               </button>
 
-              {userMenuOpen && (
+              {userMenuOpen ? (
                 <div className="internal-user-dropdown" role="menu">
                   <button
                     type="button"
@@ -302,14 +309,12 @@ export default function InternalLayoutResidente({ children }) {
                     <span>Cerrar sesión</span>
                   </button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
 
-        {typeof children === "function"
-          ? children({ profileName, profileRole })
-          : children}
+        {typeof children === "function" ? children({ profileName, profileRole }) : children}
         <AssistantChatPanel
           isOpen={isAssistantOpen}
           onClose={() => setIsAssistantOpen(false)}

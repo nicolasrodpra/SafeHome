@@ -223,6 +223,7 @@
   font-family: "Poppins", sans-serif;
 }
 
+.internal-topbar-action,
 .internal-topbar-alert {
   width: 40px;
   height: 40px;
@@ -256,20 +257,21 @@
   line-height: 1;
 }
 
-.internal-topbar-right > .internal-topbar-icon,
+.internal-topbar-action,
 .internal-icon-button {
   width: 40px;
   height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
 }
 
+.internal-topbar-action,
 .internal-icon-button {
-  padding: 0;
   cursor: pointer;
 }
 
@@ -279,7 +281,8 @@
   transition: color 0.18s ease, background 0.18s ease;
 }
 
-.internal-topbar-right > .internal-topbar-icon:hover,
+.internal-topbar-action:hover .internal-topbar-icon,
+.internal-topbar-alert:hover .internal-topbar-icon,
 .internal-icon-button:hover .internal-topbar-icon {
   color: var(--accent);
 }

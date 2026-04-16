@@ -1,25 +1,20 @@
 // Página de perfil compartida por todos los roles.
-// Consulta el perfil real en backend, permite editar campos válidos
-// y sincroniza los cambios con la sesión local.
-import { useEffect, useMemo, useState } from "react";
+// Carga el perfil real, arma un formulario seguro y respeta los campos bloqueados.
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
-import {
-  getUserProfile,
-  updateUserProfile,
-} from "../../services/modules/userApi";
+import { getUserProfile, updateUserProfile } from "../../services/modules/userApi";
 import { updateSessionProfile } from "../../services/sessionService";
 import "../../styles/general/perfilUsuario.css";
 
+// Textos de apoyo para la tarjeta lateral.
 const roleDescriptions = {
   Administrador: "Gestiona la operación general del conjunto y supervisa los módulos internos.",
   Residente: "Consulta información del conjunto y mantiene sus datos residenciales asociados.",
   Vigilante: "Controla accesos, novedades y registros operativos del conjunto residencial.",
 };
-
-const getFieldValue = (value) => (value ? value : "No disponible");
 
 const emptyForm = {
   nombres: "",
@@ -35,8 +30,9 @@ const emptyForm = {
   cantidadParqueaderos: "",
 };
 
-// Cuando la sesión solo trae el nombre completo, esta función lo separa
-// en dos partes simples para llenar el formulario mientras llega el backend.
+const getFieldValue = (value) => (value ? value : "No disponible");
+
+// Helpers para hidratar el perfil aunque la sesión llegue incompleta.
 const getFallbackNameParts = (source = {}, session = null) => {
   if (source.nombres || source.apellidos) {
     return {
@@ -70,8 +66,6 @@ const getFallbackNameParts = (source = {}, session = null) => {
   };
 };
 
-// Esta función arma un perfil seguro usando primero la respuesta del backend
-// y, si algo falta, completa con lo que ya tenemos guardado en la sesión.
 const buildProfileFromSource = (source = {}, session = null) => {
   const fallbackNameParts = getFallbackNameParts(source, session);
   const nombres = source.nombres || session?.nombres || fallbackNameParts.nombres;
@@ -122,6 +116,47 @@ const buildFormFromProfile = (profile) => ({
   cantidadParqueaderos: profile?.cantidadParqueaderos ? String(profile.cantidadParqueaderos) : "",
 });
 
+const buildProfileUpdatePayload = (form) => ({
+  nombres: form.nombres.trim(),
+  apellidos: form.apellidos.trim(),
+  cedula: form.cedula.trim(),
+  torre: form.torre.trim(),
+  apartamento: form.apartamento.trim(),
+  zonaVigilancia: form.zonaVigilancia.trim(),
+  tipoSangre: form.tipoSangre.trim(),
+  tarifaHora: form.tarifaHora.trim() ? Number(form.tarifaHora) : "",
+  cantidadParqueaderos: form.cantidadParqueaderos.trim()
+    ? Number(form.cantidadParqueaderos)
+    : "",
+});
+
+const getRoleSpecificFields = (profile) => {
+  if (!profile) {
+    return [];
+  }
+
+  if (profile.rol === "Residente") {
+    return [
+      { label: "Torre", value: profile.torre },
+      { label: "Apartamento", value: profile.apartamento },
+    ];
+  }
+
+  if (profile.rol === "Vigilante") {
+    return [
+      { label: "Zona de vigilancia", value: profile.zonaVigilancia },
+      { label: "Tipo de sangre", value: profile.tipoSangre },
+      { label: "Tarifa por hora", value: profile.tarifaHora ? `$${profile.tarifaHora}` : "" },
+      { label: "Cantidad de parqueaderos", value: profile.cantidadParqueaderos || "" },
+    ];
+  }
+
+  return [
+    { label: "Permisos", value: "Acceso administrativo completo" },
+    { label: "Estado", value: "Activo" },
+  ];
+};
+
 export default function PerfilUsuarioPage() {
   const session = useSession();
   const [profile, setProfile] = useState(null);
@@ -132,14 +167,29 @@ export default function PerfilUsuarioPage() {
 
   const layoutRole = profile?.rol || session?.rol;
   const LayoutComponent = layoutRole === "Residente" ? InternalLayoutResidente : InternalLayout;
+  const roleSpecificFields = getRoleSpecificFields(profile);
+  const isResidente = profile?.rol === "Residente";
+  const isVigilante = profile?.rol === "Vigilante";
 
-  // Esta función actualiza el perfil mostrado y el formulario al mismo tiempo
-  // para que la vista y los inputs siempre queden sincronizados.
   const syncProfileState = (nextProfile) => {
     setProfile(nextProfile);
     setForm(buildFormFromProfile(nextProfile));
   };
 
+  const handleFieldChange = (fieldName) => (event) => {
+    setForm((current) => ({ ...current, [fieldName]: event.target.value }));
+  };
+
+  const handleCancel = () => {
+    if (!profile) {
+      return;
+    }
+
+    setForm(buildFormFromProfile(profile));
+    setEditMode(false);
+  };
+
+  // Carga el perfil desde backend y usa la sesión como respaldo inmediato.
   useEffect(() => {
     let active = true;
 
@@ -184,60 +234,20 @@ export default function PerfilUsuarioPage() {
     };
   }, [session]);
 
-  const roleSpecificFields = useMemo(() => {
-    if (!profile) return [];
-
-    if (profile.rol === "Residente") {
-      return [
-        { label: "Torre", value: profile.torre },
-        { label: "Apartamento", value: profile.apartamento },
-      ];
-    }
-
-    if (profile.rol === "Vigilante") {
-      return [
-        { label: "Zona de vigilancia", value: profile.zonaVigilancia },
-        { label: "Tipo de sangre", value: profile.tipoSangre },
-        { label: "Tarifa por hora", value: profile.tarifaHora ? `$${profile.tarifaHora}` : "" },
-        { label: "Cantidad de parqueaderos", value: profile.cantidadParqueaderos || "" },
-      ];
-    }
-
-    return [
-      { label: "Permisos", value: "Acceso administrativo completo" },
-      { label: "Estado", value: "Activo" },
-    ];
-  }, [profile]);
-
-  const handleCancel = () => {
-    if (!profile) return;
-
-    setForm(buildFormFromProfile(profile));
-    setEditMode(false);
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!session?.uid || !profile) return;
+    if (!session?.uid || !profile) {
+      return;
+    }
 
     setSaving(true);
 
     try {
-      const nextProfile = await updateUserProfile(session.uid, {
-        nombres: form.nombres.trim(),
-        apellidos: form.apellidos.trim(),
-        cedula: form.cedula.trim(),
-        torre: form.torre.trim(),
-        apartamento: form.apartamento.trim(),
-        zonaVigilancia: form.zonaVigilancia.trim(),
-        tipoSangre: form.tipoSangre.trim(),
-        tarifaHora: form.tarifaHora.trim() ? Number(form.tarifaHora) : "",
-        cantidadParqueaderos: form.cantidadParqueaderos.trim()
-          ? Number(form.cantidadParqueaderos)
-          : "",
-      });
-
+      const nextProfile = await updateUserProfile(
+        session.uid,
+        buildProfileUpdatePayload(form)
+      );
       const normalizedProfile = buildProfileFromSource(nextProfile, session);
 
       syncProfileState(normalizedProfile);
@@ -261,9 +271,6 @@ export default function PerfilUsuarioPage() {
       setSaving(false);
     }
   };
-
-  const isResidente = profile?.rol === "Residente";
-  const isVigilante = profile?.rol === "Vigilante";
 
   return (
     <LayoutComponent>
@@ -291,7 +298,7 @@ export default function PerfilUsuarioPage() {
                 <h2>Información principal</h2>
                 <p>
                   {editMode
-                    ? "Actualiza tus datos personales antes de guardar."
+                    ? "Actualiza tus datos personales editables antes de guardar. La cedula, la torre y el apartamento permanecen bloqueados."
                     : "Estos datos se muestran como referencia. Usa actualizar para habilitar la edición."}
                 </p>
               </div>
@@ -308,9 +315,7 @@ export default function PerfilUsuarioPage() {
                     <input
                       name="nombres"
                       value={form.nombres || ""}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, nombres: event.target.value }))
-                      }
+                      onChange={handleFieldChange("nombres")}
                       disabled={!editMode || loading}
                     />
                   </div>
@@ -320,9 +325,7 @@ export default function PerfilUsuarioPage() {
                     <input
                       name="apellidos"
                       value={form.apellidos || ""}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, apellidos: event.target.value }))
-                      }
+                      onChange={handleFieldChange("apellidos")}
                       disabled={!editMode || loading}
                     />
                   </div>
@@ -331,11 +334,11 @@ export default function PerfilUsuarioPage() {
                     <label>Cédula</label>
                     <input
                       name="cedula"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={form.cedula || ""}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, cedula: event.target.value }))
-                      }
-                      disabled={!editMode || loading}
+                      disabled
+                      title="La cedula no se puede editar."
                     />
                   </div>
 
@@ -349,17 +352,15 @@ export default function PerfilUsuarioPage() {
                     <input name="rol" value={form.rol || ""} disabled />
                   </div>
 
-                  {isResidente && (
+                  {isResidente ? (
                     <>
                       <div className="profile-field">
                         <label>Torre</label>
                         <input
                           name="torre"
                           value={form.torre || ""}
-                          onChange={(event) =>
-                            setForm((current) => ({ ...current, torre: event.target.value }))
-                          }
-                          disabled={!editMode || loading}
+                          disabled
+                          title="La torre no se puede editar."
                         />
                       </div>
                       <div className="profile-field">
@@ -367,25 +368,21 @@ export default function PerfilUsuarioPage() {
                         <input
                           name="apartamento"
                           value={form.apartamento || ""}
-                          onChange={(event) =>
-                            setForm((current) => ({ ...current, apartamento: event.target.value }))
-                          }
-                          disabled={!editMode || loading}
+                          disabled
+                          title="El apartamento no se puede editar."
                         />
                       </div>
                     </>
-                  )}
+                  ) : null}
 
-                  {isVigilante && (
+                  {isVigilante ? (
                     <>
                       <div className="profile-field">
                         <label>Zona de vigilancia</label>
                         <input
                           name="zonaVigilancia"
                           value={form.zonaVigilancia || ""}
-                          onChange={(event) =>
-                            setForm((current) => ({ ...current, zonaVigilancia: event.target.value }))
-                          }
+                          onChange={handleFieldChange("zonaVigilancia")}
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -394,9 +391,7 @@ export default function PerfilUsuarioPage() {
                         <input
                           name="tipoSangre"
                           value={form.tipoSangre || ""}
-                          onChange={(event) =>
-                            setForm((current) => ({ ...current, tipoSangre: event.target.value }))
-                          }
+                          onChange={handleFieldChange("tipoSangre")}
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -408,9 +403,7 @@ export default function PerfilUsuarioPage() {
                           min="1"
                           step="0.01"
                           value={form.tarifaHora || ""}
-                          onChange={(event) =>
-                            setForm((current) => ({ ...current, tarifaHora: event.target.value }))
-                          }
+                          onChange={handleFieldChange("tarifaHora")}
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -422,17 +415,12 @@ export default function PerfilUsuarioPage() {
                           min="1"
                           step="1"
                           value={form.cantidadParqueaderos || ""}
-                          onChange={(event) =>
-                            setForm((current) => ({
-                              ...current,
-                              cantidadParqueaderos: event.target.value,
-                            }))
-                          }
+                          onChange={handleFieldChange("cantidadParqueaderos")}
                           disabled={!editMode || loading}
                         />
                       </div>
                     </>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="profile-actions">
