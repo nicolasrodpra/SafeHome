@@ -82,6 +82,11 @@
   white-space: nowrap;
 }
 
+.residente-comunicado-meta span:last-child {
+  color: #460669;
+  font-weight: 700;
+}
+
 .residente-comunicado-card p {
   margin: 0;
   color: #59526b;

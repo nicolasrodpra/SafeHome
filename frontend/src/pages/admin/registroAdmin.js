@@ -1,12 +1,13 @@
-// Formulario administrativo de registro de usuarios.
-// Desde aquí el administrador crea cuentas de administrador,
-// residente o vigilante con campos dinámicos por rol.
+// Formulario administrativo para crear nuevos usuarios.
+// Agrupa validación, preparación del payload y reglas por rol.
 import { useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";
 import { apiPost } from "../../services/apiClient";
+import { getResidents } from "../../services/modules/userApi";
 import "../../styles/admin/registroAdmin.css";
 
+// Configuración base del formulario.
 const initialForm = {
   nombres: "",
   apellidos: "",
@@ -80,7 +81,7 @@ function FormField({
     <div className="admin-register-field">
       <label htmlFor={id}>
         {label}
-        {required && <span>*</span>}
+        {required ? <span>*</span> : null}
       </label>
 
       {children || (
@@ -103,6 +104,7 @@ function FormField({
   );
 }
 
+// Helpers de presentación y validación.
 const sanitizeRoleClass = (value) =>
   value
     .toLowerCase()
@@ -110,8 +112,27 @@ const sanitizeRoleClass = (value) =>
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "-");
 
-const getMissingFields = (currentForm) => {
-  const fields = [
+const sanitizeCedulaInput = (value) => String(value || "").replace(/\D+/g, "");
+
+const normalizeLocationValue = (value) => {
+  const normalizedValue = String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+
+  if (!normalizedValue) {
+    return "";
+  }
+
+  return /^\d+$/.test(normalizedValue)
+    ? String(Number.parseInt(normalizedValue, 10))
+    : normalizedValue;
+};
+
+const parseTarifaHora = (value) => {
+  const parsedValue = Number(String(value).replace(",", "."));
+  return Number.isFinite(parsedValue) ? parsedValue : NaN;
+};
+
+const getMissingFields = (currentForm) =>
+  [
     { label: "nombres", value: currentForm.nombres },
     { label: "apellidos", value: currentForm.apellidos },
     { label: "cédula", value: currentForm.cedula },
@@ -119,14 +140,99 @@ const getMissingFields = (currentForm) => {
     { label: "rol", value: currentForm.rol },
     { label: "contraseña", value: currentForm.password },
     { label: "confirmación de contraseña", value: currentForm.confirmPassword },
-  ];
+  ]
+    .filter((field) => !field.value.trim())
+    .map((field) => field.label);
 
-  return fields.filter((field) => !field.value.trim()).map((field) => field.label);
+const buildRegisterPayload = (currentForm) => ({
+  nombre: `${currentForm.nombres.trim()} ${currentForm.apellidos.trim()}`.trim(),
+  nombres: currentForm.nombres.trim(),
+  apellidos: currentForm.apellidos.trim(),
+  cedula: currentForm.cedula.trim(),
+  email: currentForm.email.trim(),
+  rol: currentForm.rol,
+  password: currentForm.password,
+  confirmPassword: currentForm.confirmPassword,
+  torre: currentForm.rol === "Residente" ? currentForm.torre.trim() : "",
+  apartamento: currentForm.rol === "Residente" ? currentForm.apartamento.trim() : "",
+  zonaVigilancia: currentForm.rol === "Vigilante" ? currentForm.zonaVigilancia.trim() : "",
+  tipoSangre: currentForm.rol === "Vigilante" ? currentForm.tipoSangre.trim() : "",
+  tarifaHora: currentForm.rol === "Vigilante" ? parseTarifaHora(currentForm.tarifaHora) : "",
+  cantidadParqueaderos:
+    currentForm.rol === "Vigilante" ? Number(currentForm.cantidadParqueaderos) : "",
+});
+
+const validateForm = (currentForm) => {
+  const missingFields = getMissingFields(currentForm);
+
+  if (missingFields.length > 0) {
+    return `Completa estos campos: ${missingFields.join(", ")}.`;
+  }
+
+  if (!/^\d+$/.test(currentForm.cedula.trim())) {
+    return "La cedula solo puede contener numeros.";
+  }
+
+  if (
+    currentForm.rol === "Residente" &&
+    (!currentForm.torre.trim() || !currentForm.apartamento.trim())
+  ) {
+    return "Para un residente debes registrar torre y apartamento.";
+  }
+
+  if (
+    currentForm.rol === "Vigilante" &&
+    (!currentForm.zonaVigilancia.trim() ||
+      !currentForm.tipoSangre.trim() ||
+      !currentForm.tarifaHora.trim() ||
+      !currentForm.cantidadParqueaderos.trim())
+  ) {
+    return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre, tarifa por hora y cantidad de parqueaderos.";
+  }
+
+  if (currentForm.rol === "Vigilante") {
+    const tarifaHora = parseTarifaHora(currentForm.tarifaHora);
+    const cantidadParqueaderos = Number(currentForm.cantidadParqueaderos);
+
+    if (Number.isNaN(tarifaHora) || tarifaHora <= 0) {
+      return "La tarifa por hora del vigilante debe ser mayor a 0.";
+    }
+
+    if (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0) {
+      return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
+    }
+  }
+
+  if (currentForm.password !== currentForm.confirmPassword) {
+    return "Las contraseñas no coinciden.";
+  }
+
+  if (currentForm.password.length < 6) {
+    return "La contraseña debe tener al menos 6 caracteres.";
+  }
+
+  return "";
 };
 
-const parseTarifaHora = (value) => {
-  const parsedValue = Number(String(value).replace(",", "."));
-  return Number.isFinite(parsedValue) ? parsedValue : NaN;
+const ensureResidentLocationIsAvailable = async (currentForm) => {
+  if (currentForm.rol !== "Residente") {
+    return;
+  }
+
+  const residents = await getResidents();
+  const torre = normalizeLocationValue(currentForm.torre);
+  const apartamento = normalizeLocationValue(currentForm.apartamento);
+  const residentExists = residents.some(
+    (resident) =>
+      normalizeLocationValue(resident.torre) === torre &&
+      normalizeLocationValue(resident.apartamento) === apartamento
+  );
+
+  if (residentExists) {
+    throw new Error(
+      `Ya existe un residente registrado en la torre ${torre} apartamento ${apartamento}.`
+    );
+  }
 };
 
 export default function RegistroAdminPage() {
@@ -138,78 +244,31 @@ export default function RegistroAdminPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    const nextValue = name === "cedula" ? sanitizeCedulaInput(value) : value;
 
     setForm((currentForm) => {
       if (name !== "rol") {
         return {
           ...currentForm,
-          [name]: value,
+          [name]: nextValue,
         };
       }
 
       return {
         ...currentForm,
-        rol: value,
-        torre: value === "Residente" ? currentForm.torre : "",
-        apartamento: value === "Residente" ? currentForm.apartamento : "",
-        zonaVigilancia: value === "Vigilante" ? currentForm.zonaVigilancia : "",
-        tipoSangre: value === "Vigilante" ? currentForm.tipoSangre : "",
-        tarifaHora: value === "Vigilante" ? currentForm.tarifaHora : "",
-        cantidadParqueaderos: value === "Vigilante" ? currentForm.cantidadParqueaderos : "",
+        rol: nextValue,
+        torre: nextValue === "Residente" ? currentForm.torre : "",
+        apartamento: nextValue === "Residente" ? currentForm.apartamento : "",
+        zonaVigilancia: nextValue === "Vigilante" ? currentForm.zonaVigilancia : "",
+        tipoSangre: nextValue === "Vigilante" ? currentForm.tipoSangre : "",
+        tarifaHora: nextValue === "Vigilante" ? currentForm.tarifaHora : "",
+        cantidadParqueaderos: nextValue === "Vigilante" ? currentForm.cantidadParqueaderos : "",
       };
     });
   };
 
   const resetForm = () => {
     setForm(initialForm);
-  };
-
-  const validateForm = (currentForm) => {
-    const missingFields = getMissingFields(currentForm);
-
-    if (missingFields.length > 0) {
-      return `Completa estos campos: ${missingFields.join(", ")}.`;
-    }
-
-    if (
-      currentForm.rol === "Residente" &&
-      (!currentForm.torre.trim() || !currentForm.apartamento.trim())
-    ) {
-      return "Para un residente debes registrar torre y apartamento.";
-    }
-
-    if (
-      currentForm.rol === "Vigilante" &&
-      (!currentForm.zonaVigilancia.trim() ||
-        !currentForm.tipoSangre.trim() ||
-        !currentForm.tarifaHora.trim() ||
-        !currentForm.cantidadParqueaderos.trim())
-    ) {
-      return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre, tarifa por hora y cantidad de parqueaderos.";
-    }
-
-    if (currentForm.rol === "Vigilante") {
-      const tarifaHora = parseTarifaHora(currentForm.tarifaHora);
-      const cantidadParqueaderos = Number(currentForm.cantidadParqueaderos);
-
-      if (Number.isNaN(tarifaHora) || tarifaHora <= 0) {
-        return "La tarifa por hora del vigilante debe ser mayor a 0.";
-      }
-
-      if (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0) {
-        return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
-      }
-    }
-
-    if (currentForm.password !== currentForm.confirmPassword) {
-      return "Las contraseñas no coinciden.";
-    }
-
-    if (currentForm.password.length < 6) {
-      return "La contraseña debe tener al menos 6 caracteres.";
-    }
-
-    return "";
   };
 
   const handleSubmit = async (event) => {
@@ -226,27 +285,11 @@ export default function RegistroAdminPage() {
       return;
     }
 
-    const payload = {
-      nombre: `${form.nombres.trim()} ${form.apellidos.trim()}`.trim(),
-      nombres: form.nombres.trim(),
-      apellidos: form.apellidos.trim(),
-      cedula: form.cedula.trim(),
-      email: form.email.trim(),
-      rol: form.rol,
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-      torre: form.rol === "Residente" ? form.torre.trim() : "",
-      apartamento: form.rol === "Residente" ? form.apartamento.trim() : "",
-      zonaVigilancia: form.rol === "Vigilante" ? form.zonaVigilancia.trim() : "",
-      tipoSangre: form.rol === "Vigilante" ? form.tipoSangre.trim() : "",
-      tarifaHora: form.rol === "Vigilante" ? parseTarifaHora(form.tarifaHora) : "",
-      cantidadParqueaderos:
-        form.rol === "Vigilante" ? Number(form.cantidadParqueaderos) : "",
-    };
-
     setLoading(true);
 
     try {
+      await ensureResidentLocationIsAvailable(form);
+      const payload = buildRegisterPayload(form);
       const data = await apiPost("/users", payload, "No se pudo registrar el usuario.");
 
       Swal.fire({
@@ -390,7 +433,7 @@ export default function RegistroAdminPage() {
                     </div>
                   </FormField>
 
-                  {form.rol === "Residente" && (
+                  {form.rol === "Residente" ? (
                     <>
                       <FormField
                         id="torre"
@@ -414,9 +457,9 @@ export default function RegistroAdminPage() {
                         disabled={loading}
                       />
                     </>
-                  )}
+                  ) : null}
 
-                  {form.rol === "Vigilante" && (
+                  {form.rol === "Vigilante" ? (
                     <>
                       <FormField
                         id="zonaVigilancia"
@@ -488,9 +531,9 @@ export default function RegistroAdminPage() {
                         disabled={loading}
                       />
                     </>
-                  )}
+                  ) : null}
 
-                  {form.rol === "Administrador" && (
+                  {form.rol === "Administrador" ? (
                     <div className="admin-register-empty-state">
                       <strong>Sin campos extra para este rol</strong>
                       <p>
@@ -498,7 +541,7 @@ export default function RegistroAdminPage() {
                         credenciales de acceso.
                       </p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 

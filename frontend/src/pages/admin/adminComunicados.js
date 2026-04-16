@@ -2,6 +2,7 @@
 // Todo el CRUD se consume desde el módulo de comunicados del frontend.
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
+import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
 import {
   createComunicado,
@@ -12,6 +13,7 @@ import {
 import "../../styles/admin/adminComunicados.css";
 
 function AdminComunicados() {
+  const session = useSession();
   // Lista de comunicados traídos de la base de datos
   const [comunicados, setComunicados] = useState([]);
   // Datos del formulario (asunto y mensaje)
@@ -91,6 +93,7 @@ function AdminComunicados() {
         await createComunicado({
           asunto: form.asunto.trim(),
           mensaje: form.mensaje.trim(),
+          senderRole: session?.rol || "Administrador",
         });
       }
 

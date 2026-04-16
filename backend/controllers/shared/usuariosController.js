@@ -1,9 +1,10 @@
 // Controlador de usuarios.
-// Permite consultar perfil, actualizarlo y listar residentes para otros módulos.
+// Expone lectura de perfil, actualización segura y listado ordenado de residentes.
 const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 const { normalizeText } = require("../../utils/text");
 
+// Helpers de orden y transformación.
 const usersCollection = () => admin.firestore().collection("users");
 
 const compareByText = (firstValue = "", secondValue = "") =>
@@ -29,6 +30,14 @@ const hasProvidedNumberValue = (value) => {
   }
 
   return normalizeText(value) !== "";
+};
+
+const resolveEditableNumberField = (currentValue, rawValue) => {
+  if (rawValue === undefined || !hasProvidedNumberValue(rawValue)) {
+    return currentValue;
+  }
+
+  return parsePositiveNumber(rawValue);
 };
 
 const getSortableNumber = (value) => {
@@ -97,8 +106,6 @@ const compareResidentsByLocation = (firstResident, secondResident) => {
   return compareByText(firstResident.uid, secondResident.uid);
 };
 
-// Esta función lee el documento del usuario y lo transforma
-// al formato estable que usa todo el frontend.
 const getProfileSnapshot = async (uid) => {
   const snapshot = await usersCollection().doc(uid).get();
 
@@ -109,7 +116,36 @@ const getProfileSnapshot = async (uid) => {
   return buildUserProfile(snapshot.id, snapshot.data());
 };
 
-// Devuelve el perfil listo para pintar la vista de "Mi perfil".
+const buildProfileUpdatePayload = ({
+  currentProfile,
+  nombres,
+  apellidos,
+  nombreCompleto,
+  zonaVigilancia,
+  tipoSangre,
+  tarifaHora,
+  cantidadParqueaderos,
+}) => ({
+  nombre: nombreCompleto,
+  nombres,
+  apellidos,
+  cedula: currentProfile.cedula,
+  rol: currentProfile.rol,
+  torre: currentProfile.torre,
+  apartamento: currentProfile.apartamento,
+  zonaVigilancia: currentProfile.rol === "Vigilante" ? zonaVigilancia : currentProfile.zonaVigilancia,
+  tipoSangre: currentProfile.rol === "Vigilante" ? tipoSangre : currentProfile.tipoSangre,
+  tarifaHora: currentProfile.rol === "Vigilante" ? tarifaHora : currentProfile.tarifaHora,
+  cantidadParqueaderos:
+    currentProfile.rol === "Vigilante"
+      ? cantidadParqueaderos
+      : currentProfile.cantidadParqueaderos,
+  correo: currentProfile.email,
+  email: currentProfile.email,
+  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+});
+
+// Endpoints de perfil.
 const obtenerPerfilUsuario = async (req, res) => {
   const { uid } = req.params;
 
@@ -126,8 +162,6 @@ const obtenerPerfilUsuario = async (req, res) => {
   }
 };
 
-// Esta función actualiza solo los campos editables del perfil,
-// conserva el rol original y vuelve a consultar el documento guardado.
 const actualizarPerfilUsuario = async (req, res) => {
   const { uid } = req.params;
 
@@ -142,21 +176,13 @@ const actualizarPerfilUsuario = async (req, res) => {
     const apellidos = normalizeText(req.body?.apellidos);
     const nombreCompleto =
       [nombres, apellidos].filter(Boolean).join(" ").trim() || currentProfile.nombre;
-    const tarifaHoraValue = req.body?.tarifaHora;
-    const cantidadParqueaderosValue = req.body?.cantidadParqueaderos;
-    const tarifaHora =
-      currentProfile.rol === "Vigilante"
-        ? tarifaHoraValue === undefined || !hasProvidedNumberValue(tarifaHoraValue)
-          ? currentProfile.tarifaHora
-          : parsePositiveNumber(tarifaHoraValue)
-        : currentProfile.tarifaHora;
-    const cantidadParqueaderos =
-      currentProfile.rol === "Vigilante"
-        ? cantidadParqueaderosValue === undefined ||
-          !hasProvidedNumberValue(cantidadParqueaderosValue)
-          ? currentProfile.cantidadParqueaderos
-          : parsePositiveNumber(cantidadParqueaderosValue)
-        : currentProfile.cantidadParqueaderos;
+    const zonaVigilancia = normalizeText(req.body?.zonaVigilancia);
+    const tipoSangre = normalizeText(req.body?.tipoSangre);
+    const tarifaHora = resolveEditableNumberField(currentProfile.tarifaHora, req.body?.tarifaHora);
+    const cantidadParqueaderos = resolveEditableNumberField(
+      currentProfile.cantidadParqueaderos,
+      req.body?.cantidadParqueaderos
+    );
 
     if (currentProfile.rol === "Vigilante" && (!Number.isFinite(tarifaHora) || tarifaHora <= 0)) {
       return res.status(400).json({
@@ -173,24 +199,22 @@ const actualizarPerfilUsuario = async (req, res) => {
       });
     }
 
-    const payload = {
-      nombre: nombreCompleto,
-      nombres,
-      apellidos,
-      cedula: normalizeText(req.body?.cedula),
-      rol: currentProfile.rol,
-      torre: normalizeText(req.body?.torre),
-      apartamento: normalizeText(req.body?.apartamento),
-      zonaVigilancia: normalizeText(req.body?.zonaVigilancia),
-      tipoSangre: normalizeText(req.body?.tipoSangre),
-      tarifaHora: currentProfile.rol === "Vigilante" ? tarifaHora : 0,
-      cantidadParqueaderos: currentProfile.rol === "Vigilante" ? cantidadParqueaderos : 0,
-      correo: currentProfile.email,
-      email: currentProfile.email,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
+    await usersCollection()
+      .doc(uid)
+      .set(
+        buildProfileUpdatePayload({
+          currentProfile,
+          nombres,
+          apellidos,
+          nombreCompleto,
+          zonaVigilancia,
+          tipoSangre,
+          tarifaHora,
+          cantidadParqueaderos,
+        }),
+        { merge: true }
+      );
 
-    await usersCollection().doc(uid).set(payload, { merge: true });
     await admin.auth().updateUser(uid, { displayName: nombreCompleto });
 
     const nextProfile = await getProfileSnapshot(uid);
@@ -204,8 +228,7 @@ const actualizarPerfilUsuario = async (req, res) => {
   }
 };
 
-// Aquí listamos solo a los residentes para reutilizar la misma consulta
-// en módulos como reservas o mensajería administrativa.
+// Listado reutilizable de residentes para otros módulos.
 const listarResidentes = async (req, res) => {
   try {
     const snapshot = await usersCollection().where("rol", "==", "Residente").get();
