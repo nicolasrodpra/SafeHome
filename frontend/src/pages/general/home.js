@@ -2,7 +2,8 @@
 // Su objetivo es explicar que hace SafeHome y dirigir al login.
 import { Link } from "react-router-dom";
 import homeHeroFamily from "../../assets/homeHeroFamily.jpg";
-import BrandLogo from "../../components/shared/BrandLogo";
+import safehomeLogo from "../../assets/safehomeLogo.png";
+import safehomeLogoWhite from "../../assets/safehomeLogoWhite.png";
 import "../../styles/general/home.css";
 
 // Enlaces internos del landing para movernos entre secciones informativas.
@@ -118,7 +119,7 @@ function Home() {
       <section className="hero">
         <nav>
           <div className="nav-logo">
-            <BrandLogo className="nav-logo-image" />
+            <img src={safehomeLogo} alt="SafeHome" className="nav-logo-image" />
           </div>
 
           <ul className="nav-links">
@@ -239,7 +240,7 @@ function Home() {
 
       <footer>
         <div className="footer-brand">
-          <BrandLogo className="footer-logo-image" variant="white" />
+          <img src={safehomeLogoWhite} alt="SafeHome" className="footer-logo-image" />
           <span className="copy">Copyright 2026 SafeHome</span>
         </div>
 

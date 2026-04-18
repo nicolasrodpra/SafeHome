@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import ResidentNotificationsModal from "../components/residente/ResidentNotificationsModal";
-import BrandLogo from "../components/shared/BrandLogo";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
+import safehomeLogo from "../assets/safehomeLogo.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
 import {
@@ -206,7 +206,7 @@ export default function InternalLayoutResidente({ children }) {
     <div className="internal-shell">
       <aside className="internal-sidebar">
         <Link to="/residenteMenu" className="internal-sidebar-logo">
-          <BrandLogo className="internal-sidebar-logo-image" />
+          <img src={safehomeLogo} alt="SafeHome" className="internal-sidebar-logo-image" />
         </Link>
 
         <ul className="internal-nav-menu">
