@@ -43,13 +43,19 @@
 .internal-sidebar-logo {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   width: 100%;
-  padding: 6px 10px 10px;
+  padding: 6px 10px 12px;
   color: var(--accent);
   text-decoration: none;
-  font-size: 1.32rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+  line-height: 0;
+}
+
+.internal-sidebar-logo-image {
+  display: block;
+  width: 142px;
+  height: auto;
+  max-width: 100%;
 }
 
 .internal-nav-menu {

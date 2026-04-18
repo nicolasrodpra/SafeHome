@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
+import BrandLogo from "../components/shared/BrandLogo";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
@@ -348,7 +349,7 @@ export default function InternalLayout({ children }) {
     <div className="internal-shell">
       <aside className="internal-sidebar">
         <Link to={homeRoute} className="internal-sidebar-logo">
-          SafeHome
+          <BrandLogo className="internal-sidebar-logo-image" />
         </Link>
 
         <ul className="internal-nav-menu">

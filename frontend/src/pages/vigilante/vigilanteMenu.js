@@ -1,8 +1,7 @@
-// Menú principal del vigilante.
-// Resume los registros operativos del día y los accesos a sus módulos.
+// Menu principal del vigilante.
+// Resume los registros operativos del dia y los accesos a sus modulos.
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import ilustracionMenu from "../../assets/vigilanteHero.png";
 import InternalLayout from "../../layouts/InternalLayout";
 import { getResumenVigilancia } from "../../services/modules/vigilanciaApi";
 import "../../styles/admin/adminMenu.css";
@@ -12,7 +11,7 @@ const statCards = [
   {
     key: "vehiculosHoy",
     icon: "ph-car",
-    label: "Vehículos de hoy",
+    label: "Vehiculos de hoy",
     description: "Registros vehiculares realizados durante la jornada actual.",
     variant: "vehicles",
   },
@@ -20,7 +19,7 @@ const statCards = [
     key: "correspondenciaHoy",
     icon: "ph-package",
     label: "Correspondencia de hoy",
-    description: "Entregas recibidas y pendientes de registro para este día.",
+    description: "Entregas recibidas y pendientes de registro para este dia.",
     variant: "mail",
   },
   {
@@ -35,7 +34,7 @@ const statCards = [
 const dashboardCards = [
   {
     icon: "ph-car",
-    title: "Registro de vehículos",
+    title: "Registro de vehiculos",
     description: "Controla el ingreso de carros y motos autorizados dentro del conjunto.",
     to: "/registroVehiculos",
   },
@@ -49,12 +48,12 @@ const dashboardCards = [
     icon: "ph-users-three",
     title: "Registro de visitantes",
     to: "/registroVisitantes",
-    description: "Registra visitantes y mantén trazabilidad de los ingresos al conjunto residencial.",
+    description: "Registra visitantes y manten trazabilidad de los ingresos al conjunto residencial.",
   },
   {
     icon: "ph-bell",
     title: "Comunicados",
-    description: "Recibe y consulta los comunicados enviados por la administración del conjunto.",
+    description: "Recibe y consulta los comunicados enviados por la administracion del conjunto.",
     to: "/vigilanteComunicados",
   },
   {
@@ -140,12 +139,10 @@ function VigilanteMenu() {
                 Hola, <span>{profileName}</span>
               </h1>
               <p>
-                Monitorea ingresos, visitantes y novedades de seguridad en
-                <br />
-                conjuntos residenciales con un control claro y organizado.
+                Monitorea ingresos, visitantes y novedades de seguridad en conjuntos residenciales
+                con un control claro y organizado.
               </p>
             </div>
-            <img src={ilustracionMenu} alt="Ilustración del panel de vigilancia" />
           </div>
 
           <div className="vigilante-stats-grid">

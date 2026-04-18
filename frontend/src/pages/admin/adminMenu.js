@@ -1,8 +1,7 @@
-// Menú principal del administrador.
-// Funciona como tablero de accesos a todos los módulos de gestión.
-import { Link } from "react-router-dom";
+// Menu principal del administrador.
+// Funciona como tablero de accesos a todos los modulos de gestion.
 import { useState } from "react";
-import ilustracionMenu from "../../assets/adminHero.png";
+import { Link } from "react-router-dom";
 import AdminVigilanciaModal from "../../components/admin/AdminVigilanciaModal";
 import InternalLayout from "../../layouts/InternalLayout";
 import "../../styles/admin/adminMenu.css";
@@ -11,7 +10,7 @@ import "../../styles/admin/adminMenu.css";
 const dashboardCards = [
   {
     icon: "ph-megaphone",
-    title: "Mensajería",
+    title: "Mensajeria",
     description: "Gestiona quejas, solicitudes y autorizaciones enviadas por los residentes.",
     to: "/adminMensajeria",
   },
@@ -36,7 +35,7 @@ const dashboardCards = [
   {
     icon: "ph-user",
     title: "Residentes",
-    description: "Administra la información de los residentes del conjunto.",
+    description: "Administra la informacion de los residentes del conjunto.",
     to: "/adminResidentes",
   },
   {
@@ -47,8 +46,8 @@ const dashboardCards = [
   },
   {
     icon: "ph-pencil-simple",
-    title: "Actualización de datos",
-    description: "Modifica y mantiene actualizada tu información.",
+    title: "Actualizacion de datos",
+    description: "Modifica y mantiene actualizada tu informacion.",
     to: "/perfil",
   },
   {
@@ -105,13 +104,8 @@ function AdminMenuPage() {
                 <h1>
                   Hola, <span>{profileName}</span>
                 </h1>
-                <p>
-                  Supervisa y mejora la seguridad de tu comunidad con
-                  <br />
-                  herramientas inteligentes.
-                </p>
+                <p>Supervisa y mejora la seguridad de tu comunidad con herramientas inteligentes.</p>
               </div>
-              <img src={ilustracionMenu} alt="Ilustración del panel administrativo" />
             </div>
 
             <p className="section-label">Opciones</p>

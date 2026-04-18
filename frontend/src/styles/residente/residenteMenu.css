@@ -45,10 +45,10 @@ html, body {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    min-height: 210px;
+    justify-content: flex-start;
+    min-height: 196px;
     margin-bottom: 28px;
-    padding: 24px 40px;
+    padding: 28px 40px;
     border-radius: 24px;
     border: 1px solid var(--border);
     background: linear-gradient(135deg, #ffffff 0%, #f8f7fa 100%);
@@ -57,15 +57,11 @@ html, body {
 }
 
 .residente-hero-banner::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at right center, rgba(70, 6, 105, 0.06), transparent 34%);
-    pointer-events: none;
+    display: none;
 }
 
 .residente-hero-banner-text {
-    max-width: 500px;
+    max-width: 620px;
     position: relative;
     z-index: 1;
 }
@@ -89,19 +85,6 @@ html, body {
     font-weight: 400;
     color: var(--gray-text);
     line-height: 1.6;
-}
-
-.residente-hero-banner img {
-    position: absolute;
-    right: 14px;
-    bottom: 0;
-    width: min(48vw, 610px);
-    max-width: 610px;
-    max-height: calc(100% - 6px);
-    object-fit: contain;
-    object-position: bottom right;
-    flex-shrink: 0;
-    opacity: 0.95;
 }
 
 .residente-section-label {
@@ -201,12 +184,6 @@ html, body {
 
     .residente-hero-banner {
         padding: 24px;
-    }
-
-    .residente-hero-banner img {
-        opacity: 0.2;
-        right: -14px;
-        width: 420px;
     }
 }
 
