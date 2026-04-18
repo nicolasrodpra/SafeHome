@@ -1,27 +1,26 @@
-// Menú principal del residente.
-// Resume los módulos que puede usar dentro de su panel.
+// Menu principal del residente.
+// Resume los modulos que puede usar dentro de su panel.
 import { Link } from "react-router-dom";
-import ilustracionMenu from "../../assets/inicioHeroResidente.png";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
 import "../../styles/residente/residenteMenu.css";
 
 const dashboardCards = [
   {
     icon: "ph-megaphone",
-    title: "Mensajería",
-    description: "Envía mensajes, solicitudes o autorizaciones y haz seguimiento a tu registro.",
+    title: "Mensajeria",
+    description: "Envia mensajes, solicitudes o autorizaciones y haz seguimiento a tu registro.",
     to: "/residenteMensajeria",
   },
   {
     icon: "ph-calendar-blank",
     title: "Reservas",
-    description: "Agenda espacios comunes como el salón social o la zona BBQ fácilmente desde aquí.",
+    description: "Agenda espacios comunes como el salon social o la zona BBQ facilmente desde aqui.",
     to: "/residentesReservas",
   },
   {
     icon: "ph-bell",
     title: "Comunicados",
-    description: "Entérate de los avisos y novedades del conjunto en tiempo real.",
+    description: "Enterate de los avisos y novedades del conjunto en tiempo real.",
     to: "/residenteComunicados",
   },
   {
@@ -33,7 +32,7 @@ const dashboardCards = [
   {
     icon: "ph-pencil-simple",
     title: "Actualizar datos",
-    description: "Mantén tu información personal actualizada para una mejor comunicación.",
+    description: "Manten tu informacion personal actualizada para una mejor comunicacion.",
     to: "/perfil",
   },
 ];
@@ -73,13 +72,8 @@ function ResidenteMenu() {
               <h1>
                 Hola, <span>{profileName}</span>
               </h1>
-              <p>
-                Tu hogar, más seguro y conectado: recibe avisos
-                <br />
-                y participa en tu comunidad.
-              </p>
+              <p>Tu hogar, mas seguro y conectado: recibe avisos y participa en tu comunidad.</p>
             </div>
-            <img src={ilustracionMenu} alt="Ilustración del panel del residente" />
           </div>
 
           <p className="residente-section-label">Opciones</p>
