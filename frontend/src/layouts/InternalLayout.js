@@ -1,20 +1,22 @@
-// Layout interno compartido por administración y vigilancia.
-// Centraliza la navegación, el topbar y los contadores de pendientes.
+// Layout interno compartido por administrador y vigilante.
+// Este archivo arma la estructura comun del panel: sidebar, topbar,
+// menÃº de usuario y acceso al asistente virtual.
 import { useEffect, useRef, useState } from "react";
+import Swal from "sweetalert2";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
-import safehomeLogo from "../assets/safehomeLogo.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
 import { getMensajeria, getMessageTypeLabel } from "../services/modules/mensajeriaApi";
 import { getUserProfile } from "../services/modules/userApi";
+import { getAlertasPanico } from "../services/modules/vigilanciaApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
-import { getUserInitials } from "../utils/userDisplay";
 import "../styles/shared/internalLayout.css";
 
-// Navegación lateral por rol.
+// Submenu de vigilancia que usa el administrador para consultar
+// los registros operativos en modo solo lectura.
 const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-car", label: "Vehiculos", to: "/adminVigilanciaVehiculos" },
   {
@@ -25,6 +27,7 @@ const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-users-three", label: "Visitantes", to: "/adminVigilanciaVisitantes" },
 ];
 
+// Opciones principales del administrador dentro del panel.
 const ADMIN_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Mensajeria", to: "/adminMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
@@ -36,63 +39,49 @@ const ADMIN_NAV_ITEMS = [
   { icon: "ph-user-plus", label: "Registrar usuario", to: "/registroUsuario" },
 ];
 
+// Opciones principales del vigilante dentro del panel.
 const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
-  { icon: "ph-megaphone", label: "Quejas", to: "/vigilanteQuejas" },
+  { icon: "ph-siren", label: "Boton de panico", to: "/vigilantePanico" },
+  { icon: "ph-megaphone", label: "Quejas", to: "/vigilanteQuejas", notificationKey: "quejas" },
   { icon: "ph-bell", label: "Comunicados", to: "/vigilanteComunicados" },
 ];
 
-// Helpers del topbar y del estado visual.
-const getSessionIdentity = (session) => ({
-  name: session?.nombre || "Usuario",
-  role: session?.rol || null,
-});
+const formatPanicLocation = (alerta) => {
+  const torre = alerta.torre ? `Torre ${alerta.torre}` : "";
+  const apartamento = alerta.apartamento ? `Apto ${alerta.apartamento}` : "";
+  const bloque = alerta.bloque ? `Bloque ${alerta.bloque}` : "";
+  const piso = alerta.piso ? `Piso ${alerta.piso}` : "";
 
-const getAuthorizationStorageKey = (uid) => `safehome_admin_seen_authorizations_${uid}`;
-
-const getLatestTimestamp = (items) =>
-  items.reduce((maxTimestamp, item) => {
-    const createdAt = new Date(item.createdAtIso || 0).getTime() || 0;
-    return Math.max(maxTimestamp, createdAt);
-  }, 0);
-
-const buildPendingInboxSummary = ({ messages, role, storageKey }) => {
-  if (role === "Vigilante") {
-    return {
-      baseCount: messages.filter(
-        (item) => getMessageTypeLabel(item.type) === "Queja" && item.status === "Pendiente"
-      ).length,
-      extraCount: 0,
-    };
-  }
-
-  const pendingCases = messages.filter((item) => {
-    const typeLabel = getMessageTypeLabel(item.type);
-    return typeLabel !== "Autorización" && item.status === "Pendiente";
-  });
-  const authorizationMessages = messages.filter(
-    (item) => getMessageTypeLabel(item.type) === "Autorización"
-  );
-
-  if (window.localStorage.getItem(storageKey) === null) {
-    window.localStorage.setItem(storageKey, String(getLatestTimestamp(authorizationMessages)));
-  }
-
-  const seenAt = Number(window.localStorage.getItem(storageKey) || "0");
-  const unseenAuthorizations = authorizationMessages.filter((item) => {
-    const createdAt = new Date(item.createdAtIso || 0).getTime() || 0;
-    return createdAt > seenAt;
-  });
-
-  return {
-    baseCount: pendingCases.length,
-    extraCount: unseenAuthorizations.length,
-  };
+  return [torre, apartamento, bloque, piso].filter(Boolean).join(" · ") || "Ubicacion no registrada";
 };
 
-// Item reutilizable del menú lateral.
+const getPanicContact = (alerta) => {
+  const phone = alerta.telefono || alerta.celular || alerta?.userSnapshot?.telefono || alerta?.userSnapshot?.celular;
+  const email = alerta.residentEmail || alerta?.userSnapshot?.email;
+  return [email, phone].filter(Boolean).join(" · ") || "Sin contacto";
+};
+
+const buildPanicModalHtml = (alertas) =>
+  `
+    <div style="text-align:left;max-height:320px;overflow:auto;">
+      ${alertas
+        .map(
+          (alerta) => `
+            <div style="border:1px solid rgba(176,21,44,.25);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff6f7;">
+              <div style="font-weight:700;color:#9a1527;margin-bottom:4px;">${alerta.residentName || "Residente"}</div>
+              <div style="font-size:13px;color:#452a31;margin-bottom:2px;">${formatPanicLocation(alerta)}</div>
+              <div style="font-size:12px;color:#6b565b;margin-bottom:2px;">${getPanicContact(alerta)}</div>
+              <div style="font-size:12px;color:#6b565b;">${alerta.createdDateLabel} · ${alerta.createdTimeLabel}</div>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+
 function SidebarItem({ item, pathname }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
   const [flyoutStyle, setFlyoutStyle] = useState({});
@@ -197,76 +186,70 @@ function SidebarItem({ item, pathname }) {
     );
   }
 
-  if (!item.to) {
-    return null;
+  if (item.to) {
+    const isActive = pathname === item.to;
+
+    return (
+      <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
+        <span className="internal-nav-link-copy">
+          <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
+          <span>{item.label}</span>
+        </span>
+      </Link>
+    );
   }
 
-  const isActive = pathname === item.to;
-
-  return (
-    <Link to={item.to} className={isActive ? "internal-nav-link active" : "internal-nav-link"}>
-      <span className="internal-nav-link-copy">
-        <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
-        <span>{item.label}</span>
-      </span>
-    </Link>
-  );
+  return null;
 }
 
 export default function InternalLayout({ children }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const session = useSession();
-  const sessionIdentity = getSessionIdentity(session);
-
-  const [profileName, setProfileName] = useState(sessionIdentity.name);
-  const [profileRole, setProfileRole] = useState(sessionIdentity.role);
+  const [profileName, setProfileName] = useState(session?.nombre || "Usuario");
+  const [profileRole, setProfileRole] = useState(session?.rol || null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [pendingBaseCount, setPendingBaseCount] = useState(0);
-  const [pendingExtraCount, setPendingExtraCount] = useState(0);
-
+  const [pendingQuejasCount, setPendingQuejasCount] = useState(0);
+  const [hasNewQuejas, setHasNewQuejas] = useState(false);
   const userMenuRef = useRef(null);
+  const hasInitializedQuejasRef = useRef(false);
+  const lastPendingQuejasRef = useRef(0);
+  const panicAcknowledgedIdsRef = useRef(new Set());
+  const panicModalOpenRef = useRef(false);
   const fechaActual = getFechaActual();
-  const isVigilante = profileRole === "Vigilante";
-  const inboxRoute = isVigilante ? "/vigilanteQuejas" : "/adminMensajeria";
-  const inboxLabel = isVigilante ? "Ir a quejas" : "Ir a mensajeria";
-  const pendingInboxCount = pendingBaseCount + pendingExtraCount;
-  const navItems = isVigilante ? VIGILANTE_NAV_ITEMS : ADMIN_NAV_ITEMS;
-  const homeRoute = isVigilante ? "/vigilanteMenu" : "/adminMenu";
-  const userInitials = getUserInitials(profileName);
 
-  // Perfil visible en el encabezado.
   useEffect(() => {
     let active = true;
 
-    const applySessionIdentity = () => {
-      if (active) {
-        setProfileName(sessionIdentity.name);
-        setProfileRole(sessionIdentity.role);
-      }
-    };
-
     const loadProfile = async () => {
       if (!session?.uid) {
-        applySessionIdentity();
+        if (active) {
+          setProfileName("Usuario");
+          setProfileRole(null);
+        }
         return;
       }
 
-      applySessionIdentity();
+      if (active) {
+        setProfileName(session.nombre || "Usuario");
+        setProfileRole(session.rol || null);
+      }
 
       try {
         const profile = await getUserProfile(session.uid);
 
-        if (!active) {
-          return;
+        if (active) {
+          setProfileName(profile.nombre || "Usuario");
+          setProfileRole(profile.rol || null);
         }
 
-        setProfileName(profile.nombre || sessionIdentity.name);
-        setProfileRole(profile.rol || sessionIdentity.role);
         updateSessionProfile(profile);
       } catch (error) {
-        applySessionIdentity();
+        if (active) {
+          setProfileName(session.nombre || "Usuario");
+          setProfileRole(session.rol || null);
+        }
       }
     };
 
@@ -275,44 +258,184 @@ export default function InternalLayout({ children }) {
     return () => {
       active = false;
     };
-  }, [session, sessionIdentity.name, sessionIdentity.role]);
+  }, [session]);
 
-  // Contador de pendientes del icono de correo.
   useEffect(() => {
-    if (!session?.uid || (profileRole !== "Administrador" && profileRole !== "Vigilante")) {
-      setPendingBaseCount(0);
-      setPendingExtraCount(0);
+    if (profileRole !== "Vigilante" || !session?.uid) {
+      setPendingQuejasCount(0);
+      setHasNewQuejas(false);
+      hasInitializedQuejasRef.current = false;
+      lastPendingQuejasRef.current = 0;
       return undefined;
     }
 
-    const storageKey = getAuthorizationStorageKey(session.uid);
+    const storageKey = `safehome_vigilante_seen_quejas_${session.uid}`;
     let cancelled = false;
 
-    const syncInbox = async () => {
-      try {
-        const messages = await getMensajeria();
-        if (cancelled) {
-          return;
-        }
+    const showNewQuejasNotification = async (newCount) => {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: newCount === 1 ? "Tienes una nueva queja" : `Tienes ${newCount} nuevas quejas`,
+        text: "Revisa la campana para abrir la bandeja de quejas.",
+        showConfirmButton: false,
+        timer: 4500,
+        timerProgressBar: true,
+      });
 
-        const summary = buildPendingInboxSummary({
-          messages,
-          role: profileRole,
-          storageKey,
+      if (!("Notification" in window)) {
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        const notification = new Notification("SafeHome", {
+          body:
+            newCount === 1
+              ? "LlegÃ³ una nueva queja al panel de vigilancia."
+              : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
         });
 
-        setPendingBaseCount(summary.baseCount);
-        setPendingExtraCount(summary.extraCount);
-      } catch (error) {
-        if (!cancelled) {
-          setPendingBaseCount(0);
-          setPendingExtraCount(0);
+        notification.onclick = () => {
+          window.focus();
+          navigate("/vigilanteQuejas");
+          notification.close();
+        };
+
+        return;
+      }
+
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          const notification = new Notification("SafeHome", {
+            body:
+              newCount === 1
+                ? "LlegÃ³ una nueva queja al panel de vigilancia."
+                : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
+          });
+
+          notification.onclick = () => {
+            window.focus();
+            navigate("/vigilanteQuejas");
+            notification.close();
+          };
         }
       }
     };
 
-    syncInbox();
-    const intervalId = window.setInterval(syncInbox, 30000);
+    const syncQuejas = async () => {
+      try {
+        const messages = await getMensajeria();
+        if (cancelled) return;
+
+        const pendingQuejas = messages.filter(
+          (item) => getMessageTypeLabel(item.type) === "Queja" && item.status === "Pendiente"
+        );
+        const nextCount = pendingQuejas.length;
+        const storedSeenValue = window.localStorage.getItem(storageKey);
+
+        if (!hasInitializedQuejasRef.current) {
+          hasInitializedQuejasRef.current = true;
+          lastPendingQuejasRef.current = nextCount;
+          if (storedSeenValue === null) {
+            window.localStorage.setItem(storageKey, String(nextCount));
+          }
+        }
+
+        const seenCount = Number(window.localStorage.getItem(storageKey) || "0");
+        const newCount = Math.max(nextCount - Math.max(seenCount, lastPendingQuejasRef.current), 0);
+
+        setPendingQuejasCount(nextCount);
+        setHasNewQuejas(nextCount > seenCount);
+
+        if (newCount > 0) {
+          await showNewQuejasNotification(newCount);
+        }
+
+        lastPendingQuejasRef.current = nextCount;
+      } catch (error) {
+        if (!cancelled) {
+          setPendingQuejasCount(0);
+          setHasNewQuejas(false);
+        }
+      }
+    };
+
+    syncQuejas();
+    const intervalId = window.setInterval(syncQuejas, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [navigate, profileRole, session?.uid]);
+
+  useEffect(() => {
+    if (profileRole !== "Vigilante" || pathname !== "/vigilanteQuejas" || !session?.uid) {
+      return;
+    }
+
+    const storageKey = `safehome_vigilante_seen_quejas_${session.uid}`;
+    window.localStorage.setItem(storageKey, String(pendingQuejasCount));
+    lastPendingQuejasRef.current = pendingQuejasCount;
+    setHasNewQuejas(false);
+  }, [pathname, pendingQuejasCount, profileRole, session?.uid]);
+
+  useEffect(() => {
+    if (profileRole !== "Vigilante" || !session?.uid) {
+      panicAcknowledgedIdsRef.current = new Set();
+      panicModalOpenRef.current = false;
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const openBlockingPanicModal = async (alertas) => {
+      if (panicModalOpenRef.current || alertas.length === 0) {
+        return;
+      }
+
+      panicModalOpenRef.current = true;
+
+      await Swal.fire({
+        title: "ALERTA DE PANICO",
+        icon: "warning",
+        html: buildPanicModalHtml(alertas),
+        confirmButtonText: "Recibido",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        backdrop: true,
+      });
+
+      alertas.forEach((item) => {
+        panicAcknowledgedIdsRef.current.add(item.id);
+      });
+
+      panicModalOpenRef.current = false;
+    };
+
+    const syncPanicAlerts = async () => {
+      try {
+        const alertas = await getAlertasPanico();
+        if (cancelled) {
+          return;
+        }
+
+        const unackedActive = alertas.filter(
+          (item) => item.status === "Activa" && !panicAcknowledgedIdsRef.current.has(item.id)
+        );
+
+        if (unackedActive.length > 0) {
+          await openBlockingPanicModal(unackedActive);
+        }
+      } catch (error) {
+        // no-op
+      }
+    };
+
+    syncPanicAlerts();
+    const intervalId = window.setInterval(syncPanicAlerts, 5000);
 
     return () => {
       cancelled = true;
@@ -320,17 +443,6 @@ export default function InternalLayout({ children }) {
     };
   }, [profileRole, session?.uid]);
 
-  // Al entrar a mensajería administrativa, las autorizaciones pasan a considerarse vistas.
-  useEffect(() => {
-    if (profileRole !== "Administrador" || pathname !== "/adminMensajeria" || !session?.uid) {
-      return;
-    }
-
-    window.localStorage.setItem(getAuthorizationStorageKey(session.uid), String(Date.now()));
-    setPendingExtraCount(0);
-  }, [pathname, profileRole, session?.uid]);
-
-  // Cierra el menú de usuario al hacer clic fuera.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -345,20 +457,31 @@ export default function InternalLayout({ children }) {
     };
   }, []);
 
+  const userInitials =
+    profileName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "U";
+
+  const navItems = profileRole === "Vigilante" ? VIGILANTE_NAV_ITEMS : ADMIN_NAV_ITEMS;
+  const homeRoute = profileRole === "Vigilante" ? "/vigilanteMenu" : "/adminMenu";
+
   return (
     <div className="internal-shell">
       <aside className="internal-sidebar">
         <Link to={homeRoute} className="internal-sidebar-logo">
-          <img src={safehomeLogo} alt="SafeHome" className="internal-sidebar-logo-image" />
+          SafeHome
         </Link>
 
-        <ul className="internal-nav-menu">
-          {navItems.map((item) => (
-            <li key={item.label}>
-              <SidebarItem item={item} pathname={pathname} />
-            </li>
-          ))}
-        </ul>
+          <ul className="internal-nav-menu">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <SidebarItem item={item} pathname={pathname} />
+              </li>
+            ))}
+          </ul>
 
         <div className="internal-sidebar-assistant">
           <img src={asistenteVirtual} alt="Asistente virtual" />
@@ -379,34 +502,33 @@ export default function InternalLayout({ children }) {
       <div className="internal-main">
         <div className="internal-topbar">
           <div className="internal-topbar-left">
-            <h2>Abundara</h2>
+            <h2>AbundarÃ¡</h2>
             <span>{fechaActual}</span>
           </div>
 
           <div className="internal-topbar-right">
-            <button
-              type="button"
-              className={`internal-topbar-action${pendingInboxCount > 0 ? " has-pending" : ""}`}
-              onClick={() => navigate(inboxRoute)}
-              aria-label={inboxLabel}
-              title={inboxLabel}
-            >
-              <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
-              {pendingInboxCount > 0 ? (
-                <span className="internal-topbar-alert-badge">{pendingInboxCount}</span>
-              ) : null}
-            </button>
-
+            <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
             <button
               type="button"
               className="internal-icon-button"
               onClick={() => cerrarSesion(navigate)}
-              aria-label="Cerrar sesion"
-              title="Cerrar sesion"
+              aria-label="Cerrar sesiÃ³n"
+              title="Cerrar sesiÃ³n"
             >
-              <i className="ph-light ph-sign-out internal-topbar-icon" aria-hidden="true"></i>
+              <i className="ph-light ph-sign-out internal-topbar-icon"></i>
             </button>
-
+            <button
+              type="button"
+              className="internal-topbar-alert"
+              onClick={() => navigate("/vigilanteQuejas")}
+              aria-label="Ver quejas"
+              title="Ver quejas"
+            >
+              <i className="ph-light ph-bell internal-topbar-icon" aria-hidden="true"></i>
+              {profileRole === "Vigilante" && hasNewQuejas && pendingQuejasCount > 0 && (
+                <span className="internal-topbar-alert-badge">{pendingQuejasCount}</span>
+              )}
+            </button>
             <div className="internal-user-menu" ref={userMenuRef}>
               <button
                 type="button"
@@ -420,7 +542,7 @@ export default function InternalLayout({ children }) {
                 <i className="ph-light ph-caret-down internal-user-caret"></i>
               </button>
 
-              {userMenuOpen ? (
+              {userMenuOpen && (
                 <div className="internal-user-dropdown" role="menu">
                   <button
                     type="button"
@@ -442,10 +564,10 @@ export default function InternalLayout({ children }) {
                     }}
                   >
                     <i className="ph-light ph-sign-out"></i>
-                    <span>Cerrar sesion</span>
+                    <span>Cerrar sesiÃ³n</span>
                   </button>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
@@ -462,3 +584,4 @@ export default function InternalLayout({ children }) {
     </div>
   );
 }
+

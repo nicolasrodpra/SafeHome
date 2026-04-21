@@ -5,6 +5,12 @@ import { apiDelete, apiGet, apiPost, apiPut } from "../apiClient";
 export const getResumenVigilancia = async () =>
   apiGet("/resumen-vigilancia", "No se pudo cargar el resumen de vigilancia.");
 
+export const getAlertasPanico = async () =>
+  apiGet("/alertas-panico", "No se pudieron cargar las alertas de panico.");
+
+export const resolveAlertaPanico = async (id, payload) =>
+  apiPut(`/alertas-panico/${id}/resolver`, payload, "No se pudo marcar la alerta como atendida.");
+
 export const getVehiculos = async () =>
   apiGet("/vehiculos", "No se pudo cargar el registro de vehículos.");
 
