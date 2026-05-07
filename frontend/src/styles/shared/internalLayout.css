@@ -43,19 +43,13 @@
 .internal-sidebar-logo {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
   width: 100%;
-  padding: 6px 10px 12px;
+  padding: 6px 10px 10px;
   color: var(--accent);
   text-decoration: none;
-  line-height: 0;
-}
-
-.internal-sidebar-logo-image {
-  display: block;
-  width: 142px;
-  height: auto;
-  max-width: 100%;
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .internal-nav-menu {
@@ -334,17 +328,6 @@
   background: var(--surface);
 }
 
-.internal-topbar-alert.has-pending {
-  border-color: rgba(70, 6, 105, 0.14);
-  background: var(--accent-soft);
-}
-
-.internal-topbar-action.has-pending {
-  position: relative;
-  border-color: rgba(70, 6, 105, 0.14);
-  background: var(--accent-soft);
-}
-
 .internal-topbar-alert-badge {
   min-width: 18px;
   height: 18px;
@@ -364,21 +347,20 @@
   line-height: 1;
 }
 
-.internal-topbar-action,
+.internal-topbar-right > .internal-topbar-icon,
 .internal-icon-button {
   width: 40px;
   height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
 }
 
-.internal-topbar-action,
 .internal-icon-button {
+  padding: 0;
   cursor: pointer;
 }
 
@@ -388,8 +370,7 @@
   transition: color 0.18s ease, background 0.18s ease;
 }
 
-.internal-topbar-action:hover .internal-topbar-icon,
-.internal-topbar-alert:hover .internal-topbar-icon,
+.internal-topbar-right > .internal-topbar-icon:hover,
 .internal-icon-button:hover .internal-topbar-icon {
   color: var(--accent);
 }
@@ -500,6 +481,122 @@
   background: var(--shell-bg);
 }
 
+.emergency-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 5000;
+}
+
+.emergency-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, rgba(255, 84, 84, 0.18), transparent 36%),
+    rgba(79, 0, 0, 0.74);
+  animation: emergencyPulse 1s infinite alternate;
+}
+
+.emergency-overlay-card {
+  position: relative;
+  width: min(100%, 760px);
+  padding: 34px;
+  border: 2px solid rgba(255, 255, 255, 0.24);
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, rgba(103, 5, 5, 0.96), rgba(186, 26, 26, 0.96));
+  color: #ffffff;
+  box-shadow: 0 28px 58px rgba(0, 0, 0, 0.34);
+  text-align: center;
+}
+
+.emergency-overlay-kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.emergency-overlay-card h2 {
+  margin: 0 0 12px;
+  font-size: clamp(2.1rem, 5vw, 3.5rem);
+  line-height: 0.95;
+}
+
+.emergency-overlay-copy {
+  max-width: 560px;
+  margin: 0 auto 22px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.emergency-overlay-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.emergency-overlay-detail {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.emergency-overlay-detail span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.emergency-overlay-detail strong {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.emergency-overlay-button {
+  min-width: 260px;
+  min-height: 56px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #aa1717;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.96rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.emergency-overlay-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.emergency-overlay-button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+@keyframes emergencyPulse {
+  from {
+    opacity: 0.78;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 1080px) {
   .internal-sidebar {
     width: 208px;
@@ -581,5 +678,22 @@
 
   .internal-page-title {
     font-size: clamp(2rem, 7vw, 2.45rem);
+  }
+
+  .emergency-overlay {
+    padding: 14px;
+  }
+
+  .emergency-overlay-card {
+    padding: 24px 18px;
+  }
+
+  .emergency-overlay-details {
+    grid-template-columns: 1fr;
+  }
+
+  .emergency-overlay-button {
+    width: 100%;
+    min-width: 0;
   }
 }

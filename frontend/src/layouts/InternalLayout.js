@@ -1,6 +1,6 @@
 // Layout interno compartido por administrador y vigilante.
 // Este archivo arma la estructura comun del panel: sidebar, topbar,
-// menÃº de usuario y acceso al asistente virtual.
+// menu de usuario y acceso al asistente virtual.
 import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -8,15 +8,13 @@ import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
+import { attendEmergency, getActiveEmergencies } from "../services/modules/emergencyApi";
 import { getMensajeria, getMessageTypeLabel } from "../services/modules/mensajeriaApi";
 import { getUserProfile } from "../services/modules/userApi";
-import { getAlertasPanico } from "../services/modules/vigilanciaApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import "../styles/shared/internalLayout.css";
 
-// Submenu de vigilancia que usa el administrador para consultar
-// los registros operativos en modo solo lectura.
 const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-car", label: "Vehiculos", to: "/adminVigilanciaVehiculos" },
   {
@@ -27,7 +25,6 @@ const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-users-three", label: "Visitantes", to: "/adminVigilanciaVisitantes" },
 ];
 
-// Opciones principales del administrador dentro del panel.
 const ADMIN_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Mensajeria", to: "/adminMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/adminReservas" },
@@ -39,48 +36,13 @@ const ADMIN_NAV_ITEMS = [
   { icon: "ph-user-plus", label: "Registrar usuario", to: "/registroUsuario" },
 ];
 
-// Opciones principales del vigilante dentro del panel.
 const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
-  { icon: "ph-siren", label: "Boton de panico", to: "/vigilantePanico" },
   { icon: "ph-megaphone", label: "Quejas", to: "/vigilanteQuejas", notificationKey: "quejas" },
   { icon: "ph-bell", label: "Comunicados", to: "/vigilanteComunicados" },
 ];
-
-const formatPanicLocation = (alerta) => {
-  const torre = alerta.torre ? `Torre ${alerta.torre}` : "";
-  const apartamento = alerta.apartamento ? `Apto ${alerta.apartamento}` : "";
-  const bloque = alerta.bloque ? `Bloque ${alerta.bloque}` : "";
-  const piso = alerta.piso ? `Piso ${alerta.piso}` : "";
-
-  return [torre, apartamento, bloque, piso].filter(Boolean).join(" · ") || "Ubicacion no registrada";
-};
-
-const getPanicContact = (alerta) => {
-  const phone = alerta.telefono || alerta.celular || alerta?.userSnapshot?.telefono || alerta?.userSnapshot?.celular;
-  const email = alerta.residentEmail || alerta?.userSnapshot?.email;
-  return [email, phone].filter(Boolean).join(" · ") || "Sin contacto";
-};
-
-const buildPanicModalHtml = (alertas) =>
-  `
-    <div style="text-align:left;max-height:320px;overflow:auto;">
-      ${alertas
-        .map(
-          (alerta) => `
-            <div style="border:1px solid rgba(176,21,44,.25);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff6f7;">
-              <div style="font-weight:700;color:#9a1527;margin-bottom:4px;">${alerta.residentName || "Residente"}</div>
-              <div style="font-size:13px;color:#452a31;margin-bottom:2px;">${formatPanicLocation(alerta)}</div>
-              <div style="font-size:12px;color:#6b565b;margin-bottom:2px;">${getPanicContact(alerta)}</div>
-              <div style="font-size:12px;color:#6b565b;">${alerta.createdDateLabel} · ${alerta.createdTimeLabel}</div>
-            </div>
-          `
-        )
-        .join("")}
-    </div>
-  `;
 
 function SidebarItem({ item, pathname }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
@@ -212,11 +174,12 @@ export default function InternalLayout({ children }) {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [pendingQuejasCount, setPendingQuejasCount] = useState(0);
   const [hasNewQuejas, setHasNewQuejas] = useState(false);
+  const [activeEmergency, setActiveEmergency] = useState(null);
+  const [attendingEmergency, setAttendingEmergency] = useState(false);
   const userMenuRef = useRef(null);
   const hasInitializedQuejasRef = useRef(false);
   const lastPendingQuejasRef = useRef(0);
-  const panicAcknowledgedIdsRef = useRef(new Set());
-  const panicModalOpenRef = useRef(false);
+  const lastEmergencyIdRef = useRef("");
   const fechaActual = getFechaActual();
 
   useEffect(() => {
@@ -292,7 +255,7 @@ export default function InternalLayout({ children }) {
         const notification = new Notification("SafeHome", {
           body:
             newCount === 1
-              ? "LlegÃ³ una nueva queja al panel de vigilancia."
+              ? "Llego una nueva queja al panel de vigilancia."
               : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
         });
 
@@ -311,7 +274,7 @@ export default function InternalLayout({ children }) {
           const notification = new Notification("SafeHome", {
             body:
               newCount === 1
-                ? "LlegÃ³ una nueva queja al panel de vigilancia."
+                ? "Llego una nueva queja al panel de vigilancia."
                 : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
           });
 
@@ -372,6 +335,52 @@ export default function InternalLayout({ children }) {
   }, [navigate, profileRole, session?.uid]);
 
   useEffect(() => {
+    if (profileRole !== "Vigilante" || !session?.uid) {
+      setActiveEmergency(null);
+      lastEmergencyIdRef.current = "";
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const syncEmergencies = async () => {
+      try {
+        const emergencies = await getActiveEmergencies();
+        if (cancelled) return;
+
+        const nextEmergency = emergencies[0] || null;
+        setActiveEmergency(nextEmergency);
+
+        if (nextEmergency && nextEmergency.id !== lastEmergencyIdRef.current) {
+          lastEmergencyIdRef.current = nextEmergency.id;
+          Swal.fire({
+            title: "Emergencia activa",
+            text: `Torre ${nextEmergency.torre} - Apartamento ${nextEmergency.apartamento}`,
+            icon: "error",
+            confirmButtonColor: "#b71c1c",
+          });
+        }
+
+        if (!nextEmergency) {
+          lastEmergencyIdRef.current = "";
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setActiveEmergency(null);
+        }
+      }
+    };
+
+    syncEmergencies();
+    const intervalId = window.setInterval(syncEmergencies, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [profileRole, session?.uid]);
+
+  useEffect(() => {
     if (profileRole !== "Vigilante" || pathname !== "/vigilanteQuejas" || !session?.uid) {
       return;
     }
@@ -381,67 +390,6 @@ export default function InternalLayout({ children }) {
     lastPendingQuejasRef.current = pendingQuejasCount;
     setHasNewQuejas(false);
   }, [pathname, pendingQuejasCount, profileRole, session?.uid]);
-
-  useEffect(() => {
-    if (profileRole !== "Vigilante" || !session?.uid) {
-      panicAcknowledgedIdsRef.current = new Set();
-      panicModalOpenRef.current = false;
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    const openBlockingPanicModal = async (alertas) => {
-      if (panicModalOpenRef.current || alertas.length === 0) {
-        return;
-      }
-
-      panicModalOpenRef.current = true;
-
-      await Swal.fire({
-        title: "ALERTA DE PANICO",
-        icon: "warning",
-        html: buildPanicModalHtml(alertas),
-        confirmButtonText: "Recibido",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        backdrop: true,
-      });
-
-      alertas.forEach((item) => {
-        panicAcknowledgedIdsRef.current.add(item.id);
-      });
-
-      panicModalOpenRef.current = false;
-    };
-
-    const syncPanicAlerts = async () => {
-      try {
-        const alertas = await getAlertasPanico();
-        if (cancelled) {
-          return;
-        }
-
-        const unackedActive = alertas.filter(
-          (item) => item.status === "Activa" && !panicAcknowledgedIdsRef.current.has(item.id)
-        );
-
-        if (unackedActive.length > 0) {
-          await openBlockingPanicModal(unackedActive);
-        }
-      } catch (error) {
-        // no-op
-      }
-    };
-
-    syncPanicAlerts();
-    const intervalId = window.setInterval(syncPanicAlerts, 5000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [profileRole, session?.uid]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -468,6 +416,40 @@ export default function InternalLayout({ children }) {
   const navItems = profileRole === "Vigilante" ? VIGILANTE_NAV_ITEMS : ADMIN_NAV_ITEMS;
   const homeRoute = profileRole === "Vigilante" ? "/vigilanteMenu" : "/adminMenu";
 
+  const handleAttendEmergency = async () => {
+    if (!activeEmergency?.id || !session?.uid || attendingEmergency) {
+      return;
+    }
+
+    setAttendingEmergency(true);
+
+    try {
+      await attendEmergency(activeEmergency.id, {
+        attendedById: session.uid,
+        attendedByName: profileName || "Vigilancia",
+      });
+
+      setActiveEmergency(null);
+      lastEmergencyIdRef.current = "";
+
+      Swal.fire({
+        title: "Emergencia atendida",
+        text: "La alerta fue marcada como atendida correctamente.",
+        icon: "success",
+        confirmButtonColor: "#460669",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "No se pudo actualizar la emergencia",
+        text: error.message || "Intentalo de nuevo.",
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
+    } finally {
+      setAttendingEmergency(false);
+    }
+  };
+
   return (
     <div className="internal-shell">
       <aside className="internal-sidebar">
@@ -475,13 +457,13 @@ export default function InternalLayout({ children }) {
           SafeHome
         </Link>
 
-          <ul className="internal-nav-menu">
-            {navItems.map((item) => (
-              <li key={item.label}>
-                <SidebarItem item={item} pathname={pathname} />
-              </li>
-            ))}
-          </ul>
+        <ul className="internal-nav-menu">
+          {navItems.map((item) => (
+            <li key={item.label}>
+              <SidebarItem item={item} pathname={pathname} />
+            </li>
+          ))}
+        </ul>
 
         <div className="internal-sidebar-assistant">
           <img src={asistenteVirtual} alt="Asistente virtual" />
@@ -502,7 +484,7 @@ export default function InternalLayout({ children }) {
       <div className="internal-main">
         <div className="internal-topbar">
           <div className="internal-topbar-left">
-            <h2>AbundarÃ¡</h2>
+            <h2>Abundara</h2>
             <span>{fechaActual}</span>
           </div>
 
@@ -512,8 +494,8 @@ export default function InternalLayout({ children }) {
               type="button"
               className="internal-icon-button"
               onClick={() => cerrarSesion(navigate)}
-              aria-label="Cerrar sesiÃ³n"
-              title="Cerrar sesiÃ³n"
+              aria-label="Cerrar sesion"
+              title="Cerrar sesion"
             >
               <i className="ph-light ph-sign-out internal-topbar-icon"></i>
             </button>
@@ -564,7 +546,7 @@ export default function InternalLayout({ children }) {
                     }}
                   >
                     <i className="ph-light ph-sign-out"></i>
-                    <span>Cerrar sesiÃ³n</span>
+                    <span>Cerrar sesion</span>
                   </button>
                 </div>
               )}
@@ -580,8 +562,48 @@ export default function InternalLayout({ children }) {
           userName={profileName}
           session={session}
         />
+        {profileRole === "Vigilante" && activeEmergency && (
+          <div className="emergency-overlay" role="alertdialog" aria-modal="true">
+            <div className="emergency-overlay-backdrop"></div>
+            <section className="emergency-overlay-card">
+              <span className="emergency-overlay-kicker">ALERTA DE EMERGENCIA</span>
+              <h2>Atencion inmediata requerida</h2>
+              <p className="emergency-overlay-copy">
+                Un residente activo el boton de panico. Verifica la ubicacion y atiende la
+                novedad de inmediato.
+              </p>
+
+              <div className="emergency-overlay-details">
+                <div className="emergency-overlay-detail">
+                  <span>Torre</span>
+                  <strong>{activeEmergency.torre || "Sin dato"}</strong>
+                </div>
+                <div className="emergency-overlay-detail">
+                  <span>Apartamento</span>
+                  <strong>{activeEmergency.apartamento || "Sin dato"}</strong>
+                </div>
+                <div className="emergency-overlay-detail">
+                  <span>Residente</span>
+                  <strong>{activeEmergency.residentName || "Sin dato"}</strong>
+                </div>
+                <div className="emergency-overlay-detail">
+                  <span>Hora</span>
+                  <strong>{activeEmergency.createdTimeLabel || "Sin hora"}</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="emergency-overlay-button"
+                onClick={handleAttendEmergency}
+                disabled={attendingEmergency}
+              >
+                {attendingEmergency ? "Actualizando..." : "Marcar como atendida"}
+              </button>
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
