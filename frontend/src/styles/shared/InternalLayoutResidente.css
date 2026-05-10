@@ -116,6 +116,21 @@
   min-width: 0;
 }
 
+.internal-nav-link-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #460669;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 .internal-sidebar-assistant {
   margin-top: auto;
   width: 100%;
@@ -242,6 +257,17 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
+}
+
+.internal-topbar-alert.has-pending {
+  border-color: rgba(70, 6, 105, 0.14);
+  background: var(--accent-soft);
+}
+
+.internal-topbar-action.has-pending {
+  position: relative;
+  border-color: rgba(70, 6, 105, 0.14);
+  background: var(--accent-soft);
 }
 
 .internal-topbar-alert-badge {

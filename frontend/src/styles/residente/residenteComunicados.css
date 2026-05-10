@@ -94,6 +94,21 @@
   line-height: 1.65;
 }
 
+.residente-comunicado-image-shell {
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: #faf9fb;
+}
+
+.residente-comunicado-image {
+  width: 100%;
+  display: block;
+  max-height: 340px;
+  object-fit: cover;
+}
+
 .residente-comunicados-empty {
   margin: 0;
   padding: 24px;

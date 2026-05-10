@@ -1,6 +1,4 @@
-// Pantalla administrativa para publicar, editar y eliminar comunicados.
-// Todo el CRUD se consume desde el módulo de comunicados del frontend.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
@@ -12,64 +10,131 @@ import {
 } from "../../services/modules/comunicadosApi";
 import "../../styles/admin/adminComunicados.css";
 
+const INITIAL_FORM = {
+  asunto: "",
+  mensaje: "",
+  imageData: "",
+  imageName: "",
+  imagePreview: "",
+  removeImage: false,
+};
+
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen seleccionada."));
+    reader.readAsDataURL(file);
+  });
+
 function AdminComunicados() {
   const session = useSession();
-  // Lista de comunicados traídos de la base de datos
   const [comunicados, setComunicados] = useState([]);
-  // Datos del formulario (asunto y mensaje)
-  const [form, setForm] = useState({ asunto: "", mensaje: "" });
-  // Indica si se está enviando o guardando un comunicado
+  const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
-  // Indica si se están cargando los comunicados desde el servidor
   const [cargando, setCargando] = useState(true);
-  // ID del comunicado siendo editado (null si no se edita)
   const [editandoId, setEditandoId] = useState(null);
-  // ID del comunicado en proceso de eliminación
   const [accionandoId, setAccionandoId] = useState(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const fileInputRef = useRef(null);
 
-  // Trae la lista de comunicados desde el servidor
   const loadComunicados = async () => {
     try {
       const data = await getComunicados();
       setComunicados(data);
     } catch (error) {
-      // Si hay error, muestra lista vacía
       setComunicados([]);
     } finally {
-      // Detiene el estado de carga
       setCargando(false);
     }
   };
 
-  // Carga los comunicados cuando el componente se monta
   useEffect(() => {
     loadComunicados();
   }, []);
 
-  // Actualiza los campos del formulario cuando el usuario escribe
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Limpia el formulario y cancela la edición
-  const resetForm = () => {
-    setForm({ asunto: "", mensaje: "" });
-    setEditandoId(null);
+  const resetFileInput = () => {
+    setFileInputKey((current) => current + 1);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
-  // Carga los datos del comunicado seleccionado en el formulario para editar
+  const resetForm = () => {
+    setForm(INITIAL_FORM);
+    setEditandoId(null);
+    resetFileInput();
+  };
+
   const handleEditar = (comunicado) => {
     setEditandoId(comunicado.id);
     setForm({
       asunto: comunicado.asunto,
       mensaje: comunicado.mensaje,
+      imageData: "",
+      imageName: comunicado.imageName || "",
+      imagePreview: comunicado.imageUrl || "",
+      removeImage: false,
     });
+    resetFileInput();
   };
 
-  // Valida y envía o actualiza un comunicado
+  const handleImageSelected = async (event) => {
+    const selectedFile = event.target.files?.[0];
+
+    if (!selectedFile) {
+      return;
+    }
+
+    if (!selectedFile.type.startsWith("image/")) {
+      Swal.fire({
+        title: "Archivo no válido",
+        text: "Selecciona una imagen en formato JPG, PNG, WEBP o GIF.",
+        icon: "warning",
+        confirmButtonColor: "#460669",
+      });
+      resetFileInput();
+      return;
+    }
+
+    try {
+      const imageData = await readFileAsDataUrl(selectedFile);
+      setForm((prev) => ({
+        ...prev,
+        imageData,
+        imageName: selectedFile.name,
+        imagePreview: imageData,
+        removeImage: false,
+      }));
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "No se pudo cargar la imagen seleccionada.",
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
+      resetFileInput();
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setForm((prev) => ({
+      ...prev,
+      imageData: "",
+      imageName: "",
+      imagePreview: "",
+      removeImage: true,
+    }));
+    resetFileInput();
+  };
+
   const handleEnviar = async () => {
-    // Validar que los campos no estén vacíos
     if (!form.asunto.trim() || !form.mensaje.trim()) {
       Swal.fire({
         title: "Campos incompletos",
@@ -83,21 +148,26 @@ function AdminComunicados() {
     setLoading(true);
 
     try {
-      // Si se está editando, actualiza; si no, crea uno nuevo
+      const payload = {
+        asunto: form.asunto.trim(),
+        mensaje: form.mensaje.trim(),
+        removeImage: form.removeImage,
+      };
+
+      if (form.imageData) {
+        payload.imageData = form.imageData;
+        payload.imageName = form.imageName;
+      }
+
       if (editandoId) {
-        await updateComunicado(editandoId, {
-          asunto: form.asunto.trim(),
-          mensaje: form.mensaje.trim(),
-        });
+        await updateComunicado(editandoId, payload);
       } else {
         await createComunicado({
-          asunto: form.asunto.trim(),
-          mensaje: form.mensaje.trim(),
+          ...payload,
           senderRole: session?.rol || "Administrador",
         });
       }
 
-      // Recarga la lista y limpia el formulario
       await loadComunicados();
       resetForm();
     } catch (error) {
@@ -112,9 +182,7 @@ function AdminComunicados() {
     }
   };
 
-
-  const handleEliminar = async (comunicado) => { //handleEliminar recibe el comunicado a eliminar para saber qué ID eliminar del servidor.
-    // Muestra diálogo de confirmación
+  const handleEliminar = async (comunicado) => {
     const result = await Swal.fire({
       title: "¿Eliminar comunicado?",
       text: "Esta acción no se puede deshacer.",
@@ -127,22 +195,18 @@ function AdminComunicados() {
       reverseButtons: true,
     });
 
-    // Cancela si el usuario no confirma
     if (!result.isConfirmed) return;
 
-    setAccionandoId(comunicado.id); // Establece el ID del comunicado que se está eliminando para deshabilitar su botón y mostrar estado de acción.
+    setAccionandoId(comunicado.id);
 
     try {
-      // Elimina el comunicado del servidor
       await deleteComunicado(comunicado.id);
       await loadComunicados();
 
-      // Si se estaba editando este comunicado, limpia el formulario
-      if (editandoId === comunicado.id) { // Si el comunicado que se eliminó es el que se estaba editando, resetea el formulario para evitar mostrar datos de un comunicado que ya no existe.
+      if (editandoId === comunicado.id) {
         resetForm();
       }
 
-      // Muestra mensaje de éxito
       Swal.fire({
         title: "Comunicado eliminado",
         text: "El comunicado fue eliminado correctamente.",
@@ -157,7 +221,7 @@ function AdminComunicados() {
         confirmButtonColor: "#460669",
       });
     } finally {
-      setAccionandoId(null); // Limpia el ID del comunicado en acción para reactivar los botones de edición y eliminación.
+      setAccionandoId(null);
     }
   };
 
@@ -166,8 +230,8 @@ function AdminComunicados() {
       <div className="content">
         <h1 className="internal-page-title page-title">Comunicados</h1>
         <p className="page-copy">
-          Publica avisos para la comunidad desde una vista más sobria, con lectura clara y
-          acciones directas para editar o eliminar.
+          Publica avisos para la comunidad, ahora con imagen opcional para que la información se vea
+          completa tanto en administración como en la vista del residente.
         </p>
 
         <div className="comunicados-layout">
@@ -177,7 +241,6 @@ function AdminComunicados() {
             ) : comunicados.length === 0 ? (
               <p className="estado-msg">No hay comunicados publicados aún.</p>
             ) : (
-              // Renderiza cada comunicado como una tarjeta
               comunicados.map((comunicado) => (
                 <div
                   className={`comunicado-card${editandoId === comunicado.id ? " is-editing" : ""}`}
@@ -189,7 +252,18 @@ function AdminComunicados() {
                       {comunicado.fecha} {comunicado.hora}
                     </span>
                   </div>
+
                   <p>{comunicado.mensaje}</p>
+
+                  {comunicado.imageUrl ? (
+                    <div className="comunicado-image-shell">
+                      <img
+                        src={comunicado.imageUrl}
+                        alt={`Imagen del comunicado ${comunicado.asunto}`}
+                        className="comunicado-image"
+                      />
+                    </div>
+                  ) : null}
 
                   <div className="comunicado-actions">
                     <button
@@ -220,11 +294,11 @@ function AdminComunicados() {
           </div>
 
           <div className="comunicados-form">
-            {editandoId && (
+            {editandoId ? (
               <div className="form-editing-banner">
                 <div>
                   <span className="editing-badge">Editando</span>
-                  <p>Actualiza el contenido y guarda los cambios del comunicado.</p>
+                  <p>Actualiza el contenido, la imagen o ambos antes de guardar.</p>
                 </div>
 
                 <button
@@ -236,7 +310,7 @@ function AdminComunicados() {
                   Cancelar
                 </button>
               </div>
-            )}
+            ) : null}
 
             <div className="form-field">
               <label>Asunto:</label>
@@ -258,6 +332,42 @@ function AdminComunicados() {
                 placeholder="Escribe el comunicado..."
               />
             </div>
+
+            <div className="form-field">
+              <label>Imagen opcional:</label>
+              <input
+                key={fileInputKey}
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleImageSelected}
+              />
+              <small className="comunicado-helper-copy">
+                Formatos permitidos: JPG, PNG, WEBP o GIF. Máximo sugerido: 6 MB.
+              </small>
+            </div>
+
+            {form.imagePreview ? (
+              <div className="comunicado-preview-card">
+                <div className="comunicado-preview-head">
+                  <strong>{form.imageName || "Imagen seleccionada"}</strong>
+                  <button
+                    type="button"
+                    className="btn-cancelar-edicion btn-inline-remove"
+                    onClick={handleRemoveImage}
+                    disabled={loading}
+                  >
+                    Quitar imagen
+                  </button>
+                </div>
+                <img
+                  src={form.imagePreview}
+                  alt="Vista previa del comunicado"
+                  className="comunicado-preview-image"
+                />
+              </div>
+            ) : null}
+
             <button className="btn-enviar" onClick={handleEnviar} disabled={loading}>
               {loading
                 ? editandoId

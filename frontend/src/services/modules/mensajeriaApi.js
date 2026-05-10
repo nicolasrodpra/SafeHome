@@ -1,5 +1,5 @@
-// Modulo de mensajeria del frontend.
-// Reune llamadas al backend y utilidades de orden y agrupacion
+// Módulo de mensajería del frontend.
+// Reúne llamadas al backend y utilidades de orden y agrupación
 // para que las vistas solo se concentren en mostrar datos.
 import { apiGet, apiPost, apiPut } from "../apiClient";
 
@@ -19,7 +19,7 @@ export const MENSAJERIA_SECTION_TYPES = [
   {
     value: "Autorización",
     label: "Autorizaciones",
-    description: "Registros informativos que quedan disponibles para consulta administrativa.",
+    description: "Registros que administración puede aceptar, responder o rechazar.",
   },
 ];
 
@@ -33,6 +33,14 @@ const normalizeComparable = (value) =>
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+
+const STATUS_LABELS = {
+  pendiente: "Pendiente",
+  respondida: "Respondida",
+  aceptada: "Aceptada",
+  rechazada: "Rechazada",
+  registrada: "Pendiente",
+};
 
 export const getMessageTypeLabel = (type) => {
   const normalizedType = normalizeComparable(type);
@@ -52,8 +60,32 @@ export const getMessageTypeLabel = (type) => {
   return normalizeText(type);
 };
 
-export const isMessageRespondable = (type) =>
-  normalizeComparable(type) !== normalizeComparable("Autorización");
+export const isAuthorizationMessage = (type) =>
+  normalizeComparable(type) === normalizeComparable("Autorización");
+
+export const normalizeMessageStatus = (status) => {
+  const normalizedStatus = normalizeComparable(status);
+  return STATUS_LABELS[normalizedStatus] || normalizeText(status) || "Pendiente";
+};
+
+export const isPendingMessageStatus = (status) =>
+  normalizeComparable(normalizeMessageStatus(status)) === normalizeComparable("Pendiente");
+
+export const isMessageRespondable = () => true;
+
+export const getMessageActivityTimestamp = (item) =>
+  new Date(item?.updatedAtIso || item?.respondedAtIso || item?.createdAtIso || 0).getTime() || 0;
+
+export const hasAdministrativeMessageUpdate = (item) =>
+  !isPendingMessageStatus(item?.status) || Boolean(normalizeText(item?.response));
+
+export const countResidentMessagingUpdates = (messages, residentId, lastSeenAt = 0) =>
+  messages.filter(
+    (item) =>
+      item.residentId === residentId &&
+      hasAdministrativeMessageUpdate(item) &&
+      getMessageActivityTimestamp(item) > lastSeenAt
+  ).length;
 
 const sortByCreatedAt = (firstItem, secondItem) => {
   const firstDate = new Date(firstItem.createdAtIso || 0).getTime() || 0;
@@ -69,7 +101,9 @@ const sortStrategies = {
       normalizeComparable(secondItem.residentName)
     ),
   Estado: (firstItem, secondItem) =>
-    normalizeComparable(firstItem.status).localeCompare(normalizeComparable(secondItem.status)),
+    normalizeComparable(normalizeMessageStatus(firstItem.status)).localeCompare(
+      normalizeComparable(normalizeMessageStatus(secondItem.status))
+    ),
   Asunto: (firstItem, secondItem) =>
     normalizeComparable(firstItem.subject).localeCompare(normalizeComparable(secondItem.subject)),
 };
@@ -79,8 +113,6 @@ export const sortMessages = (messages, sortValue = DEFAULT_SORT) => {
   return [...messages].sort(sorter);
 };
 
-// Aquí armamos una bandeja por tipo para que la vista no tenga que repetir
-// filtros y ordenamientos en cada sección del módulo.
 export const groupMessagesByType = (messages, sortValue = DEFAULT_SORT) =>
   MENSAJERIA_SECTION_TYPES.reduce((groups, section) => {
     groups[section.value] = sortMessages(
@@ -97,18 +129,19 @@ export const getMensajeria = async () =>
   apiGet("/mensajeria", "No se pudo cargar la mensajería.");
 
 export const createMensaje = async (payload) => {
-  const data = await apiPost(
-    "/mensajeria",
+  const data = await apiPost("/mensajeria", payload, "No se pudo guardar el mensaje.");
+  return data.mensajeria;
+};
+
+export const manageMensaje = async (id, payload) => {
+  const data = await apiPut(
+    `/mensajeria/${id}/gestion`,
     payload,
-    "No se pudo guardar el mensaje."
+    "No se pudo gestionar el mensaje."
   );
 
   return data.mensajeria;
 };
 
 export const respondToMensaje = async (id, payload) =>
-  apiPut(
-    `/mensajeria/${id}/respuesta`,
-    payload,
-    "No se pudo guardar la respuesta."
-  );
+  manageMensaje(id, { ...payload, action: payload?.action || "responder" });

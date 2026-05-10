@@ -1,5 +1,6 @@
-// Bandeja administrativa de mensajeria.
-// Permite ver los mensajes agrupados por tipo y responderlos desde un modal.
+// Bandeja administrativa de mensajería.
+// Permite ver los mensajes agrupados por tipo
+// y gestionar respuestas o decisiones desde un modal.
 import { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import MensajeriaDetailModal from "../../components/mensajeria/MensajeriaDetailModal";
@@ -9,13 +10,13 @@ import InternalLayout from "../../layouts/InternalLayout";
 import {
   getMensajeria,
   groupMessagesByType,
+  isPendingMessageStatus,
+  manageMensaje,
   MENSAJERIA_SECTION_TYPES,
   MENSAJERIA_SORT_OPTIONS_ADMIN,
-  respondToMensaje,
 } from "../../services/modules/mensajeriaApi";
 import "../../styles/shared/mensajeriaModule.css";
 
-// Componente de icono de flecha hacia abajo
 const ChevronDown = () => (
   <svg
     width="13"
@@ -31,26 +32,32 @@ const ChevronDown = () => (
   </svg>
 );
 
+const ACTION_COPY = {
+  aceptar: {
+    successTitle: "Autorización aceptada",
+    successText: "La autorización fue aceptada correctamente.",
+  },
+  rechazar: {
+    successTitle: "Autorización rechazada",
+    successText: "La autorización fue rechazada correctamente.",
+  },
+  responder: {
+    successTitle: "Respuesta enviada",
+    successText: "La gestión fue guardada correctamente.",
+  },
+};
+
 export default function AdminMensajeriaPage() {
   const session = useSession();
-  // Lista de mensajes de mensajería
   const [messages, setMessages] = useState([]);
-  // Indica si se están cargando los mensajes
   const [loading, setLoading] = useState(true);
-  // Estado del dropdown de ordenamiento
   const [sortOpen, setSortOpen] = useState(false);
-  // Valor actual de ordenamiento
   const [sortValue, setSortValue] = useState(MENSAJERIA_SORT_OPTIONS_ADMIN[0]);
-  // Mensaje seleccionado para ver detalles
   const [selectedMessage, setSelectedMessage] = useState(null);
-  // Texto de la respuesta
   const [replyText, setReplyText] = useState("");
-  // Indica si se está enviando la respuesta
-  const [submittingReply, setSubmittingReply] = useState(false);
-  // Referencia al dropdown para detectar clics fuera
+  const [submittingAction, setSubmittingAction] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Carga los mensajes desde el servidor
   const loadMessages = async () => {
     try {
       const nextMessages = await getMensajeria();
@@ -62,88 +69,89 @@ export default function AdminMensajeriaPage() {
     }
   };
 
-  // Carga los mensajes 
   useEffect(() => {
     loadMessages();
+    const intervalId = window.setInterval(loadMessages, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, []);
 
-  // Maneja clics fuera del dropdown para cerrarlo
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) { // Si el clic es fuera del dropdown, cerramos el menú
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setSortOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside); // Listener para detectar clics en cualquier parte del documento
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  // Agrupa los mensajes por tipo 
-  const groupedMessages = useMemo( // useMemo para memorizar el resultado de agrupar los mensajes por tipo y ordenarlos según el valor seleccionado, evitando cálculos innecesarios en cada renderizado.
-    () => groupMessagesByType(messages, sortValue), 
-    [messages, sortValue] 
+  const groupedMessages = useMemo(
+    () => groupMessagesByType(messages, sortValue),
+    [messages, sortValue]
   );
-  // Cuenta los mensajes pendientes
-  const pendingCount = messages.filter((item) => item.status === "Pendiente").length;
+  const pendingCount = messages.filter((item) => isPendingMessageStatus(item.status)).length;
 
-  // Abre el modal con el mensaje seleccionado
   const handleOpenMessage = (item) => {
     setSelectedMessage(item);
-    setReplyText(item.response || ""); // Si el mensaje ya tiene una respuesta, la cargamos en el estado para mostrarla en el modal, de lo contrario dejamos el campo vacío para escribir una nueva respuesta.
+    setReplyText(item.response || "");
   };
 
-  // Cierra el modal y limpia el estado
-  const handleCloseMessage = () => {  // Al cerrar el modal, limpiamos el mensaje seleccionado y el texto de respuesta para que no quede información anterior si se abre otro mensaje.
-    setSelectedMessage(null); 
-    setReplyText(""); 
+  const handleCloseMessage = () => {
+    setSelectedMessage(null);
+    setReplyText("");
   };
 
-  // Envía la respuesta al mensaje seleccionado
-  const handleSubmitReply = async () => { 
-    if (!selectedMessage) return; // Si no hay mensaje seleccionado, no hacemos nada
+  const handleSubmitAction = async (action) => {
+    if (!selectedMessage) {
+      return;
+    }
 
-    if (!replyText.trim()) { // trim para validar que el texto de respuesta no esté vacío o solo con espacios, ya que queremos evitar enviar respuestas vacías al mensaje.
+    if (action === "responder" && !replyText.trim()) {
       Swal.fire({
         title: "Respuesta vacía",
         text: "Escribe una respuesta antes de guardar.",
         icon: "warning",
         confirmButtonColor: "#460669",
       });
-      return; 
+      return;
     }
 
-    setSubmittingReply(true); // Indicamos que se está enviando la respuesta para mostrar un indicador de carga en el botón del modal y evitar múltiples envíos.
+    setSubmittingAction(true);
 
     try {
-      await respondToMensaje(selectedMessage.id, { 
-        response: replyText, //
+      await manageMensaje(selectedMessage.id, {
+        action,
+        response: replyText,
         respondedById: session?.uid || "",
         respondedByName: session?.nombre || "Administración",
       });
 
-      await loadMessages(); // Recargamos los mensajes para actualizar el estado de la mensajería después de enviar la respuesta, mostrando así el cambio en la lista y el detalle del mensaje.
+      await loadMessages();
 
       Swal.fire({
-        title: "Respuesta enviada",
-        text: "La respuesta fue guardada correctamente.",
+        title: ACTION_COPY[action]?.successTitle || "Gestión completada",
+        text: ACTION_COPY[action]?.successText || "El mensaje fue actualizado correctamente.",
         icon: "success",
         confirmButtonColor: "#460669",
       });
 
-      handleCloseMessage(); // Cerramos el modal después de enviar la respuesta para volver a la lista de mensajes.
+      handleCloseMessage();
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "No se pudo guardar la respuesta.",
+        text: error.message || "No se pudo gestionar el mensaje.",
         icon: "error",
         confirmButtonColor: "#460669",
       });
     } finally {
-      setSubmittingReply(false);
+      setSubmittingAction(false);
     }
   };
 
@@ -154,17 +162,17 @@ export default function AdminMensajeriaPage() {
           <div>
             <h1 className="internal-page-title">Mensajería recibida</h1>
             <p className="mensajeria-page-copy">
-              Revisa los mensajes enviados por los residentes, responde la mensajería y las
-              solicitudes desde una sola bandeja y conserva las autorizaciones como registro
-              administrativo.
+              Revisa quejas, solicitudes y autorizaciones desde una sola bandeja. Desde aquí
+              puedes responder mensajes y decidir autorizaciones para que el estado se actualice
+              también del lado del residente.
             </p>
           </div>
 
           <div className="mensajeria-summary-grid mensajeria-summary-grid-single">
             <article className="mensajeria-summary-card">
               <span>Pendientes</span>
-              <strong>{pendingCount}</strong> 
-              <p>Casos que aún necesitan revisión o respuesta.</p>
+              <strong>{pendingCount}</strong>
+              <p>Casos que aún necesitan una gestión administrativa.</p>
             </article>
           </div>
         </header>
@@ -172,10 +180,9 @@ export default function AdminMensajeriaPage() {
         <section className="mensajeria-toolbar">
           <div className="mensajeria-toolbar-copy">
             <span>Mensajería administrativa</span>
-            <strong>Organiza los registros por tipo y responde desde el detalle</strong>
+            <strong>Organiza los registros por tipo y resuélvelos desde el detalle</strong>
           </div>
 
-          {/* Dropdown para ordenar mensajes */}
           <div className="mensajeria-sort-block" ref={dropdownRef}>
             <span className="mensajeria-sort-label">Ordenar por:</span>
             <button
@@ -191,13 +198,13 @@ export default function AdminMensajeriaPage() {
               {MENSAJERIA_SORT_OPTIONS_ADMIN.map((option) => (
                 <div
                   key={option}
-                  className={`mensajeria-sort-dropdown-item${sortValue === option ? " active" : ""}`} 
+                  className={`mensajeria-sort-dropdown-item${sortValue === option ? " active" : ""}`}
                   onClick={() => {
                     setSortValue(option);
                     setSortOpen(false);
                   }}
                 >
-                  <span className="mensajeria-sort-dot"></span> 
+                  <span className="mensajeria-sort-dot"></span>
                   {option}
                 </div>
               ))}
@@ -205,7 +212,6 @@ export default function AdminMensajeriaPage() {
           </div>
         </section>
 
-        {/* Grid de secciones de mensajería */}
         <div className="mensajeria-sections-grid">
           {MENSAJERIA_SECTION_TYPES.map((section) => (
             <MensajeriaSectionTable
@@ -225,15 +231,14 @@ export default function AdminMensajeriaPage() {
         </div>
       </div>
 
-      {/* Modal para ver detalles y responder */}
       <MensajeriaDetailModal
         item={selectedMessage}
         mode="admin"
         replyText={replyText}
         onReplyChange={setReplyText}
         onClose={handleCloseMessage}
-        onSubmitReply={handleSubmitReply}
-        submittingReply={submittingReply}
+        onSubmitAction={handleSubmitAction}
+        submittingAction={submittingAction}
       />
     </InternalLayout>
   );

@@ -5,6 +5,19 @@ import { apiDelete, apiGet, apiPost, apiPut } from "../apiClient";
 export const getResumenVigilancia = async () =>
   apiGet("/resumen-vigilancia", "No se pudo cargar el resumen de vigilancia.");
 
+export const getVigilanciaConfig = async () =>
+  apiGet("/vigilancia/configuracion", "No se pudo cargar la configuración de vigilancia.");
+
+export const updateVigilanciaConfig = async (payload) => {
+  const data = await apiPut(
+    "/vigilancia/configuracion",
+    payload,
+    "No se pudo actualizar la tarifa de vigilancia."
+  );
+
+  return data.configuracion;
+};
+
 export const getVehiculos = async () =>
   apiGet("/vehiculos", "No se pudo cargar el registro de vehículos.");
 

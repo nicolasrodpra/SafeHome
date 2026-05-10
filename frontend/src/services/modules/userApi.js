@@ -1,6 +1,6 @@
 // Módulo de usuarios del frontend.
 // Aquí se agrupan perfil, actualización y listado de residentes.
-import { apiGet, apiPut } from "../apiClient";
+import { apiDelete, apiGet, apiPut } from "../apiClient";
 
 // El backend puede devolver el perfil dentro de `profile`
 // o plano, así que aquí lo normalizamos una sola vez.
@@ -35,3 +35,16 @@ export const updateUserProfile = async (uid, payload) => {
 
 export const getResidents = async () =>
   apiGet("/users/residentes", "No se pudo cargar la lista de residentes.");
+
+export const updateResidentByAdmin = async (uid, payload) => {
+  const data = await apiPut(
+    `/users/residentes/${uid}`,
+    payload,
+    "No se pudo actualizar el residente."
+  );
+
+  return data.residente;
+};
+
+export const deleteResidentByAdmin = async (uid) =>
+  apiDelete(`/users/residentes/${uid}`, "No se pudo eliminar el residente.");

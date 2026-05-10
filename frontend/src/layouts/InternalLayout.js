@@ -7,7 +7,11 @@ import asistenteVirtual from "../assets/asistenteVirtual.png";
 import safehomeLogo from "../assets/safehomeLogo.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
-import { getMensajeria, getMessageTypeLabel } from "../services/modules/mensajeriaApi";
+import {
+  getMensajeria,
+  getMessageTypeLabel,
+  isPendingMessageStatus,
+} from "../services/modules/mensajeriaApi";
 import { getUserProfile } from "../services/modules/userApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
@@ -50,50 +54,25 @@ const getSessionIdentity = (session) => ({
   role: session?.rol || null,
 });
 
-const getAuthorizationStorageKey = (uid) => `safehome_admin_seen_authorizations_${uid}`;
-
-const getLatestTimestamp = (items) =>
-  items.reduce((maxTimestamp, item) => {
-    const createdAt = new Date(item.createdAtIso || 0).getTime() || 0;
-    return Math.max(maxTimestamp, createdAt);
-  }, 0);
-
-const buildPendingInboxSummary = ({ messages, role, storageKey }) => {
+const buildPendingInboxSummary = ({ messages, role }) => {
   if (role === "Vigilante") {
     return {
       baseCount: messages.filter(
-        (item) => getMessageTypeLabel(item.type) === "Queja" && item.status === "Pendiente"
+        (item) =>
+          getMessageTypeLabel(item.type) === "Queja" && isPendingMessageStatus(item.status)
       ).length,
       extraCount: 0,
     };
   }
 
-  const pendingCases = messages.filter((item) => {
-    const typeLabel = getMessageTypeLabel(item.type);
-    return typeLabel !== "Autorización" && item.status === "Pendiente";
-  });
-  const authorizationMessages = messages.filter(
-    (item) => getMessageTypeLabel(item.type) === "Autorización"
-  );
-
-  if (window.localStorage.getItem(storageKey) === null) {
-    window.localStorage.setItem(storageKey, String(getLatestTimestamp(authorizationMessages)));
-  }
-
-  const seenAt = Number(window.localStorage.getItem(storageKey) || "0");
-  const unseenAuthorizations = authorizationMessages.filter((item) => {
-    const createdAt = new Date(item.createdAtIso || 0).getTime() || 0;
-    return createdAt > seenAt;
-  });
-
   return {
-    baseCount: pendingCases.length,
-    extraCount: unseenAuthorizations.length,
+    baseCount: messages.filter((item) => isPendingMessageStatus(item.status)).length,
+    extraCount: 0,
   };
 };
 
 // Item reutilizable del menú lateral.
-function SidebarItem({ item, pathname }) {
+function SidebarItem({ item, pathname, badgeCount = 0 }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
   const [flyoutStyle, setFlyoutStyle] = useState({});
   const groupRef = useRef(null);
@@ -168,6 +147,7 @@ function SidebarItem({ item, pathname }) {
             <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
             <span>{item.label}</span>
           </span>
+          {badgeCount > 0 ? <span className="internal-nav-link-badge">{badgeCount}</span> : null}
           <i className="ph-light ph-caret-right internal-nav-parent-caret" aria-hidden="true"></i>
         </button>
 
@@ -209,6 +189,7 @@ function SidebarItem({ item, pathname }) {
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </span>
+      {badgeCount > 0 ? <span className="internal-nav-link-badge">{badgeCount}</span> : null}
     </Link>
   );
 }
@@ -285,7 +266,6 @@ export default function InternalLayout({ children }) {
       return undefined;
     }
 
-    const storageKey = getAuthorizationStorageKey(session.uid);
     let cancelled = false;
 
     const syncInbox = async () => {
@@ -298,7 +278,6 @@ export default function InternalLayout({ children }) {
         const summary = buildPendingInboxSummary({
           messages,
           role: profileRole,
-          storageKey,
         });
 
         setPendingBaseCount(summary.baseCount);
@@ -319,16 +298,6 @@ export default function InternalLayout({ children }) {
       window.clearInterval(intervalId);
     };
   }, [profileRole, session?.uid]);
-
-  // Al entrar a mensajería administrativa, las autorizaciones pasan a considerarse vistas.
-  useEffect(() => {
-    if (profileRole !== "Administrador" || pathname !== "/adminMensajeria" || !session?.uid) {
-      return;
-    }
-
-    window.localStorage.setItem(getAuthorizationStorageKey(session.uid), String(Date.now()));
-    setPendingExtraCount(0);
-  }, [pathname, profileRole, session?.uid]);
 
   // Cierra el menú de usuario al hacer clic fuera.
   useEffect(() => {
@@ -355,7 +324,11 @@ export default function InternalLayout({ children }) {
         <ul className="internal-nav-menu">
           {navItems.map((item) => (
             <li key={item.label}>
-              <SidebarItem item={item} pathname={pathname} />
+              <SidebarItem
+                item={item}
+                pathname={pathname}
+                badgeCount={item.to === inboxRoute ? pendingInboxCount : 0}
+              />
             </li>
           ))}
         </ul>

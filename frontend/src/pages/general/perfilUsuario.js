@@ -6,6 +6,7 @@ import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
 import InternalLayoutResidente from "../../layouts/InternalLayoutResidente";
 import { getUserProfile, updateUserProfile } from "../../services/modules/userApi";
+import { getVigilanciaConfig } from "../../services/modules/vigilanciaApi";
 import { updateSessionProfile } from "../../services/sessionService";
 import "../../styles/general/perfilUsuario.css";
 
@@ -26,7 +27,6 @@ const emptyForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
-  tarifaHora: "",
   cantidadParqueaderos: "",
 };
 
@@ -87,12 +87,6 @@ const buildProfileFromSource = (source = {}, session = null) => {
     apartamento: source.apartamento || session?.apartamento || "",
     zonaVigilancia: source.zonaVigilancia || session?.zonaVigilancia || "",
     tipoSangre: source.tipoSangre || session?.tipoSangre || "",
-    tarifaHora:
-      typeof source.tarifaHora === "number"
-        ? source.tarifaHora
-        : typeof session?.tarifaHora === "number"
-          ? session.tarifaHora
-          : 0,
     cantidadParqueaderos:
       typeof source.cantidadParqueaderos === "number"
         ? source.cantidadParqueaderos
@@ -112,7 +106,6 @@ const buildFormFromProfile = (profile) => ({
   apartamento: profile?.apartamento || "",
   zonaVigilancia: profile?.zonaVigilancia || "",
   tipoSangre: profile?.tipoSangre || "",
-  tarifaHora: profile?.tarifaHora ? String(profile.tarifaHora) : "",
   cantidadParqueaderos: profile?.cantidadParqueaderos ? String(profile.cantidadParqueaderos) : "",
 });
 
@@ -124,13 +117,43 @@ const buildProfileUpdatePayload = (form) => ({
   apartamento: form.apartamento.trim(),
   zonaVigilancia: form.zonaVigilancia.trim(),
   tipoSangre: form.tipoSangre.trim(),
-  tarifaHora: form.tarifaHora.trim() ? Number(form.tarifaHora) : "",
   cantidadParqueaderos: form.cantidadParqueaderos.trim()
     ? Number(form.cantidadParqueaderos)
     : "",
 });
 
-const getRoleSpecificFields = (profile) => {
+const getMissingRequiredFields = (form, role, vigilanciaTarifaHora) => {
+  const fields = [
+    { label: "nombres", value: form.nombres },
+    { label: "apellidos", value: form.apellidos },
+    { label: "cédula", value: form.cedula },
+    { label: "correo", value: form.email },
+    { label: "rol", value: form.rol },
+  ];
+
+  if (role === "Residente") {
+    fields.push(
+      { label: "torre", value: form.torre },
+      { label: "apartamento", value: form.apartamento }
+    );
+  }
+
+  if (role === "Vigilante") {
+    fields.push(
+      { label: "zona de vigilancia", value: form.zonaVigilancia },
+      { label: "tipo de sangre", value: form.tipoSangre },
+      { label: "cantidad de parqueaderos", value: form.cantidadParqueaderos }
+    );
+
+    if (!(Number(vigilanciaTarifaHora) > 0)) {
+      fields.push({ label: "tarifa de vigilancia en administración", value: "" });
+    }
+  }
+
+  return fields.filter((field) => !String(field.value || "").trim()).map((field) => field.label);
+};
+
+const getRoleSpecificFields = (profile, vigilanciaTarifaHora = 0) => {
   if (!profile) {
     return [];
   }
@@ -146,7 +169,10 @@ const getRoleSpecificFields = (profile) => {
     return [
       { label: "Zona de vigilancia", value: profile.zonaVigilancia },
       { label: "Tipo de sangre", value: profile.tipoSangre },
-      { label: "Tarifa por hora", value: profile.tarifaHora ? `$${profile.tarifaHora}` : "" },
+      {
+        label: "Tarifa por hora",
+        value: vigilanciaTarifaHora ? `$${vigilanciaTarifaHora}` : "",
+      },
       { label: "Cantidad de parqueaderos", value: profile.cantidadParqueaderos || "" },
     ];
   }
@@ -164,12 +190,14 @@ export default function PerfilUsuarioPage() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [vigilanciaConfig, setVigilanciaConfig] = useState(null);
 
   const layoutRole = profile?.rol || session?.rol;
   const LayoutComponent = layoutRole === "Residente" ? InternalLayoutResidente : InternalLayout;
-  const roleSpecificFields = getRoleSpecificFields(profile);
   const isResidente = profile?.rol === "Residente";
   const isVigilante = profile?.rol === "Vigilante";
+  const vigilanciaTarifaHora = Number(vigilanciaConfig?.tarifaHoraVigilante) || 0;
+  const roleSpecificFields = getRoleSpecificFields(profile, vigilanciaTarifaHora);
 
   const syncProfileState = (nextProfile) => {
     setProfile(nextProfile);
@@ -234,10 +262,56 @@ export default function PerfilUsuarioPage() {
     };
   }, [session]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadVigilanciaConfig = async () => {
+      if (!isVigilante) {
+        if (active) {
+          setVigilanciaConfig(null);
+        }
+        return;
+      }
+
+      try {
+        const config = await getVigilanciaConfig();
+
+        if (active) {
+          setVigilanciaConfig(config);
+          updateSessionProfile({
+            tarifaHora: Number(config?.tarifaHoraVigilante) || 0,
+          });
+        }
+      } catch (error) {
+        if (active) {
+          setVigilanciaConfig(null);
+        }
+      }
+    };
+
+    loadVigilanciaConfig();
+
+    return () => {
+      active = false;
+    };
+  }, [isVigilante]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!session?.uid || !profile) {
+      return;
+    }
+
+    const missingFields = getMissingRequiredFields(form, profile.rol, vigilanciaTarifaHora);
+
+    if (missingFields.length > 0) {
+      Swal.fire({
+        title: "Campos obligatorios pendientes",
+        text: `Completa estos campos antes de guardar: ${missingFields.join(", ")}.`,
+        icon: "warning",
+        confirmButtonColor: "#460669",
+      });
       return;
     }
 
@@ -298,7 +372,7 @@ export default function PerfilUsuarioPage() {
                 <h2>Información principal</h2>
                 <p>
                   {editMode
-                    ? "Actualiza tus datos personales editables antes de guardar. La cedula, la torre y el apartamento permanecen bloqueados."
+                    ? "Actualiza tus datos personales editables antes de guardar. Todos los campos deben estar completos para poder enviar los cambios."
                     : "Estos datos se muestran como referencia. Usa actualizar para habilitar la edición."}
                 </p>
               </div>
@@ -316,6 +390,7 @@ export default function PerfilUsuarioPage() {
                       name="nombres"
                       value={form.nombres || ""}
                       onChange={handleFieldChange("nombres")}
+                      required
                       disabled={!editMode || loading}
                     />
                   </div>
@@ -326,6 +401,7 @@ export default function PerfilUsuarioPage() {
                       name="apellidos"
                       value={form.apellidos || ""}
                       onChange={handleFieldChange("apellidos")}
+                      required
                       disabled={!editMode || loading}
                     />
                   </div>
@@ -383,6 +459,7 @@ export default function PerfilUsuarioPage() {
                           name="zonaVigilancia"
                           value={form.zonaVigilancia || ""}
                           onChange={handleFieldChange("zonaVigilancia")}
+                          required
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -392,6 +469,7 @@ export default function PerfilUsuarioPage() {
                           name="tipoSangre"
                           value={form.tipoSangre || ""}
                           onChange={handleFieldChange("tipoSangre")}
+                          required
                           disabled={!editMode || loading}
                         />
                       </div>
@@ -399,12 +477,14 @@ export default function PerfilUsuarioPage() {
                         <label>Tarifa por hora</label>
                         <input
                           name="tarifaHora"
-                          type="number"
-                          min="1"
-                          step="0.01"
-                          value={form.tarifaHora || ""}
-                          onChange={handleFieldChange("tarifaHora")}
-                          disabled={!editMode || loading}
+                          type="text"
+                          value={
+                            vigilanciaTarifaHora > 0
+                              ? `$${vigilanciaTarifaHora}`
+                              : "Pendiente por definir en administraciÃ³n"
+                          }
+                          disabled
+                          title="La tarifa del vigilante se configura desde administraciÃ³n."
                         />
                       </div>
                       <div className="profile-field">
@@ -416,6 +496,7 @@ export default function PerfilUsuarioPage() {
                           step="1"
                           value={form.cantidadParqueaderos || ""}
                           onChange={handleFieldChange("cantidadParqueaderos")}
+                          required
                           disabled={!editMode || loading}
                         />
                       </div>

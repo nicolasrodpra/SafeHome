@@ -123,6 +123,21 @@
   min-width: 0;
 }
 
+.internal-nav-link-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #460669;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 .internal-nav-group {
   position: relative;
   z-index: 150;

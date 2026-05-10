@@ -60,6 +60,11 @@ export default function ResidenteMensajeriaPage() {
 
   useEffect(() => {
     loadMessages();
+    const intervalId = window.setInterval(loadMessages, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   useEffect(() => {
@@ -149,7 +154,8 @@ export default function ResidenteMensajeriaPage() {
             <h1 className="internal-page-title">Mensajería del residente</h1>
             <p className="mensajeria-page-copy">
               Registra mensajes, solicitudes y autorizaciones para administración desde una sola
-              vista y consulta el estado de cada envío.
+              vista y consulta el estado de cada envío, incluidas las respuestas o decisiones
+              sobre tus autorizaciones.
             </p>
           </div>
         </header>

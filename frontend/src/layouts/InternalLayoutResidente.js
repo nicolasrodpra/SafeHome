@@ -12,13 +12,18 @@ import {
   getNotificacionesResidente,
   marcarNotificacionesResidenteComoVistas,
 } from "../services/modules/notificacionesResidenteApi";
+import {
+  countResidentMessagingUpdates,
+  getMensajeria,
+  getMessageActivityTimestamp,
+  hasAdministrativeMessageUpdate,
+} from "../services/modules/mensajeriaApi";
 import { getUserProfile } from "../services/modules/userApi";
 import { updateSessionProfile } from "../services/sessionService";
 import { getFechaActual } from "../utils/getDate";
 import { getUserInitials } from "../utils/userDisplay";
 import "../styles/shared/InternalLayoutResidente.css";
 
-// Navegación lateral del residente.
 const RESIDENTE_NAV_ITEMS = [
   { icon: "ph-megaphone", label: "Mensajería", to: "/residenteMensajeria" },
   { icon: "ph-calendar-blank", label: "Reservas", to: "/residentesReservas" },
@@ -32,7 +37,9 @@ const getSessionIdentity = (session) => ({
   role: session?.rol || "Residente",
 });
 
-function SidebarItem({ item, pathname }) {
+const getResidentMensajeriaStorageKey = (uid) => `safehome_resident_seen_mensajeria_${uid}`;
+
+function SidebarItem({ item, pathname, badgeCount = 0 }) {
   if (!item.to) {
     return null;
   }
@@ -45,6 +52,7 @@ function SidebarItem({ item, pathname }) {
         <i className={`ph-light ${item.icon}`} aria-hidden="true"></i>
         <span>{item.label}</span>
       </span>
+      {badgeCount > 0 ? <span className="internal-nav-link-badge">{badgeCount}</span> : null}
     </Link>
   );
 }
@@ -63,12 +71,13 @@ export default function InternalLayoutResidente({ children }) {
   const [residentNotifications, setResidentNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [residentInboxUpdatesCount, setResidentInboxUpdatesCount] = useState(0);
+  const [latestResidentInboxTimestamp, setLatestResidentInboxTimestamp] = useState(0);
 
   const userMenuRef = useRef(null);
   const fechaActual = getFechaActual();
   const userInitials = getUserInitials(profileName);
 
-  // Perfil mostrado en el encabezado.
   useEffect(() => {
     let active = true;
 
@@ -109,7 +118,60 @@ export default function InternalLayoutResidente({ children }) {
     };
   }, [session, sessionIdentity.name, sessionIdentity.role]);
 
-  // Sincroniza las notificaciones del residente.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadResidentInboxUpdates = async () => {
+      if (!session?.uid) {
+        if (!cancelled) {
+          setResidentInboxUpdatesCount(0);
+          setLatestResidentInboxTimestamp(0);
+        }
+        return;
+      }
+
+      try {
+        const messages = await getMensajeria();
+
+        if (cancelled) {
+          return;
+        }
+
+        const residentMessages = messages.filter((item) => item.residentId === session.uid);
+        const relevantMessages = residentMessages.filter(hasAdministrativeMessageUpdate);
+        const latestTimestamp = relevantMessages.reduce(
+          (maxTimestamp, item) => Math.max(maxTimestamp, getMessageActivityTimestamp(item)),
+          0
+        );
+        const storageKey = getResidentMensajeriaStorageKey(session.uid);
+
+        if (window.localStorage.getItem(storageKey) === null) {
+          window.localStorage.setItem(storageKey, String(latestTimestamp));
+        }
+
+        const seenAt = Number(window.localStorage.getItem(storageKey) || "0");
+
+        setLatestResidentInboxTimestamp(latestTimestamp);
+        setResidentInboxUpdatesCount(
+          countResidentMessagingUpdates(residentMessages, session.uid, seenAt)
+        );
+      } catch (error) {
+        if (!cancelled) {
+          setResidentInboxUpdatesCount(0);
+          setLatestResidentInboxTimestamp(0);
+        }
+      }
+    };
+
+    loadResidentInboxUpdates();
+    const intervalId = window.setInterval(loadResidentInboxUpdates, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [session?.uid]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -158,7 +220,18 @@ export default function InternalLayoutResidente({ children }) {
     };
   }, [session?.uid]);
 
-  // Cuando el modal se abre, las pendientes pasan a vistas.
+  useEffect(() => {
+    if (pathname !== "/residenteMensajeria" || !session?.uid) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      getResidentMensajeriaStorageKey(session.uid),
+      String(latestResidentInboxTimestamp)
+    );
+    setResidentInboxUpdatesCount(0);
+  }, [latestResidentInboxTimestamp, pathname, session?.uid]);
+
   useEffect(() => {
     if (!notificationsOpen || !session?.uid || unreadNotificationsCount === 0) {
       return undefined;
@@ -187,7 +260,6 @@ export default function InternalLayoutResidente({ children }) {
     };
   }, [notificationsOpen, session?.uid, unreadNotificationsCount]);
 
-  // Cierra el menú de usuario al hacer clic fuera.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -212,7 +284,11 @@ export default function InternalLayoutResidente({ children }) {
         <ul className="internal-nav-menu">
           {RESIDENTE_NAV_ITEMS.map((item) => (
             <li key={item.label}>
-              <SidebarItem item={item} pathname={pathname} />
+              <SidebarItem
+                item={item}
+                pathname={pathname}
+                badgeCount={item.to === "/residenteMensajeria" ? residentInboxUpdatesCount : 0}
+              />
             </li>
           ))}
         </ul>
@@ -243,12 +319,15 @@ export default function InternalLayoutResidente({ children }) {
           <div className="internal-topbar-right">
             <button
               type="button"
-              className="internal-topbar-action"
+              className={`internal-topbar-action${residentInboxUpdatesCount > 0 ? " has-pending" : ""}`}
               onClick={() => navigate("/residenteMensajeria")}
               aria-label="Ir a mensajeria"
               title="Ir a mensajeria"
             >
               <i className="ph-light ph-envelope-simple internal-topbar-icon" aria-hidden="true"></i>
+              {residentInboxUpdatesCount > 0 ? (
+                <span className="internal-topbar-alert-badge">{residentInboxUpdatesCount}</span>
+              ) : null}
             </button>
             <button
               type="button"

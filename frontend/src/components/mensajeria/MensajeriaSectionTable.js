@@ -1,7 +1,11 @@
 // Tabla reutilizable para mostrar bandejas de mensajería.
 // La misma estructura sirve para administración y residente,
 // cambiando algunas columnas según el modo recibido.
-import { isMessageRespondable } from "../../services/modules/mensajeriaApi";
+import {
+  isAuthorizationMessage,
+  isPendingMessageStatus,
+  normalizeMessageStatus,
+} from "../../services/modules/mensajeriaApi";
 
 const MailIcon = () => (
   <svg
@@ -26,19 +30,38 @@ const getStatusClassName = (status) =>
     .replace(/[\u0300-\u036f]/g, "");
 
 export function MensajeriaStatusBadge({ status }) {
-  return <span className={`mensajeria-status-chip ${getStatusClassName(status)}`}>{status}</span>;
+  const normalizedStatus = normalizeMessageStatus(status);
+  return (
+    <span className={`mensajeria-status-chip ${getStatusClassName(normalizedStatus)}`}>
+      {normalizedStatus}
+    </span>
+  );
 }
 
 function ResidentResponseState({ item }) {
-  if (!isMessageRespondable(item.type)) {
-    return <span className="mensajeria-response-state neutral">No aplica</span>;
-  }
+  const normalizedStatus = normalizeMessageStatus(item.status);
 
   if (item.response) {
     return <span className="mensajeria-response-state answered">Disponible</span>;
   }
 
-  return <span className="mensajeria-response-state pending">Pendiente</span>;
+  if (isPendingMessageStatus(normalizedStatus)) {
+    return <span className="mensajeria-response-state pending">Pendiente</span>;
+  }
+
+  if (isAuthorizationMessage(item.type)) {
+    return (
+      <span
+        className={`mensajeria-response-state ${
+          normalizedStatus === "Aceptada" ? "answered" : "rejected"
+        }`}
+      >
+        {normalizedStatus}
+      </span>
+    );
+  }
+
+  return <span className="mensajeria-response-state neutral">{normalizedStatus}</span>;
 }
 
 export default function MensajeriaSectionTable({
@@ -74,11 +97,11 @@ export default function MensajeriaSectionTable({
             <thead>
               <tr>
                 <th>Estado</th>
-                {usesAdminLayout ? <th>Informacion</th> : <th>Asunto</th>}
+                {usesAdminLayout ? <th>Información</th> : <th>Asunto</th>}
                 <th>{usesAdminLayout ? "Asunto" : "Fecha"}</th>
                 <th>{usesAdminLayout ? "Fecha" : "Hora"}</th>
                 <th>{usesAdminLayout ? "Hora" : "Respuesta"}</th>
-                <th>Accion</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
