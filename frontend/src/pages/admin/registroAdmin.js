@@ -18,7 +18,6 @@ const initialForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
-  tarifaHora: "",
   cantidadParqueaderos: "",
   password: "",
   confirmPassword: "",
@@ -44,11 +43,11 @@ const roleDetails = {
   Vigilante: {
     title: "Perfil de vigilancia",
     description:
-      "Incluye datos operativos, el tipo de sangre y la tarifa por hora para vehículos visitantes.",
+      "Incluye datos operativos y el tipo de sangre. La tarifa por hora se configura desde vigilancia.",
     checklist: [
       "Registrar zona de vigilancia",
       "Guardar tipo de sangre",
-      "Definir tarifa por hora",
+      "Definir cantidad de parqueaderos",
     ],
   },
   default: {
@@ -126,11 +125,6 @@ const normalizeLocationValue = (value) => {
     : normalizedValue;
 };
 
-const parseTarifaHora = (value) => {
-  const parsedValue = Number(String(value).replace(",", "."));
-  return Number.isFinite(parsedValue) ? parsedValue : NaN;
-};
-
 const getMissingFields = (currentForm) =>
   [
     { label: "nombres", value: currentForm.nombres },
@@ -157,7 +151,6 @@ const buildRegisterPayload = (currentForm) => ({
   apartamento: currentForm.rol === "Residente" ? currentForm.apartamento.trim() : "",
   zonaVigilancia: currentForm.rol === "Vigilante" ? currentForm.zonaVigilancia.trim() : "",
   tipoSangre: currentForm.rol === "Vigilante" ? currentForm.tipoSangre.trim() : "",
-  tarifaHora: currentForm.rol === "Vigilante" ? parseTarifaHora(currentForm.tarifaHora) : "",
   cantidadParqueaderos:
     currentForm.rol === "Vigilante" ? Number(currentForm.cantidadParqueaderos) : "",
 });
@@ -184,19 +177,13 @@ const validateForm = (currentForm) => {
     currentForm.rol === "Vigilante" &&
     (!currentForm.zonaVigilancia.trim() ||
       !currentForm.tipoSangre.trim() ||
-      !currentForm.tarifaHora.trim() ||
       !currentForm.cantidadParqueaderos.trim())
   ) {
-    return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre, tarifa por hora y cantidad de parqueaderos.";
+    return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre y cantidad de parqueaderos.";
   }
 
   if (currentForm.rol === "Vigilante") {
-    const tarifaHora = parseTarifaHora(currentForm.tarifaHora);
     const cantidadParqueaderos = Number(currentForm.cantidadParqueaderos);
-
-    if (Number.isNaN(tarifaHora) || tarifaHora <= 0) {
-      return "La tarifa por hora del vigilante debe ser mayor a 0.";
-    }
 
     if (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0) {
       return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
@@ -261,7 +248,6 @@ export default function RegistroAdminPage() {
         apartamento: nextValue === "Residente" ? currentForm.apartamento : "",
         zonaVigilancia: nextValue === "Vigilante" ? currentForm.zonaVigilancia : "",
         tipoSangre: nextValue === "Vigilante" ? currentForm.tipoSangre : "",
-        tarifaHora: nextValue === "Vigilante" ? currentForm.tarifaHora : "",
         cantidadParqueaderos: nextValue === "Vigilante" ? currentForm.cantidadParqueaderos : "",
       };
     });
@@ -500,21 +486,6 @@ export default function RegistroAdminPage() {
                           <i className="ph-light ph-caret-down"></i>
                         </div>
                       </FormField>
-
-                      <FormField
-                        id="tarifaHora"
-                        type="number"
-                        name="tarifaHora"
-                        label="Tarifa por hora"
-                        value={form.tarifaHora}
-                        onChange={handleChange}
-                        placeholder="Ej. 5000"
-                        required
-                        min="1"
-                        step="0.01"
-                        inputMode="decimal"
-                        disabled={loading}
-                      />
 
                       <FormField
                         id="cantidadParqueaderos"

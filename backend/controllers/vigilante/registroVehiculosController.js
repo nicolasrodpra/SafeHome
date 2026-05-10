@@ -3,6 +3,7 @@
 // de registros antiguos ya finalizados.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
+const { readVigilanciaConfig } = require("../../utils/vigilanciaConfig");
 
 const vehiculosCollection = () => admin.firestore().collection("vehiculos");
 const usersCollection = () => admin.firestore().collection("users");
@@ -173,10 +174,12 @@ const obtenerPerfilVigilante = async (uid) => {
     return null;
   }
 
+  const vigilanciaConfig = await readVigilanciaConfig();
+
   return {
     uid: vigilanteUid,
     nombre: limpiarTexto(data.nombre) || "Vigilante",
-    tarifaHora: normalizarNumero(data.tarifaHora),
+    tarifaHora: normalizarNumero(vigilanciaConfig?.tarifaHoraVigilante),
   };
 };
 

@@ -264,17 +264,16 @@
 }
 
 .reservas-calendar-cell {
-  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   height: 172px;
-  padding: 14px 10px 34px;
+  padding: 12px 10px 10px;
   border: 1px solid rgba(17, 24, 39, 0.06);
   border-radius: 0;
   background: #ffffff;
   cursor: pointer;
-  text-align: start;
+  text-align: center;
   overflow: hidden;
   transition: background 0.18s ease;
 }
@@ -309,13 +308,14 @@
 }
 
 .reservas-calendar-cell-day {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
+  align-self: flex-end;
+  margin-top: auto;
+  padding-top: 8px;
   color: #767183;
   font-family: "Poppins", sans-serif;
   font-size: 0.84rem;
   font-weight: 600;
+  line-height: 1;
 }
 
 .reservas-calendar-cell.is-today .reservas-calendar-cell-day {
@@ -328,11 +328,14 @@
 
 .reservas-calendar-events {
   display: flex;
+  width: 100%;
+  flex: 1;
   flex-direction: column;
-  gap: 7px;
-  align-items: flex-start;
-  max-height: calc(100% - 38px);
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 0;
+  min-height: 0;
 }
 
 .reservas-chip,
@@ -343,17 +346,24 @@
 }
 
 .reservas-chip {
-  width: min(100%, 118px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 132px;
   min-height: 46px;
   background: #f7f6f9;
+  flex-shrink: 0;
 }
 
 .reservas-chip-main {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  text-align: center;
 }
 
 .reservas-day-item-top {
@@ -437,19 +447,6 @@
 .reservas-chip em,
 .reservas-day-item em {
   display: none;
-}
-
-.reservas-more-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #f2f3f7;
-  color: #667085;
-  font-size: 0.58rem;
-  font-weight: 700;
 }
 
 .reservas-mini-calendar,
@@ -834,7 +831,7 @@
 
   .reservas-calendar-cell {
     height: 148px;
-    padding-bottom: 30px;
+    padding: 10px 8px 8px;
   }
 }
 
@@ -856,11 +853,12 @@
 
   .reservas-calendar-cell {
     height: 140px;
-    padding-bottom: 30px;
+    padding: 10px 8px 8px;
   }
 
   .reservas-chip {
-    width: min(100%, 112px);
+    max-width: 124px;
+    min-height: 42px;
   }
 
   .reservas-day-item-top,

@@ -1,6 +1,7 @@
 // Controlador general de registro de usuarios.
 // Valida entradas, protege la ubicación única del residente y completa el alta en Auth + Firestore.
 const admin = require("../config/firebaseAdmin");
+const { readVigilanciaConfig } = require("../utils/vigilanciaConfig");
 
 const ROLES_VALIDOS = ["Administrador", "Residente", "Vigilante"];
 const TIPOS_SANGRE_VALIDOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -38,17 +39,6 @@ const parseCantidadParqueaderos = (value) => {
   const parsedValue = Number(textValue);
 
   return Number.isFinite(parsedValue) ? Math.trunc(parsedValue) : NaN;
-};
-
-const parseTarifaHora = (value) => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  const textValue = limpiarTexto(value).replace(",", ".");
-  const parsedValue = Number(textValue);
-
-  return Number.isFinite(parsedValue) ? parsedValue : NaN;
 };
 
 const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -108,7 +98,6 @@ const construirDatosPorRol = ({
   apartamento,
   zonaVigilancia,
   tipoSangre,
-  tarifaHora,
   cantidadParqueaderos,
   residentLocationKey,
 }) => {
@@ -117,7 +106,7 @@ const construirDatosPorRol = ({
   }
 
   if (rol === "Vigilante") {
-    return { zonaVigilancia, tipoSangre, tarifaHora, cantidadParqueaderos };
+    return { zonaVigilancia, tipoSangre, cantidadParqueaderos };
   }
 
   return {};
@@ -129,7 +118,6 @@ const validarCamposPorRol = ({
   apartamento,
   zonaVigilancia,
   tipoSangre,
-  tarifaHora,
   cantidadParqueaderos,
 }) => {
   if (rol === "Residente" && (!torre || !apartamento)) {
@@ -138,20 +126,13 @@ const validarCamposPorRol = ({
 
   if (
     rol === "Vigilante" &&
-    (!zonaVigilancia ||
-      !tipoSangre ||
-      Number.isNaN(tarifaHora) ||
-      Number.isNaN(cantidadParqueaderos))
+    (!zonaVigilancia || !tipoSangre || Number.isNaN(cantidadParqueaderos))
   ) {
-    return "Para registrar un vigilante debes completar la zona de vigilancia, el tipo de sangre, la tarifa por hora y la cantidad de parqueaderos.";
+    return "Para registrar un vigilante debes completar la zona de vigilancia, el tipo de sangre y la cantidad de parqueaderos.";
   }
 
   if (rol === "Vigilante" && !TIPOS_SANGRE_VALIDOS.includes(tipoSangre)) {
     return "Selecciona un tipo de sangre válido.";
-  }
-
-  if (rol === "Vigilante" && tarifaHora <= 0) {
-    return "La tarifa por hora del vigilante debe ser mayor a 0.";
   }
 
   if (rol === "Vigilante" && cantidadParqueaderos <= 0) {
@@ -236,7 +217,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     apartamento,
     zonaVigilancia,
     tipoSangre,
-    tarifaHora,
     cantidadParqueaderos,
   } = req.body;
 
@@ -252,7 +232,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   const apartamentoNormalizado = normalizarUbicacion(apartamento);
   const zonaVigilanciaNormalizada = limpiarTexto(zonaVigilancia);
   const tipoSangreNormalizado = limpiarTexto(tipoSangre);
-  const tarifaHoraNormalizada = parseTarifaHora(tarifaHora);
   const cantidadParqueaderosNormalizada = parseCantidadParqueaderos(cantidadParqueaderos);
   const residentLocationKey =
     rolFinal === "Residente"
@@ -277,7 +256,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     apartamento: apartamentoNormalizado,
     zonaVigilancia: zonaVigilanciaNormalizada,
     tipoSangre: tipoSangreNormalizado,
-    tarifaHora: tarifaHoraNormalizada,
     cantidadParqueaderos: cantidadParqueaderosNormalizada,
   });
 
@@ -306,6 +284,10 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   let residentLocationReserved = false;
 
   try {
+    const vigilanciaConfig = rolFinal === "Vigilante" ? await readVigilanciaConfig() : null;
+    const tarifaHoraConfigurada =
+      rolFinal === "Vigilante" ? Number(vigilanciaConfig?.tarifaHoraVigilante) || 0 : 0;
+
     if (rolFinal === "Residente") {
       await reservarUbicacionResidente({
         torre: torreNormalizada,
@@ -336,10 +318,10 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
         apartamento: apartamentoNormalizado,
         zonaVigilancia: zonaVigilanciaNormalizada,
         tipoSangre: tipoSangreNormalizado,
-        tarifaHora: tarifaHoraNormalizada,
         cantidadParqueaderos: cantidadParqueaderosNormalizada,
         residentLocationKey,
       }),
+      tarifaHora: tarifaHoraConfigurada,
       creadoEn: admin.firestore.FieldValue.serverTimestamp(),
     };
 

@@ -49,6 +49,11 @@ export default function VigilanteQuejasPage() {
     };
 
     loadMessages();
+    const intervalId = window.setInterval(loadMessages, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   useEffect(() => {

@@ -60,6 +60,16 @@ export default function ResidenteComunicados() {
                 </div>
 
                 <p>{comunicado.mensaje}</p>
+
+                {comunicado.imageUrl ? (
+                  <div className="residente-comunicado-image-shell">
+                    <img
+                      src={comunicado.imageUrl}
+                      alt={`Imagen del comunicado ${comunicado.asunto}`}
+                      className="residente-comunicado-image"
+                    />
+                  </div>
+                ) : null}
               </article>
             ))
           )}

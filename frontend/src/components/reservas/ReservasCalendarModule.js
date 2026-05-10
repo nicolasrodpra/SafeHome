@@ -78,7 +78,7 @@ function SelectedDayReservationItem({
           <span>{formatReservationRange(reservation.startHour, reservation.endHour)}</span>
         </div>
         <div className="reservas-day-item-top-right">
-          {isResidentMode && isOwner ? <em>Mi reserva</em> : null}
+          {isOwner ? <em>{isResidentMode ? "Mi reserva" : "Reserva propia"}</em> : null}
           {canEdit ? (
             <button
               type="button"
@@ -120,12 +120,14 @@ function SelectedDayReservationItem({
 
 export default function ReservasCalendarModule({ mode }) {
   const isResidentMode = mode === "resident";
+  const isAdminMode = mode === "admin";
+  const canManageReservations = isResidentMode || isAdminMode;
   const session = useSession();
   const formSectionRef = useRef(null);
   const [reservas, setReservas] = useState([]);
   const [loadingReservas, setLoadingReservas] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(isResidentMode);
+  const [profileLoading, setProfileLoading] = useState(canManageReservations);
   const [userProfile, setUserProfile] = useState(null);
   const [editingReservation, setEditingReservation] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
@@ -152,7 +154,7 @@ export default function ReservasCalendarModule({ mode }) {
   }, []);
 
   useEffect(() => {
-    if (!isResidentMode) {
+    if (!canManageReservations) {
       setProfileLoading(false);
       return;
     }
@@ -187,12 +189,12 @@ export default function ReservasCalendarModule({ mode }) {
         if (active) {
           setUserProfile({
             userId: session.uid,
-            nombre: session.nombre || "Residente",
+            nombre: session.nombre || (isAdminMode ? "AdministraciÃ³n" : "Residente"),
             cedula: session.cedula || "",
             torre: session.torre || "",
             apartamento: session.apartamento || "",
             email: session.email || "",
-            rol: session.rol || "Residente",
+            rol: session.rol || (isAdminMode ? "Administrador" : "Residente"),
           });
           setProfileLoading(false);
         }
@@ -204,7 +206,7 @@ export default function ReservasCalendarModule({ mode }) {
     return () => {
       active = false;
     };
-  }, [isResidentMode, session]);
+  }, [canManageReservations, isAdminMode, session]);
 
   useEffect(() => {
     if (editingReservation) {
@@ -295,7 +297,7 @@ export default function ReservasCalendarModule({ mode }) {
   const selectedDate = parseDateKey(selectedDateKey);
   const selectedDateIsPast = isPastDateKey(selectedDateKey, new Date());
   const canSubmitReservation =
-    isResidentMode &&
+    canManageReservations &&
     !profileLoading &&
     !!session?.uid &&
     !!selectedZone &&
@@ -377,10 +379,10 @@ export default function ReservasCalendarModule({ mode }) {
   const handleSubmitReservation = async (event) => {
     event.preventDefault();
 
-    if (!session?.uid || !userProfile || userProfile.rol !== "Residente") {
+    if (!session?.uid || !userProfile || !canManageReservations) {
       Swal.fire({
         title: "Acceso no permitido",
-        text: "Solo los residentes pueden gestionar reservas.",
+        text: "Solo los residentes y la administraciÃ³n pueden gestionar reservas.",
         icon: "warning",
         confirmButtonColor: "#460669",
       });
@@ -403,7 +405,10 @@ export default function ReservasCalendarModule({ mode }) {
 
     const startHourValue = Number(startHour);
     const durationValue = Number(duration);
-    const residentNameValue = residentNameInput.trim() || userProfile?.nombre || "Residente";
+    const defaultReservationName =
+      userProfile?.rol === "Administrador" ? "AdministraciÃ³n" : "Residente";
+    const residentNameValue =
+      residentNameInput.trim() || userProfile?.nombre || defaultReservationName;
     const cedulaValue = cedulaInput.trim() || userProfile?.cedula || "";
     const validation = getReservationValidation({
       reservations: reservas,
@@ -438,10 +443,10 @@ export default function ReservasCalendarModule({ mode }) {
         duration: durationValue,
         userId: session.uid,
         residentName: residentNameValue,
-        residentEmail: userProfile.email,
+        residentEmail: userProfile.email || session?.email || "",
         cedula: cedulaValue,
-        torre: userProfile.torre,
-        apartamento: userProfile.apartamento,
+        torre: userProfile.torre || "",
+        apartamento: userProfile.apartamento || "",
       };
 
       if (isEditingReservation) {
@@ -459,8 +464,8 @@ export default function ReservasCalendarModule({ mode }) {
       Swal.fire({
         title: isEditingReservation ? "Reserva actualizada" : "Reserva creada",
         text: isEditingReservation
-          ? `Tu reserva de ${selectedZone.label} se actualizó correctamente.`
-          : `Tu reserva de ${selectedZone.label} quedó registrada correctamente.`,
+          ? `La reserva de ${selectedZone.label} se actualizó correctamente.`
+          : `La reserva de ${selectedZone.label} quedó registrada correctamente.`,
         icon: "success",
         confirmButtonColor: "#460669",
       });
@@ -536,7 +541,7 @@ export default function ReservasCalendarModule({ mode }) {
           <p className="reservas-page-copy">
             {isResidentMode
               ? "Reserva piscina, gimnasio, salón comunal, cancha o zona BBQ con validaciones de horario, cruces y límite de horas por zona."
-              : "Consulta en tiempo real las reservas registradas por los residentes sin posibilidad de crear ni editar eventos."}
+              : "Consulta en tiempo real las reservas registradas y crea reservas administrativas cuando sea necesario, manteniendo las mismas validaciones de horario y disponibilidad."}
           </p>
         </div>
 
@@ -623,21 +628,19 @@ export default function ReservasCalendarModule({ mode }) {
                   className={cellClassName}
                   onClick={() => setSelectedDateKey(cell.dateKey)}
                   disabled={isPast}
+                  aria-label={`${getFullDateLabel(cell.dateKey)} con ${cellReservations.length} reserva(s)`}
+                  title={`${cellReservations.length} reserva(s) registradas`}
                 >
                   <span className="reservas-calendar-cell-day">{cell.dayNumber}</span>
 
                   <div className="reservas-calendar-events">
-                    {cellReservations.slice(0, 3).map((reservation) => (
+                    {cellReservations.slice(0, 2).map((reservation) => (
                       <ReservationChip
                         key={reservation.id}
                         reservation={reservation}
-                        isOwner={isResidentMode && reservation.userId === session?.uid}
+                        isOwner={reservation.userId === session?.uid}
                       />
                     ))}
-
-                    {cellReservations.length > 3 ? (
-                      <span className="reservas-more-badge">+{cellReservations.length - 3} más</span>
-                    ) : null}
                   </div>
                 </button>
               );
@@ -714,11 +717,11 @@ export default function ReservasCalendarModule({ mode }) {
                     isResidentMode={isResidentMode}
                     isOwner={reservation.userId === session?.uid}
                     canEdit={
-                      isResidentMode &&
+                      canManageReservations &&
                       canManageReservation(reservation, session?.uid, new Date())
                     }
                     canCancel={
-                      isResidentMode &&
+                      canManageReservations &&
                       canManageReservation(reservation, session?.uid, new Date())
                     }
                     isEditing={editingReservation?.id === reservation.id}
@@ -730,7 +733,7 @@ export default function ReservasCalendarModule({ mode }) {
             </div>
           </section>
 
-          {isResidentMode ? (
+          {canManageReservations ? (
             <section className="reservas-side-section" ref={formSectionRef}>
               <div className="reservas-side-section-head">
                 <h3>{isEditingReservation ? "Editar reserva" : "Crear reserva"}</h3>

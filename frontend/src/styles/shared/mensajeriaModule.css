@@ -304,6 +304,16 @@
   color: #43614a;
 }
 
+.mensajeria-status-chip.aceptada {
+  background: #e9f6ef;
+  color: #2f6b45;
+}
+
+.mensajeria-status-chip.rechazada {
+  background: #fdecee;
+  color: #a63a4f;
+}
+
 .mensajeria-status-chip.registrada {
   background: #f6f2ea;
   color: #8b6d2a;
@@ -355,6 +365,11 @@
 .mensajeria-response-state.neutral {
   background: #f6f2ea;
   color: #8b6d2a;
+}
+
+.mensajeria-response-state.rejected {
+  background: #fdecee;
+  color: #a63a4f;
 }
 
 .mensajeria-action-cell {
@@ -460,7 +475,8 @@
 }
 
 .mensajeria-primary-btn,
-.mensajeria-secondary-btn {
+.mensajeria-secondary-btn,
+.mensajeria-danger-btn {
   height: 42px;
   padding: 0 18px;
   border-radius: 10px;
@@ -482,8 +498,15 @@
   color: #5d4d6b;
 }
 
+.mensajeria-danger-btn {
+  border: none;
+  background: #b94157;
+  color: #ffffff;
+}
+
 .mensajeria-primary-btn:disabled,
 .mensajeria-secondary-btn:disabled,
+.mensajeria-danger-btn:disabled,
 .mensajeria-action-cell button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
@@ -661,6 +684,14 @@
   padding: 0 24px 24px;
 }
 
+.mensajeria-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 1080px) {
   .mensajeria-page-header,
   .mensajeria-toolbar {
@@ -698,6 +729,12 @@
   }
 
   .mensajeria-modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .mensajeria-modal-actions {
+    width: 100%;
     flex-direction: column-reverse;
     align-items: stretch;
   }
