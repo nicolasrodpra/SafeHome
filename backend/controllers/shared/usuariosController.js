@@ -4,9 +4,11 @@ const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 const { normalizeText } = require("../../utils/text");
 const { readVigilanciaConfig } = require("../../utils/vigilanciaConfig");
+const { isAllowedValue, normalizeAllowedValue } = require("../../utils/validation");
 
 // Helpers de orden y transformación.
 const RESIDENT_LOCATION_COLLECTION = "residentLocations";
+const TIPOS_SANGRE_VALIDOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const usersCollection = () => admin.firestore().collection("users");
 const residentLocationsCollection = () =>
   admin.firestore().collection(RESIDENT_LOCATION_COLLECTION);
@@ -18,14 +20,8 @@ const compareByText = (firstValue = "", secondValue = "") =>
   });
 
 const parsePositiveNumber = (value) => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  const normalizedValue = normalizeText(value).replace(",", ".");
-  const parsedValue = Number(normalizedValue);
-
-  return Number.isFinite(parsedValue) ? parsedValue : NaN;
+  const normalizedValue = typeof value === "number" ? String(value) : normalizeText(value);
+  return /^\d+$/.test(normalizedValue) ? Number.parseInt(normalizedValue, 10) : NaN;
 };
 
 const hasProvidedNumberValue = (value) => {
@@ -244,7 +240,10 @@ const actualizarPerfilUsuario = async (req, res) => {
     const nombreCompleto =
       [nombres, apellidos].filter(Boolean).join(" ").trim() || currentProfile.nombre;
     const zonaVigilancia = normalizeText(req.body?.zonaVigilancia);
-    const tipoSangre = normalizeText(req.body?.tipoSangre);
+    const tipoSangre =
+      currentProfile.rol === "Vigilante"
+        ? normalizeAllowedValue(req.body?.tipoSangre, TIPOS_SANGRE_VALIDOS)
+        : normalizeText(req.body?.tipoSangre);
     let tarifaHora = currentProfile.tarifaHora;
     const cantidadParqueaderos = resolveEditableNumberField(
       currentProfile.cantidadParqueaderos,
@@ -263,6 +262,10 @@ const actualizarPerfilUsuario = async (req, res) => {
       return res.status(400).json({
         mensaje: "La tarifa por hora del vigilante debe ser mayor a 0.",
       });
+    }
+
+    if (currentProfile.rol === "Vigilante" && !isAllowedValue(tipoSangre, TIPOS_SANGRE_VALIDOS)) {
+      return res.status(400).json({ mensaje: "Selecciona un tipo de sangre valido." });
     }
 
     if (

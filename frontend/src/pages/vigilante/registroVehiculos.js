@@ -1,7 +1,7 @@
 // Módulo operativo de vehículos visitantes.
 // Permite registrar ingreso, editar datos y registrar la salida
 // con cálculo de cobro según la tarifa del vigilante.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
@@ -10,6 +10,7 @@ import { updateSessionProfile } from "../../services/sessionService";
 import {
   createVehiculo,
   getVehiculos,
+  getVigilanciaConfig,
   registerVehiculoSalida,
   updateVehiculo,
 } from "../../services/modules/vigilanciaApi";
@@ -38,9 +39,27 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("es-CO", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+const WEEK_DAY_KEYS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
 
 const formatCurrency = (value) => CURRENCY_FORMATTER.format(Number(value) || 0);
 const normalizeText = (value) => String(value || "").trim().toUpperCase();
+const getDailyRateForDate = (date, baseRate, dailyRates = {}, chargeFlags = {}) => {
+  const dayKey = WEEK_DAY_KEYS[date.getDay()];
+  const hasChargeFlag = Object.prototype.hasOwnProperty.call(chargeFlags, dayKey);
+
+  if (hasChargeFlag && chargeFlags[dayKey] === false) {
+    return 0;
+  }
+
+  const dayRate = Number(dailyRates?.[dayKey]);
+  const hasDailyRate = Object.prototype.hasOwnProperty.call(dailyRates, dayKey);
+
+  if (hasDailyRate && dayRate === 0) {
+    return 0;
+  }
+
+  return dayRate > 0 ? dayRate : Number(baseRate) || 0;
+};
 const createShiftState = () => ({
   startIso: new Date().toISOString(),
 });
@@ -74,7 +93,7 @@ const buildDurationLabel = (durationMinutes) => {
 const calculateExitPreview = (vehicle, tarifaHora) => {
   const ingresoDate = getDateFromIso(vehicle.ingresoIso);
 
-  if (!ingresoDate || !Number.isFinite(tarifaHora) || tarifaHora <= 0) {
+  if (!ingresoDate || !Number.isFinite(tarifaHora) || tarifaHora < 0) {
     return null;
   }
 
@@ -174,8 +193,10 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkin
 
     if (!form.propietario.trim()) nextErrors.propietario = "Requerido";
     if (!form.documento.trim()) nextErrors.documento = "Requerido";
+    else if (!/^\d+$/.test(form.documento.trim())) nextErrors.documento = "Solo numeros";
     if (!form.placa.trim()) nextErrors.placa = "Requerido";
     if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
+    else if (!/^\d+$/.test(form.telefono.trim())) nextErrors.telefono = "Solo numeros";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
     if (!form.parqueadero.trim()) {
@@ -244,8 +265,12 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkin
               <input
                 value={form.documento}
                 onChange={(event) =>
-                  setForm((prev) => ({ ...prev, documento: event.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    documento: event.target.value.replace(/\D+/g, ""),
+                  }))
                 }
+                inputMode="numeric"
                 placeholder="Número de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
@@ -269,8 +294,12 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkin
               <input
                 value={form.telefono}
                 onChange={(event) =>
-                  setForm((prev) => ({ ...prev, telefono: event.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    telefono: event.target.value.replace(/\D+/g, ""),
+                  }))
                 }
+                inputMode="numeric"
                 placeholder="Número de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}
@@ -354,6 +383,9 @@ export default function RegistroVehiculos() {
   const [loadingForm, setLoadingForm] = useState(false);
   const [exitingId, setExitingId] = useState(null);
   const [tarifaHoraActual, setTarifaHoraActual] = useState(Number(session?.tarifaHora) || 0);
+  const [tarifasPorDiaActual, setTarifasPorDiaActual] = useState({});
+  const [cobroPorDiaActual, setCobroPorDiaActual] = useState({});
+  const [tarifaConfigLoaded, setTarifaConfigLoaded] = useState(false);
   const [cantidadParqueaderosActual, setCantidadParqueaderosActual] = useState(
     Number(session?.cantidadParqueaderos) || 0
   );
@@ -372,6 +404,40 @@ export default function RegistroVehiculos() {
   useEffect(() => {
     loadVehicles();
   }, []);
+
+  const loadTarifaConfig = useCallback(async () => {
+    try {
+      const config = await getVigilanciaConfig();
+
+      setTarifaHoraActual(Number(config?.tarifaHoraVigilante) || 0);
+      setTarifasPorDiaActual(config?.tarifasPorDia || {});
+      setCobroPorDiaActual(config?.cobroPorDia || {});
+    } catch (error) {
+      setTarifaHoraActual(0);
+      setTarifasPorDiaActual({});
+      setCobroPorDiaActual({});
+    } finally {
+      setTarifaConfigLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    loadTarifaConfig();
+
+    const refreshOnFocus = () => {
+      if (active) {
+        loadTarifaConfig();
+      }
+    };
+
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, [loadTarifaConfig]);
 
   useEffect(() => {
     if (!session?.uid) {
@@ -397,7 +463,6 @@ export default function RegistroVehiculos() {
       Number.isFinite(cantidadGuardada) &&
       cantidadGuardada > 0
     ) {
-      setTarifaHoraActual(tarifaGuardada);
       setCantidadParqueaderosActual(cantidadGuardada);
       return () => {
         active = false;
@@ -405,7 +470,6 @@ export default function RegistroVehiculos() {
     }
 
     if (!session?.uid) {
-      setTarifaHoraActual(0);
       setCantidadParqueaderosActual(0);
       return () => {
         active = false;
@@ -421,18 +485,15 @@ export default function RegistroVehiculos() {
           return;
         }
 
-        setTarifaHoraActual(tarifaPerfil);
         setCantidadParqueaderosActual(Number(profile?.cantidadParqueaderos) || 0);
 
         if (tarifaPerfil > 0 || Number(profile?.cantidadParqueaderos) > 0) {
           updateSessionProfile({
-            tarifaHora: tarifaPerfil,
             cantidadParqueaderos: Number(profile?.cantidadParqueaderos) || 0,
           });
         }
       } catch (error) {
         if (active) {
-          setTarifaHoraActual(0);
           setCantidadParqueaderosActual(0);
         }
       }
@@ -473,6 +534,20 @@ export default function RegistroVehiculos() {
       ),
     [cantidadParqueaderosActual]
   );
+  const currentDayKey = WEEK_DAY_KEYS[new Date().getDay()];
+  const tarifaHoraDelDia = useMemo(
+    () => getDailyRateForDate(new Date(), tarifaHoraActual, tarifasPorDiaActual, cobroPorDiaActual),
+    [tarifaHoraActual, tarifasPorDiaActual, cobroPorDiaActual]
+  );
+  const dailyRateLoaded = Object.prototype.hasOwnProperty.call(tarifasPorDiaActual, currentDayKey);
+  const cobraTarifaHoy =
+    cobroPorDiaActual[currentDayKey] !== false &&
+    !(dailyRateLoaded && Number(tarifasPorDiaActual[currentDayKey]) === 0);
+  const tarifaHoyLabel = !tarifaConfigLoaded
+    ? "Cargando..."
+    : cobraTarifaHoy
+      ? formatCurrency(tarifaHoraDelDia)
+      : "Sin cobro";
 
   const cashCloseItems = useMemo(
     () =>
@@ -532,7 +607,7 @@ export default function RegistroVehiculos() {
       return;
     }
 
-    const preview = calculateExitPreview(vehicle, tarifaHoraActual);
+    const preview = calculateExitPreview(vehicle, tarifaHoraDelDia);
 
     const result = await Swal.fire({
       title: "Registrar salida",
@@ -540,9 +615,7 @@ export default function RegistroVehiculos() {
         <div style="text-align:left">
           <p><strong>Vehículo:</strong> ${vehicle.placa}</p>
           <p><strong>Propietario:</strong> ${vehicle.propietario}</p>
-          <p><strong>Tarifa por hora:</strong> ${
-            tarifaHoraActual > 0 ? formatCurrency(tarifaHoraActual) : "Se validará en el servidor"
-          }</p>
+          <p><strong>Tarifa por hora:</strong> ${tarifaHoyLabel}</p>
           <p><strong>Tiempo parqueado:</strong> ${
             preview?.duracionTexto || "Se calculará al confirmar"
           }</p>
@@ -708,8 +781,8 @@ export default function RegistroVehiculos() {
                     <i className="ph-light ph-money"></i>
                   </div>
                   <div className="counter-info">
-                    <span className="counter-number">{formatCurrency(tarifaHoraActual)}</span>
-                    <span className="counter-label">Tarifa por hora</span>
+                    <span className="counter-number">{tarifaHoyLabel}</span>
+                    <span className="counter-label">Tarifa de hoy</span>
                   </div>
                 </div>
               </div>
@@ -737,7 +810,7 @@ export default function RegistroVehiculos() {
             </div>
           </div>
 
-          {!tarifaHoraActual && (
+          {cobraTarifaHoy && !tarifaHoraDelDia && (
             <div className="cash-close-alert">
               El vigilante no tiene una tarifa por hora cargada en la sesión. Si acabas de
               configurarla, vuelve a iniciar sesión para aplicar el cobro correctamente.

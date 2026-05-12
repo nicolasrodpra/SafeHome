@@ -1,6 +1,7 @@
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 const { normalizeText } = require("../../utils/text");
+const { normalizeLocationValue } = require("../../utils/validation");
 
 const EMERGENCIAS_COLLECTION = "emergenciasPanico";
 const ESTADO_ACTIVA = "Activa";
@@ -59,8 +60,8 @@ const crearEmergencia = async (req, res) => {
     residentId: normalizeText(req.body?.residentId),
     residentName: normalizeText(req.body?.residentName),
     residentEmail: normalizeText(req.body?.residentEmail),
-    torre: normalizeText(req.body?.torre),
-    apartamento: normalizeText(req.body?.apartamento),
+    torre: normalizeLocationValue(req.body?.torre),
+    apartamento: normalizeLocationValue(req.body?.apartamento),
   };
 
   if (!payload.residentId || !payload.residentName || !payload.torre || !payload.apartamento) {
@@ -99,7 +100,18 @@ const atenderEmergencia = async (req, res) => {
   const attendedByName = normalizeText(req.body?.attendedByName) || "Vigilancia";
 
   try {
-    await emergenciasCollection().doc(id).update({
+    const docRef = emergenciasCollection().doc(id);
+    const snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      return res.status(404).json({ mensaje: "No se encontro la emergencia." });
+    }
+
+    if (snapshot.data()?.status === ESTADO_ATENDIDA) {
+      return res.status(400).json({ mensaje: "Esta emergencia ya fue atendida." });
+    }
+
+    await docRef.update({
       status: ESTADO_ATENDIDA,
       attendedById,
       attendedByName,

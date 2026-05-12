@@ -48,11 +48,13 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
 
     if (!form.nombre.trim()) nextErrors.nombre = "Requerido";
     if (!form.documento.trim()) nextErrors.documento = "Requerido";
+    else if (!/^\d+$/.test(form.documento.trim())) nextErrors.documento = "Solo numeros";
     if (!form.residente.trim()) nextErrors.residente = "Requerido";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
     if (!form.motivo.trim()) nextErrors.motivo = "Requerido";
     if (!form.telefono.trim()) nextErrors.telefono = "Requerido";
+    else if (!/^\d+$/.test(form.telefono.trim())) nextErrors.telefono = "Solo numeros";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -110,7 +112,13 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
               <label>Documento</label>
               <input
                 value={form.documento}
-                onChange={(event) => setForm((prev) => ({ ...prev, documento: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    documento: event.target.value.replace(/\D+/g, ""),
+                  }))
+                }
+                inputMode="numeric"
                 placeholder="Número de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}
@@ -132,7 +140,13 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
               <label>Teléfono</label>
               <input
                 value={form.telefono}
-                onChange={(event) => setForm((prev) => ({ ...prev, telefono: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    telefono: event.target.value.replace(/\D+/g, ""),
+                  }))
+                }
+                inputMode="numeric"
                 placeholder="Número de contacto"
               />
               {errors.telefono && <span className="field-error">{errors.telefono}</span>}

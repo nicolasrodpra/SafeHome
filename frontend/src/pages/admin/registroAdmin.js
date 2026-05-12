@@ -183,10 +183,11 @@ const validateForm = (currentForm) => {
   }
 
   if (currentForm.rol === "Vigilante") {
-    const cantidadParqueaderos = Number(currentForm.cantidadParqueaderos);
+    const cantidadParqueaderosText = currentForm.cantidadParqueaderos.trim();
+    const cantidadParqueaderos = Number(cantidadParqueaderosText);
 
-    if (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0) {
-      return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
+    if (!/^\d+$/.test(cantidadParqueaderosText) || cantidadParqueaderos <= 0) {
+      return "La cantidad de parqueaderos del vigilante debe ser un entero mayor a 0.";
     }
   }
 
@@ -231,7 +232,10 @@ export default function RegistroAdminPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = name === "cedula" ? sanitizeCedulaInput(value) : value;
+    const nextValue =
+      name === "cedula" || name === "cantidadParqueaderos"
+        ? sanitizeCedulaInput(value)
+        : value;
 
     setForm((currentForm) => {
       if (name !== "rol") {

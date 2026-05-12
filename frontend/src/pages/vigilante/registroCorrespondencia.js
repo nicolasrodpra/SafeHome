@@ -55,6 +55,7 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
 
     if (!form.residente.trim()) nextErrors.residente = "Requerido";
     if (!form.documento.trim()) nextErrors.documento = "Requerido";
+    else if (!/^\d+$/.test(form.documento.trim())) nextErrors.documento = "Solo numeros";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
     if (!form.tipoEntrega) nextErrors.tipoEntrega = "Requerido";
@@ -119,7 +120,13 @@ function CorrespondenciaModal({ isOpen, onClose, onSave, editingItem, loading })
               <input
                 name="documento"
                 value={form.documento || ""}
-                onChange={(event) => setForm((prev) => ({ ...prev, documento: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    documento: event.target.value.replace(/\D+/g, ""),
+                  }))
+                }
+                inputMode="numeric"
                 placeholder="Numero de documento"
               />
               {errors.documento && <span className="field-error">{errors.documento}</span>}

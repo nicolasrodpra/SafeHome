@@ -3,7 +3,14 @@
 const admin = require("../../config/firebaseAdmin");
 const { toDate } = require("../../utils/firestoreDates");
 const { normalizeText } = require("../../utils/text");
-const { readVigilanciaConfig, vigilanciaConfigDoc } = require("../../utils/vigilanciaConfig");
+const {
+  normalizeDailyChargeFlags,
+  normalizeDailyRates,
+  readVigilanciaConfig,
+  vigilanciaConfigDoc,
+  WEEK_DAY_KEYS,
+} = require("../../utils/vigilanciaConfig");
+const { parsePositiveInteger } = require("../../utils/validation");
 
 // Esta comparación revisa si una fecha pertenece al día actual.
 // La usamos para contar solo los registros de hoy.
@@ -31,12 +38,7 @@ const countTodayRecords = async (collectionName) => {
 };
 
 const parsePositiveNumber = (value) => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  const parsedValue = Number(String(value || "").replace(",", ".").trim());
-  return Number.isFinite(parsedValue) ? parsedValue : NaN;
+  return parsePositiveInteger(value);
 };
 
 const sincronizarTarifaVigilantes = async (tarifaHoraVigilante) => {
@@ -88,10 +90,34 @@ const obtenerConfiguracionVigilancia = async (req, res) => {
 
 const actualizarConfiguracionVigilancia = async (req, res) => {
   const tarifaHoraVigilante = parsePositiveNumber(req.body?.tarifaHoraVigilante);
+  const tarifasPorDiaBase = normalizeDailyRates(req.body?.tarifasPorDia);
+  const cobroPorDia = normalizeDailyChargeFlags(req.body?.cobroPorDia, req.body?.tarifasPorDia);
 
   if (!Number.isFinite(tarifaHoraVigilante) || tarifaHoraVigilante <= 0) {
     return res.status(400).json({
       mensaje: "La tarifa por hora de vigilancia debe ser mayor a 0.",
+    });
+  }
+
+  const tarifasPorDia = WEEK_DAY_KEYS.reduce((rates, dayKey) => {
+    rates[dayKey] =
+      Number.isFinite(tarifasPorDiaBase[dayKey]) && tarifasPorDiaBase[dayKey] > 0
+        ? tarifasPorDiaBase[dayKey]
+        : cobroPorDia[dayKey]
+          ? tarifaHoraVigilante
+          : 0;
+    return rates;
+  }, {});
+
+  const hasInvalidDailyRate = WEEK_DAY_KEYS.some(
+    (dayKey) =>
+      cobroPorDia[dayKey] &&
+      (!Number.isFinite(tarifasPorDia[dayKey]) || tarifasPorDia[dayKey] <= 0)
+  );
+
+  if (hasInvalidDailyRate) {
+    return res.status(400).json({
+      mensaje: "Todas las tarifas por dia deben ser mayores a 0.",
     });
   }
 
@@ -103,6 +129,8 @@ const actualizarConfiguracionVigilancia = async (req, res) => {
       vigilanciaConfigDoc().set(
         {
           tarifaHoraVigilante,
+          tarifasPorDia,
+          cobroPorDia,
           updatedByUid,
           updatedByName,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -116,6 +144,8 @@ const actualizarConfiguracionVigilancia = async (req, res) => {
       mensaje: "La tarifa de vigilancia se actualizó correctamente.",
       configuracion: {
         tarifaHoraVigilante,
+        tarifasPorDia,
+        cobroPorDia,
         updatedByUid,
         updatedByName,
       },

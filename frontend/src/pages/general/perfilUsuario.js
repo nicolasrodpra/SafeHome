@@ -17,6 +17,8 @@ const roleDescriptions = {
   Vigilante: "Controla accesos, novedades y registros operativos del conjunto residencial.",
 };
 
+const bloodTypeOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 const emptyForm = {
   nombres: "",
   apellidos: "",
@@ -122,6 +124,8 @@ const buildProfileUpdatePayload = (form) => ({
     : "",
 });
 
+const isPositiveIntegerText = (value) => /^\d+$/.test(String(value || "").trim()) && Number(value) > 0;
+
 const getMissingRequiredFields = (form, role, vigilanciaTarifaHora) => {
   const fields = [
     { label: "nombres", value: form.nombres },
@@ -205,7 +209,12 @@ export default function PerfilUsuarioPage() {
   };
 
   const handleFieldChange = (fieldName) => (event) => {
-    setForm((current) => ({ ...current, [fieldName]: event.target.value }));
+    const nextValue =
+      fieldName === "cantidadParqueaderos"
+        ? event.target.value.replace(/\D+/g, "")
+        : event.target.value;
+
+    setForm((current) => ({ ...current, [fieldName]: nextValue }));
   };
 
   const handleCancel = () => {
@@ -309,6 +318,16 @@ export default function PerfilUsuarioPage() {
       Swal.fire({
         title: "Campos obligatorios pendientes",
         text: `Completa estos campos antes de guardar: ${missingFields.join(", ")}.`,
+        icon: "warning",
+        confirmButtonColor: "#460669",
+      });
+      return;
+    }
+
+    if (profile.rol === "Vigilante" && !isPositiveIntegerText(form.cantidadParqueaderos)) {
+      Swal.fire({
+        title: "Cantidad invalida",
+        text: "La cantidad de parqueaderos debe ser un entero mayor a 0.",
         icon: "warning",
         confirmButtonColor: "#460669",
       });
@@ -465,13 +484,20 @@ export default function PerfilUsuarioPage() {
                       </div>
                       <div className="profile-field">
                         <label>Tipo de sangre</label>
-                        <input
+                        <select
                           name="tipoSangre"
                           value={form.tipoSangre || ""}
                           onChange={handleFieldChange("tipoSangre")}
                           required
                           disabled={!editMode || loading}
-                        />
+                        >
+                          <option value="">Selecciona el tipo de sangre</option>
+                          {bloodTypeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="profile-field">
                         <label>Tarifa por hora</label>

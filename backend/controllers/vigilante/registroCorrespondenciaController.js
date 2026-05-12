@@ -6,6 +6,12 @@ const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firest
 const {
   crearNotificacionCorrespondencia,
 } = require("../shared/notificacionesResidenteController");
+const {
+  isAllowedValue,
+  isNumericText,
+  normalizeAllowedValue,
+  normalizeLocationValue,
+} = require("../../utils/validation");
 
 const correspondenciaCollection = () => admin.firestore().collection("correspondencia");
 const usersCollection = () => admin.firestore().collection("users");
@@ -15,9 +21,9 @@ const limpiarTexto = (value) => (typeof value === "string" ? value.trim() : "");
 const normalizarCorrespondencia = (payload = {}) => ({
   residente: limpiarTexto(payload.residente),
   documento: limpiarTexto(payload.documento),
-  torre: limpiarTexto(payload.torre),
-  apartamento: limpiarTexto(payload.apartamento),
-  tipoEntrega: limpiarTexto(payload.tipoEntrega),
+  torre: normalizeLocationValue(payload.torre),
+  apartamento: normalizeLocationValue(payload.apartamento),
+  tipoEntrega: normalizeAllowedValue(payload.tipoEntrega, ["Paquete", "Sobre", "Documento"]),
   remitente: limpiarTexto(payload.remitente),
   observacion: limpiarTexto(payload.observacion),
 });
@@ -26,6 +32,24 @@ const obtenerCamposFaltantes = (registro) =>
   Object.entries(registro)
     .filter(([, value]) => !value)
     .map(([field]) => field);
+
+const validarCorrespondencia = (registro) => {
+  const camposFaltantes = obtenerCamposFaltantes(registro);
+
+  if (camposFaltantes.length > 0) {
+    return `Completa estos campos: ${camposFaltantes.join(", ")}.`;
+  }
+
+  if (!isNumericText(registro.documento)) {
+    return "El documento del residente solo puede contener numeros.";
+  }
+
+  if (!isAllowedValue(registro.tipoEntrega, ["Paquete", "Sobre", "Documento"])) {
+    return "Selecciona un tipo de entrega valido.";
+  }
+
+  return "";
+};
 
 const obtenerFechaRegistro = (data = {}) => toDate(data.fecha || data.createdAt);
 const obtenerFechaEntrega = (data = {}) => toDate(data.entregadoAt);
@@ -133,12 +157,10 @@ const obtenerCorrespondencia = async (req, res) => {
 
 const crearCorrespondencia = async (req, res) => {
   const registro = normalizarCorrespondencia(req.body);
-  const camposFaltantes = obtenerCamposFaltantes(registro);
+  const mensajeValidacion = validarCorrespondencia(registro);
 
-  if (camposFaltantes.length > 0) {
-    return res.status(400).json({
-      mensaje: `Completa estos campos: ${camposFaltantes.join(", ")}.`,
-    });
+  if (mensajeValidacion) {
+    return res.status(400).json({ mensaje: mensajeValidacion });
   }
 
   try {
@@ -194,12 +216,10 @@ const crearCorrespondencia = async (req, res) => {
 const actualizarCorrespondencia = async (req, res) => {
   const { id } = req.params;
   const registro = normalizarCorrespondencia(req.body);
-  const camposFaltantes = obtenerCamposFaltantes(registro);
+  const mensajeValidacion = validarCorrespondencia(registro);
 
-  if (camposFaltantes.length > 0) {
-    return res.status(400).json({
-      mensaje: `Completa estos campos: ${camposFaltantes.join(", ")}.`,
-    });
+  if (mensajeValidacion) {
+    return res.status(400).json({ mensaje: mensajeValidacion });
   }
 
   try {
@@ -278,7 +298,14 @@ const eliminarCorrespondencia = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await correspondenciaCollection().doc(id).delete();
+    const docRef = correspondenciaCollection().doc(id);
+    const currentDoc = await docRef.get();
+
+    if (!currentDoc.exists) {
+      return res.status(404).json({ mensaje: "No se encontro la correspondencia." });
+    }
+
+    await docRef.delete();
     return res.status(200).json({ mensaje: "Correspondencia eliminada" });
   } catch (error) {
     return res.status(500).json({ mensaje: error.message });

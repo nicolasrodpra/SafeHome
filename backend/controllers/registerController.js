@@ -2,6 +2,7 @@
 // Valida entradas, protege la ubicación única del residente y completa el alta en Auth + Firestore.
 const admin = require("../config/firebaseAdmin");
 const { readVigilanciaConfig } = require("../utils/vigilanciaConfig");
+const { isValidEmail } = require("../utils/validation");
 
 const ROLES_VALIDOS = ["Administrador", "Residente", "Vigilante"];
 const TIPOS_SANGRE_VALIDOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -31,14 +32,9 @@ const normalizarUbicacion = (value) => {
 const getResidentLocationKey = (torre, apartamento) => `${torre}__${apartamento}`;
 
 const parseCantidadParqueaderos = (value) => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.trunc(value);
-  }
+  const textValue = typeof value === "number" ? String(value) : limpiarTexto(value);
 
-  const textValue = limpiarTexto(value);
-  const parsedValue = Number(textValue);
-
-  return Number.isFinite(parsedValue) ? Math.trunc(parsedValue) : NaN;
+  return /^\d+$/.test(textValue) ? Number.parseInt(textValue, 10) : NaN;
 };
 
 const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -244,6 +240,10 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
 
   if (!esCedulaNumerica(cedulaNormalizada)) {
     return res.status(400).json({ mensaje: "La cedula solo puede contener numeros." });
+  }
+
+  if (!isValidEmail(emailNormalizado)) {
+    return res.status(400).json({ mensaje: "Ingresa un correo electronico valido." });
   }
 
   if (!ROLES_VALIDOS.includes(rolFinal)) {
