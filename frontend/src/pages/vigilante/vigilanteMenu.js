@@ -140,18 +140,21 @@ function VigilanteMenu() {
     <InternalLayout>
       {({ profileName }) => (
         <div className="content">
-          <div className="hero-banner">
+          <div className="hero-banner vigilante-hero-banner">
             <div className="hero-banner-text">
               <h1>
                 Hola, <span>{profileName}</span>
               </h1>
               <p>
-                Monitorea ingresos, visitantes y novedades de seguridad en
-                <br />
-                conjuntos residenciales con un control claro y organizado.
+                Monitorea ingresos, visitantes y novedades de seguridad con un
+                control claro y organizado.
               </p>
             </div>
-            <img src={ilustracionMenu} alt="Ilustracion del panel de vigilancia" />
+            <img
+              src={ilustracionMenu}
+              alt="Ilustracion del panel de vigilancia"
+              className="vigilante-hero-image"
+            />
           </div>
 
           <div className="vigilante-stats-grid">
