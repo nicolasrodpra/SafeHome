@@ -4,10 +4,13 @@ const { normalizeText } = require("../../utils/text");
 const { normalizeLocationValue } = require("../../utils/validation");
 
 const EMERGENCIAS_COLLECTION = "emergenciasPanico";
+const ALERTAS_COLLECTION = "alertasPanico";
 const ESTADO_ACTIVA = "Activa";
+const ESTADO_EN_CAMINO = "En camino";
 const ESTADO_ATENDIDA = "Atendida";
 
 const emergenciasCollection = () => admin.firestore().collection(EMERGENCIAS_COLLECTION);
+const alertasCollection = () => admin.firestore().collection(ALERTAS_COLLECTION);
 
 const sortByCreatedAtDesc = (firstItem, secondItem) => {
   const firstDate = firstItem.createdAt?.getTime?.() || 0;
@@ -81,6 +84,27 @@ const crearEmergencia = async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
+    await alertasCollection().doc(ref.id).set({
+      ...payload,
+      cedula: normalizeText(req.body?.cedula),
+      telefono: normalizeText(req.body?.telefono),
+      celular: normalizeText(req.body?.celular),
+      bloque: normalizeText(req.body?.bloque),
+      piso: normalizeText(req.body?.piso),
+      rol: normalizeText(req.body?.rol) || "Residente",
+      source: normalizeText(req.body?.source) || "mobile",
+      userSnapshot:
+        typeof req.body?.userSnapshot === "object" && req.body.userSnapshot
+          ? req.body.userSnapshot
+          : {},
+      status: ESTADO_ACTIVA,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      resolvedAt: null,
+      resolvedById: "",
+      resolvedByName: "",
+    });
+
     return res.status(201).json({
       mensaje: "Alerta de panico enviada correctamente.",
       emergencia: {
@@ -118,6 +142,17 @@ const atenderEmergencia = async (req, res) => {
       attendedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+
+    await alertasCollection().doc(id).set(
+      {
+        status: ESTADO_ATENDIDA,
+        resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+        resolvedById: attendedById,
+        resolvedByName: attendedByName,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     return res.status(200).json({
       mensaje: "Emergencia marcada como atendida.",

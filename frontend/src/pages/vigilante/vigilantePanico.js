@@ -2,8 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";
 import useSession from "../../hooks/useSession";
-import { getAlertasPanico, resolveAlertaPanico } from "../../services/modules/vigilanciaApi";
+import {
+  getAlertasPanico,
+  markAlertaPanicoEnCamino,
+} from "../../services/modules/vigilanciaApi";
 import "../../styles/vigilante/vigilanteMenu.css";
+
+const ACTIVE_PANIC_STATUSES = ["Activa", "En camino"];
 
 const formatResidentLocation = (alerta) => {
   const torre = alerta.torre ? `Torre ${alerta.torre}` : "";
@@ -19,11 +24,35 @@ const getContactLine = (alerta) => {
   return [email, phone].filter(Boolean).join(" · ") || "Sin contacto";
 };
 
-function AlertaPanicoCard({ alerta, onResolve, resolving }) {
+const getResidentAudioSrc = (alerta) => {
+  const audio = alerta?.residentAudio;
+  if (!audio) {
+    return "";
+  }
+
+  if (audio.url) {
+    const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    const serverBase = apiBase.replace(/\/api\/?$/, "");
+    return `${serverBase}${audio.url}`;
+  }
+
+  if (audio.audioBase64) {
+    return `data:${audio.mimeType || "audio/m4a"};base64,${audio.audioBase64}`;
+  }
+
+  return "";
+};
+
+function AlertaPanicoCard({ alerta, onMarkOnWay, workingAction }) {
+  const isOnWay = alerta.status === "En camino";
+  const audioSrc = getResidentAudioSrc(alerta);
+
   return (
-    <article className="vigilante-panico-card">
+    <article className={`vigilante-panico-card ${isOnWay ? "is-on-way" : ""}`}>
       <div className="vigilante-panico-card-head">
-        <span className="vigilante-panico-chip">Emergencia</span>
+        <span className={`vigilante-panico-chip ${isOnWay ? "is-on-way" : ""}`}>
+          {isOnWay ? "En camino" : "Emergencia"}
+        </span>
         <span className="vigilante-panico-time">
           {alerta.createdDateLabel} · {alerta.createdTimeLabel}
         </span>
@@ -33,15 +62,29 @@ function AlertaPanicoCard({ alerta, onResolve, resolving }) {
       <p>{formatResidentLocation(alerta)}</p>
       {alerta.cedula ? <p>Cedula: {alerta.cedula}</p> : null}
       <p>{getContactLine(alerta)}</p>
+      {audioSrc ? (
+        <div className="vigilante-panico-audio">
+          <span>Audio del residente</span>
+          <audio controls src={audioSrc}>
+            Tu navegador no puede reproducir este audio.
+          </audio>
+        </div>
+      ) : null}
 
-      <button
-        type="button"
-        className="vigilante-panico-resolve-btn"
-        onClick={() => onResolve(alerta)}
-        disabled={resolving}
-      >
-        {resolving ? "Marcando..." : "Marcar atendida"}
-      </button>
+      <div className="vigilante-panico-actions">
+        {!isOnWay ? (
+          <button
+            type="button"
+            className="vigilante-panico-onway-btn"
+            onClick={() => onMarkOnWay(alerta)}
+            disabled={Boolean(workingAction)}
+          >
+            {workingAction === "onway" ? "Actualizando..." : "En camino"}
+          </button>
+        ) : (
+          <span className="vigilante-panico-note">Esperando confirmacion del residente</span>
+        )}
+      </div>
     </article>
   );
 }
@@ -50,7 +93,7 @@ export default function VigilantePanicoPage() {
   const session = useSession();
   const [historialPanico, setHistorialPanico] = useState([]);
   const [loadingPanico, setLoadingPanico] = useState(true);
-  const [resolvingId, setResolvingId] = useState("");
+  const [markingOnWayId, setMarkingOnWayId] = useState("");
 
   const loadAlertasPanico = useCallback(async () => {
     try {
@@ -69,16 +112,16 @@ export default function VigilantePanicoPage() {
     return () => window.clearInterval(intervalId);
   }, [loadAlertasPanico]);
 
-  const handleResolveAlerta = async (alerta) => {
-    if (!alerta?.id || resolvingId) {
+  const handleMarkOnWay = async (alerta) => {
+    if (!alerta?.id || markingOnWayId) {
       return;
     }
 
-    setResolvingId(alerta.id);
+    setMarkingOnWayId(alerta.id);
     try {
-      await resolveAlertaPanico(alerta.id, {
-        resolvedById: session?.uid || session?.id || session?.userId || "",
-        resolvedByName: session?.nombre || "Vigilante",
+      await markAlertaPanicoEnCamino(alerta.id, {
+        responderId: session?.uid || session?.id || session?.userId || "",
+        responderName: session?.nombre || "Vigilante",
       });
 
       await loadAlertasPanico();
@@ -86,8 +129,8 @@ export default function VigilantePanicoPage() {
       Swal.fire({
         toast: true,
         position: "top-end",
-        icon: "success",
-        title: "Alerta marcada como atendida",
+        icon: "info",
+        title: "Vigilancia en camino",
         showConfirmButton: false,
         timer: 2500,
       });
@@ -98,11 +141,13 @@ export default function VigilantePanicoPage() {
         text: error.message || "Intenta de nuevo en unos segundos.",
       });
     } finally {
-      setResolvingId("");
+      setMarkingOnWayId("");
     }
   };
 
-  const activeAlertas = historialPanico.filter((item) => item.status === "Activa");
+  const activeAlertas = historialPanico.filter((item) =>
+    ACTIVE_PANIC_STATUSES.includes(item.status)
+  );
 
   return (
     <InternalLayout>
@@ -126,8 +171,8 @@ export default function VigilantePanicoPage() {
                 <AlertaPanicoCard
                   key={alerta.id}
                   alerta={alerta}
-                  onResolve={handleResolveAlerta}
-                  resolving={resolvingId === alerta.id}
+                  onMarkOnWay={handleMarkOnWay}
+                  workingAction={markingOnWayId === alerta.id ? "onway" : ""}
                 />
               ))}
             </div>
@@ -161,7 +206,11 @@ export default function VigilantePanicoPage() {
                       <td>
                         <span
                           className={`vigilante-panico-status ${
-                            alerta.status === "Activa" ? "is-active" : "is-resolved"
+                            alerta.status === "Atendida"
+                              ? "is-resolved"
+                              : alerta.status === "En camino"
+                                ? "is-on-way"
+                                : "is-active"
                           }`}
                         >
                           {alerta.status}

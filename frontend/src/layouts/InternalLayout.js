@@ -8,7 +8,7 @@ import asistenteVirtual from "../assets/asistenteVirtual.png";
 import safehomeLogo from "../assets/safehomeLogo.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
-import { attendEmergency, getActiveEmergencies } from "../services/modules/emergencyApi";
+import { getActiveEmergencies } from "../services/modules/emergencyApi";
 import {
   getMensajeria,
   getMessageTypeLabel,
@@ -45,6 +45,7 @@ const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-car", label: "Registro de vehiculos", to: "/registroVehiculos" },
   { icon: "ph-package", label: "Registro de correspondencia", to: "/registroCorrespondencia" },
   { icon: "ph-users-three", label: "Registro de visitantes", to: "/registroVisitantes" },
+  { icon: "ph-warning-circle", label: "Boton de panico", to: "/vigilantePanico" },
   { icon: "ph-megaphone", label: "Quejas", to: "/vigilanteQuejas" },
   { icon: "ph-bell", label: "Comunicados", to: "/vigilanteComunicados" },
 ];
@@ -53,6 +54,69 @@ const getSessionIdentity = (session) => ({
   name: session?.nombre || "Usuario",
   role: session?.rol || null,
 });
+
+const getEmergencyAudioContext = (audioContextRef) => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const BrowserAudioContext = window.AudioContext || window.webkitAudioContext;
+
+  if (!BrowserAudioContext) {
+    return null;
+  }
+
+  if (!audioContextRef.current) {
+    audioContextRef.current = new BrowserAudioContext();
+  }
+
+  return audioContextRef.current;
+};
+
+const playEmergencyAlertSound = (audioContextRef) => {
+  const audioContext = getEmergencyAudioContext(audioContextRef);
+
+  if (!audioContext) {
+    return;
+  }
+
+    const scheduleAlarm = () => {
+      const startTime = audioContext.currentTime;
+      const masterGain = audioContext.createGain();
+      masterGain.gain.setValueAtTime(0.0001, startTime);
+      masterGain.gain.exponentialRampToValueAtTime(0.68, startTime + 0.02);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.45);
+      masterGain.connect(audioContext.destination);
+
+    for (let index = 0; index < 9; index += 1) {
+      const toneStart = startTime + index * 0.16;
+      const oscillator = audioContext.createOscillator();
+      const toneGain = audioContext.createGain();
+
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(index % 2 === 0 ? 1040 : 740, toneStart);
+      toneGain.gain.setValueAtTime(0.0001, toneStart);
+      toneGain.gain.exponentialRampToValueAtTime(1, toneStart + 0.015);
+      toneGain.gain.exponentialRampToValueAtTime(0.0001, toneStart + 0.14);
+
+      oscillator.connect(toneGain);
+      toneGain.connect(masterGain);
+      oscillator.start(toneStart);
+      oscillator.stop(toneStart + 0.15);
+    }
+
+    window.setTimeout(() => {
+      masterGain.disconnect();
+    }, 1700);
+  };
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume().then(scheduleAlarm).catch(() => {});
+    return;
+  }
+
+  scheduleAlarm();
+};
 
 const buildPendingInboxSummary = ({ messages, role }) => {
   if (role === "Vigilante") {
@@ -206,12 +270,14 @@ export default function InternalLayout({ children }) {
   const [pendingBaseCount, setPendingBaseCount] = useState(0);
   const [pendingExtraCount, setPendingExtraCount] = useState(0);
   const [activeEmergency, setActiveEmergency] = useState(null);
-  const [attendingEmergency, setAttendingEmergency] = useState(false);
 
   const userMenuRef = useRef(null);
   const hasInitializedQuejasRef = useRef(false);
   const lastPendingQuejasRef = useRef(0);
   const lastEmergencyIdRef = useRef("");
+  const emergencyAudioContextRef = useRef(null);
+  const emergencyAlarmIntervalRef = useRef(null);
+  const emergencySwalOpenRef = useRef(false);
   const fechaActual = getFechaActual();
   const isVigilante = profileRole === "Vigilante";
   const inboxRoute = isVigilante ? "/vigilanteQuejas" : "/adminMensajeria";
@@ -378,6 +444,57 @@ export default function InternalLayout({ children }) {
   }, [navigate, profileRole, session?.uid]);
 
   useEffect(() => {
+    const unlockEmergencyAudio = () => {
+      const audioContext = getEmergencyAudioContext(emergencyAudioContextRef);
+
+      if (audioContext?.state === "suspended") {
+        audioContext.resume().catch(() => {});
+      }
+
+      if (activeEmergency) {
+        playEmergencyAlertSound(emergencyAudioContextRef);
+      }
+    };
+
+    window.addEventListener("pointerdown", unlockEmergencyAudio, { once: true });
+    window.addEventListener("keydown", unlockEmergencyAudio, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockEmergencyAudio);
+      window.removeEventListener("keydown", unlockEmergencyAudio);
+    };
+  }, [activeEmergency]);
+
+  useEffect(() => {
+    if (!activeEmergency) {
+      if (emergencyAlarmIntervalRef.current) {
+        window.clearInterval(emergencyAlarmIntervalRef.current);
+        emergencyAlarmIntervalRef.current = null;
+      }
+      if (emergencySwalOpenRef.current) {
+        emergencySwalOpenRef.current = false;
+        Swal.close();
+      }
+      return undefined;
+    }
+
+    playEmergencyAlertSound(emergencyAudioContextRef);
+
+    if (!emergencyAlarmIntervalRef.current) {
+      emergencyAlarmIntervalRef.current = window.setInterval(() => {
+        playEmergencyAlertSound(emergencyAudioContextRef);
+      }, 1500);
+    }
+
+    return () => {
+      if (emergencyAlarmIntervalRef.current) {
+        window.clearInterval(emergencyAlarmIntervalRef.current);
+        emergencyAlarmIntervalRef.current = null;
+      }
+    };
+  }, [activeEmergency]);
+
+  useEffect(() => {
     if (profileRole !== "Vigilante" || !session?.uid) {
       setActiveEmergency(null);
       lastEmergencyIdRef.current = "";
@@ -400,11 +517,16 @@ export default function InternalLayout({ children }) {
         if (nextEmergency && nextEmergency.id !== lastEmergencyIdRef.current) {
           lastEmergencyIdRef.current = nextEmergency.id;
           Swal.fire({
+            toast: true,
+            position: "top-end",
             title: "Emergencia activa",
             text: `Torre ${nextEmergency.torre} - Apartamento ${nextEmergency.apartamento}`,
             icon: "error",
-            confirmButtonColor: "#b71c1c",
+            showConfirmButton: false,
+            timer: undefined,
+            timerProgressBar: false,
           });
+          emergencySwalOpenRef.current = true;
         }
 
         if (!nextEmergency) {
@@ -439,40 +561,6 @@ export default function InternalLayout({ children }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const handleAttendEmergency = async () => {
-    if (!activeEmergency?.id || !session?.uid || attendingEmergency) {
-      return;
-    }
-
-    setAttendingEmergency(true);
-
-    try {
-      await attendEmergency(activeEmergency.id, {
-        attendedById: session.uid,
-        attendedByName: profileName || "Vigilancia",
-      });
-
-      setActiveEmergency(null);
-      lastEmergencyIdRef.current = "";
-
-      Swal.fire({
-        title: "Emergencia atendida",
-        text: "La alerta fue marcada como atendida correctamente.",
-        icon: "success",
-        confirmButtonColor: "#460669",
-      });
-    } catch (error) {
-      Swal.fire({
-        title: "No se pudo actualizar la emergencia",
-        text: error.message || "Intentalo de nuevo.",
-        icon: "error",
-        confirmButtonColor: "#460669",
-      });
-    } finally {
-      setAttendingEmergency(false);
-    }
-  };
 
   return (
     <div className="internal-shell">
@@ -593,14 +681,20 @@ export default function InternalLayout({ children }) {
         />
 
         {profileRole === "Vigilante" && activeEmergency ? (
-          <div className="emergency-overlay" role="alertdialog" aria-modal="true">
+          <div
+            className={`emergency-overlay ${
+              pathname === "/vigilantePanico" ? "is-route-panel" : ""
+            }`}
+            role="alertdialog"
+            aria-modal={pathname === "/vigilantePanico" ? "false" : "true"}
+          >
             <div className="emergency-overlay-backdrop"></div>
             <section className="emergency-overlay-card">
               <span className="emergency-overlay-kicker">ALERTA DE EMERGENCIA</span>
               <h2>Atencion inmediata requerida</h2>
               <p className="emergency-overlay-copy">
-                Un residente activo el boton de panico. Verifica la ubicacion y atiende la
-                novedad de inmediato.
+                Un residente activo el boton de panico. La alerta solo puede marcarse como
+                atendida desde la vista de boton de panico.
               </p>
 
               <div className="emergency-overlay-details">
@@ -625,10 +719,9 @@ export default function InternalLayout({ children }) {
               <button
                 type="button"
                 className="emergency-overlay-button"
-                onClick={handleAttendEmergency}
-                disabled={attendingEmergency}
+                onClick={() => navigate("/vigilantePanico")}
               >
-                {attendingEmergency ? "Actualizando..." : "Marcar como atendida"}
+                Atender alerta
               </button>
             </section>
           </div>

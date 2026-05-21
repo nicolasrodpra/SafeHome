@@ -11,6 +11,13 @@ export const getAlertasPanico = async () =>
 export const resolveAlertaPanico = async (id, payload) =>
   apiPut(`/alertas-panico/${id}/resolver`, payload, "No se pudo marcar la alerta como atendida.");
 
+export const markAlertaPanicoEnCamino = async (id, payload) =>
+  apiPut(
+    `/alertas-panico/${id}/en-camino`,
+    payload,
+    "No se pudo marcar la alerta como en camino."
+  );
+
 export const getVigilanciaConfig = async () =>
   apiGet("/vigilancia/configuracion", "No se pudo cargar la configuracion de vigilancia.");
 
@@ -88,6 +95,15 @@ export const deleteCorrespondencia = async (id) =>
 
 export const getVisitantes = async () =>
   apiGet("/visitantes", "No se pudo cargar el registro de visitantes.");
+
+export const registerVisitanteIngresoByCode = async (payload) => {
+  const data = await apiPost(
+    "/visitantes/ingreso-codigo",
+    payload,
+    "No se pudo registrar el ingreso del visitante."
+  );
+  return data.visitante;
+};
 
 export const createVisitante = async (payload) => {
   const data = await apiPost("/visitantes", payload, "No se pudo registrar el visitante.");

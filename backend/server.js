@@ -34,7 +34,7 @@ const app = express();
 
 app.disable("x-powered-by"); 
 app.use(cors()); 
-app.use(express.json({ limit: "15mb" }));
+app.use(express.json({ limit: "35mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Sirve archivos desde la carpeta "uploads" para acceder a imÃ¡genes y documentos subidos.
 
 app.get("/", (req, res) => {
@@ -74,6 +74,102 @@ const getResidentProfileById = async (uid) => {
   }
 };
 
+const normalizeQrVehicleType = (value) => {
+  const cleanValue = String(value || "").trim().toLowerCase();
+  return cleanValue === "carro" ? "Carro" : "Moto";
+};
+
+const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
+  const hasVehicle = Boolean(visitorData?.conVehiculo);
+  const placa = String(visitorData?.placa || "").trim().toUpperCase();
+
+  if (!hasVehicle || !placa) {
+    return "";
+  }
+
+  const vehiculosRef = admin.firestore().collection("vehiculos");
+  const alreadyLinkedSnapshot = await vehiculosRef
+    .where("visitanteId", "==", visitorId)
+    .limit(1)
+    .get();
+
+  if (!alreadyLinkedSnapshot.empty) {
+    return String(alreadyLinkedSnapshot.docs[0].data()?.parqueadero || "").trim();
+  }
+
+  const activePlateSnapshot = await vehiculosRef.where("placa", "==", placa).get();
+  const hasActivePlate = activePlateSnapshot.docs.some((snapshotDoc) => {
+    const estado = snapshotDoc.data()?.estado;
+    return estado !== "Salio";
+  });
+
+  if (hasActivePlate) {
+    return "";
+  }
+
+  const parqueadero =
+    String(visitorData?.parqueadero || visitorData?.parqueaderoVehiculo || "").trim() ||
+    (await assignAvailableParking());
+
+  if (!parqueadero) {
+    return "";
+  }
+
+  const now = new Date();
+  await vehiculosRef.add({
+    propietario: String(visitorData?.nombre || visitorData?.nombreCompleto || "").trim(),
+    documento: String(visitorData?.documento || visitorData?.identificacion || "").trim(),
+    placa,
+    telefono: String(visitorData?.telefono || "").trim(),
+    torre: String(visitorData?.torre || visitorData?.residenteTorre || "").trim(),
+    apartamento: String(visitorData?.apartamento || visitorData?.residenteApartamento || "").trim(),
+    parqueadero,
+    tipo: normalizeQrVehicleType(visitorData?.tipoVehiculo || visitorData?.tipo),
+    estado: "Activo",
+    fecha: admin.firestore.Timestamp.fromDate(now),
+    ingresoAt: admin.firestore.Timestamp.fromDate(now),
+    createdAt: admin.firestore.Timestamp.fromDate(now),
+    vigilanteRegistroUid: "",
+    vigilanteRegistroNombre: "Ingreso por QR visitante",
+    tarifaHoraBase: 0,
+    visitanteId: visitorId,
+    visitanteCodigoAcceso: String(visitorData?.codigoAcceso || "").trim(),
+  });
+
+  await admin.firestore().collection("visitantes").doc(visitorId).update({
+    parqueadero,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return parqueadero;
+};
+
+const assignAvailableParking = async () => {
+  const usersSnapshot = await admin.firestore().collection("users").get();
+  const maxParking = usersSnapshot.docs.reduce((maxValue, snapshotDoc) => {
+    const currentValue = Number(snapshotDoc.data()?.cantidadParqueaderos);
+    return Number.isFinite(currentValue) && currentValue > maxValue ? currentValue : maxValue;
+  }, 0);
+
+  const vehiclesSnapshot = await admin.firestore().collection("vehiculos").get();
+  const occupiedParking = new Set(
+    vehiclesSnapshot.docs
+      .filter((snapshotDoc) => snapshotDoc.data()?.estado !== "Salio")
+      .map((snapshotDoc) => String(snapshotDoc.data()?.parqueadero || "").trim())
+      .filter(Boolean)
+  );
+  const parkingLimit = maxParking || Math.max(occupiedParking.size + 1, 1);
+
+  for (let index = 1; index <= parkingLimit; index += 1) {
+    const parkingNumber = String(index);
+    if (!occupiedParking.has(parkingNumber)) {
+      return parkingNumber;
+    }
+  }
+
+  return "";
+};
+
 const renderQrVisitante = async (req, res) => {
   const rawPayload = String(req.query?.payload || "");
 
@@ -91,7 +187,36 @@ const renderQrVisitante = async (req, res) => {
 
   const safe = (value) => String(value || "").trim();
   const yesNo = (value) => (value ? "Si" : "No");
-  const visitorName = safe(parsedPayload.nombreCompleto) || "Visitante";
+  const visitanteId = safe(parsedPayload.visitanteId);
+  if (visitanteId) {
+    try {
+      const visitorDoc = await admin.firestore().collection("visitantes").doc(visitanteId).get();
+      if (visitorDoc.exists) {
+        const visitorData = visitorDoc.data() || {};
+        if ((visitorData.estado || visitorData.status) === "Pendiente") {
+          await visitorDoc.ref.update({
+            estado: "Ingreso",
+            status: "Ingreso",
+            horaIngreso: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+        const updatedVisitorDoc = await visitorDoc.ref.get();
+        parsedPayload = { ...updatedVisitorDoc.data(), ...parsedPayload, estado: "Ingreso", status: "Ingreso" };
+        const assignedParking = await registerVisitorVehicleIfNeeded({
+          visitorId: visitanteId,
+          visitorData: parsedPayload,
+        });
+        if (assignedParking) {
+          parsedPayload.parqueadero = assignedParking;
+        }
+      }
+    } catch (error) {
+      // Si falla la lectura, seguimos mostrando la informacion incluida en el QR.
+    }
+  }
+
+  const visitorName = safe(parsedPayload.nombreCompleto || parsedPayload.nombre) || "Visitante";
   const residentData = parsedPayload.residenteDatosCompletos || {};
   const dbResidentData = await getResidentProfileById(parsedPayload.residenteLookupId);
   const residentPhone = safe(
@@ -101,7 +226,12 @@ const renderQrVisitante = async (req, res) => {
       dbResidentData.telefono ||
       dbResidentData.celular
   );
-  const prettyGeneratedDate = formatGeneratedDate(parsedPayload.generadoEn);
+  const prettyGeneratedDate = formatGeneratedDate(parsedPayload.generadoEn || parsedPayload.createdAt);
+  const visitorDocument = safe(parsedPayload.identificacion || parsedPayload.documento);
+  const visitorPhone = safe(parsedPayload.telefono);
+  const entryHour = safe(parsedPayload.horaEntrada || parsedPayload.horaEntradaProgramada);
+  const visitorVehicleType = safe(parsedPayload.tipoVehiculo || parsedPayload.tipo);
+  const visitorParking = safe(parsedPayload.parqueadero || parsedPayload.parqueaderoVehiculo);
 
   const html = `
     <!doctype html>
@@ -136,12 +266,14 @@ const renderQrVisitante = async (req, res) => {
             <h2>Datos del visitante</h2>
             <table>
               <tr><td class="label">Nombre completo</td><td class="value">${visitorName}</td></tr>
-              <tr><td class="label">Identificacion</td><td class="value">${safe(parsedPayload.identificacion) || "No registrada"}</td></tr>
-              <tr><td class="label">Telefono</td><td class="value">${safe(parsedPayload.telefono) || "No registrado"}</td></tr>
-              <tr><td class="label">Hora de entrada</td><td class="value">${safe(parsedPayload.horaEntrada) || "No registrada"}</td></tr>
-              <tr><td class="label">Hora de salida</td><td class="value">${safe(parsedPayload.horaSalida) || "No registrada"}</td></tr>
+              <tr><td class="label">Identificacion</td><td class="value">${visitorDocument || "No registrada"}</td></tr>
+              <tr><td class="label">Telefono</td><td class="value">${visitorPhone || "No registrado"}</td></tr>
+              <tr><td class="label">Hora de entrada</td><td class="value">${entryHour || "No registrada"}</td></tr>
+              <tr><td class="label">Estado</td><td class="value">${safe(parsedPayload.estado || parsedPayload.status) || "Pendiente"}</td></tr>
               <tr><td class="label">Entra con vehiculo</td><td class="value">${yesNo(parsedPayload.conVehiculo)}</td></tr>
+              <tr><td class="label">Tipo de vehiculo</td><td class="value">${visitorVehicleType || "No aplica"}</td></tr>
               <tr><td class="label">Placa</td><td class="value">${safe(parsedPayload.placa) || "No aplica"}</td></tr>
+              <tr><td class="label">Parqueadero</td><td class="value">${visitorParking || "No aplica"}</td></tr>
               <tr><td class="label">Fecha de generacion</td><td class="value">${prettyGeneratedDate}</td></tr>
             </table>
           </div>
@@ -212,4 +344,3 @@ setInterval(() => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
-

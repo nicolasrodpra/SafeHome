@@ -5,12 +5,14 @@ const {
   crearVisitante,
   actualizarVisitante,
   eliminarVisitante,
+  ingresarVisitantePorCodigo,
 } = require("../../controllers/vigilante/registroVisitantesController");
 
 const router = express.Router();
 
 router.get("/visitantes", obtenerVisitantes);
 router.post("/visitantes", crearVisitante);
+router.post("/visitantes/ingreso-codigo", ingresarVisitantePorCodigo);
 router.put("/visitantes/:id", actualizarVisitante);
 router.delete("/visitantes/:id", eliminarVisitante);
 

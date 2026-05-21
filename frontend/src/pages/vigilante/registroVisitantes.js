@@ -1,12 +1,13 @@
 // Módulo operativo de visitantes.
 // Permite registrar, editar y eliminar ingresos autorizados del día.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import InternalLayout from "../../layouts/InternalLayout";
 import {
   createVisitante,
   deleteVisitante,
   getVisitantes,
+  registerVisitanteIngresoByCode,
   updateVisitante,
 } from "../../services/modules/vigilanciaApi";
 import "../../styles/vigilante/registroVisitantes.css";
@@ -201,34 +202,101 @@ function VisitanteModal({ isOpen, onClose, onSave, editingVisitor, loading }) {
   );
 }
 
+function CodigoIngresoModal({ isOpen, onClose, onSave, loading }) {
+  const [codigoAcceso, setCodigoAcceso] = useState("");
+
+  useEffect(() => {
+    if (isOpen) setCodigoAcceso("");
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="guard-modal-overlay" onClick={onClose}>
+      <div className="guard-modal-box code-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-stripe" />
+        <div className="modal-header">
+          <div className="modal-header-left">
+            <div className="modal-icon">
+              <i className="ph-light ph-key"></i>
+            </div>
+            <div>
+              <p className="modal-title">Ingresar codigo</p>
+              <p className="modal-subtitle">
+                Usalo solo si el QR no abre desde el celular.
+              </p>
+            </div>
+          </div>
+          <button type="button" className="modal-close" onClick={onClose}>
+            <i className="ph-light ph-x"></i>
+          </button>
+        </div>
+
+        <form
+          className="code-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!codigoAcceso.trim()) return;
+            onSave(codigoAcceso.trim());
+          }}
+        >
+          <label>Codigo del visitante</label>
+          <input
+            value={codigoAcceso}
+            onChange={(event) => setCodigoAcceso(event.target.value.toUpperCase())}
+            placeholder="Ej: VST-L..."
+          />
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel" onClick={onClose} disabled={loading}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn-save" disabled={loading || !codigoAcceso.trim()}>
+              {loading ? "Validando..." : "Registrar ingreso"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function RegistroVisitantes() {
   const [visitors, setVisitors] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [editingVisitor, setEditingVisitor] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
+  const [loadingCode, setLoadingCode] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const pendingVisitors = visitors.filter((visitor) => (visitor.estado || visitor.status) === "Pendiente");
+  const enteredVisitors = visitors.filter((visitor) =>
+    ["Ingreso", "Aprobado"].includes(visitor.estado || visitor.status)
+  );
 
-  const loadVisitors = async () => {
+  const loadVisitors = useCallback(async () => {
     try {
       const data = await getVisitantes();
       setVisitors(data);
     } catch (error) {
       setVisitors([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadVisitors();
-  }, []);
+  }, [loadVisitors]);
 
   const handleSave = async (formData) => {
     setLoadingForm(true);
 
     try {
       if (editingVisitor) {
-        await updateVisitante(editingVisitor.id, formData);
+        await updateVisitante(editingVisitor.id, {
+          ...formData,
+          estado: editingVisitor.estado || editingVisitor.status || "Pendiente",
+        });
       } else {
-        await createVisitante(formData);
+        await createVisitante({ ...formData, estado: "Ingreso" });
       }
 
       await loadVisitors();
@@ -285,6 +353,32 @@ export default function RegistroVisitantes() {
     }
   };
 
+  const handleCodeSubmit = async (codigoAcceso) => {
+    setLoadingCode(true);
+
+    try {
+      const visitante = await registerVisitanteIngresoByCode({ codigoAcceso });
+      await loadVisitors();
+      setCodeModalOpen(false);
+
+      Swal.fire({
+        title: "Ingreso registrado",
+        text: `${visitante.nombre} quedo registrado como ingreso.`,
+        icon: "success",
+        confirmButtonColor: "#460669",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Codigo no valido",
+        text: error.message || "No se pudo registrar el ingreso.",
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
+    } finally {
+      setLoadingCode(false);
+    }
+  };
+
   return (
     <InternalLayout>
       <main className="content guard-module-page">
@@ -298,8 +392,8 @@ export default function RegistroVisitantes() {
           </div>
 
           <div className="guard-module-summary">
-            <span>Total de registros</span>
-            <strong>{visitors.length}</strong>
+            <span>Ingresos reales</span>
+            <strong>{enteredVisitors.length}</strong>
           </div>
         </header>
 
@@ -321,10 +415,24 @@ export default function RegistroVisitantes() {
                   </div>
                   <div className="counter-info">
                     <span className="counter-number">{visitors.length}</span>
-                    <span className="counter-label">Visitantes</span>
+                    <span className="counter-label">Total</span>
+                  </div>
+                </div>
+                <div className="counter-card">
+                  <div className="counter-icon moto">
+                    <i className="ph-light ph-clock"></i>
+                  </div>
+                  <div className="counter-info">
+                    <span className="counter-number">{pendingVisitors.length}</span>
+                    <span className="counter-label">Pendientes</span>
                   </div>
                 </div>
               </div>
+
+              <button type="button" className="code-entry-btn" onClick={() => setCodeModalOpen(true)}>
+                <i className="ph-light ph-key"></i>
+                Ingresar codigo
+              </button>
 
               <button type="button" className="register-btn" onClick={() => setModalOpen(true)}>
                 <span>
@@ -335,6 +443,39 @@ export default function RegistroVisitantes() {
                 <span className="plus-sq"></span>
               </button>
             </div>
+          </div>
+
+          <div className="pending-visitors-panel">
+            <div>
+              <h3>Visitantes pendientes</h3>
+              <p>Vigilante, se registro esta persona y el estado esta pendiente.</p>
+            </div>
+            {pendingVisitors.length === 0 ? (
+              <span className="pending-empty">Sin pendientes</span>
+            ) : (
+              <div className="pending-list">
+                {pendingVisitors.map((visitor) => (
+                  <article className="pending-card" key={visitor.id}>
+                    <div className="pending-card-info">
+                      <strong>{visitor.nombre}</strong>
+                      <span>
+                        Torre {visitor.torre} - Apto {visitor.apartamento}
+                      </span>
+                      <small>Codigo: {visitor.codigoAcceso || "Sin codigo"}</small>
+                    </div>
+                    <button
+                      type="button"
+                      className="pending-delete-btn"
+                      disabled={deletingId === visitor.id}
+                      onClick={() => handleDelete(visitor)}
+                      title="Eliminar pendiente"
+                    >
+                      {deletingId === visitor.id ? "..." : <i className="ph-light ph-trash"></i>}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="guard-module-table-wrap">
@@ -350,19 +491,20 @@ export default function RegistroVisitantes() {
                   <th>Apartamento</th>
                   <th>Motivo</th>
                   <th>Fecha</th>
-                  <th>Hora</th>
+                  <th>Hora entrada</th>
+                  <th>Estado</th>
                   <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
-                {visitors.length === 0 ? (
+                {enteredVisitors.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="guard-module-empty-row">
-                      No hay visitantes registrados.
+                    <td colSpan={12} className="guard-module-empty-row">
+                      No hay visitantes con ingreso registrado.
                     </td>
                   </tr>
                 ) : (
-                  visitors.map((visitor) => (
+                  enteredVisitors.map((visitor) => (
                     <tr key={visitor.id}>
                       <td>
                         <div
@@ -388,6 +530,9 @@ export default function RegistroVisitantes() {
                       <td>{visitor.motivo}</td>
                       <td>{visitor.fecha}</td>
                       <td>{visitor.hora}</td>
+                      <td>
+                        <span className="visitor-status-badge">{visitor.estado || "Ingreso"}</span>
+                      </td>
                       <td>
                         <div className="action-btns">
                           <button
@@ -428,6 +573,12 @@ export default function RegistroVisitantes() {
         onSave={handleSave}
         editingVisitor={editingVisitor}
         loading={loadingForm}
+      />
+      <CodigoIngresoModal
+        isOpen={codeModalOpen}
+        onClose={() => setCodeModalOpen(false)}
+        onSave={handleCodeSubmit}
+        loading={loadingCode}
       />
     </InternalLayout>
   );

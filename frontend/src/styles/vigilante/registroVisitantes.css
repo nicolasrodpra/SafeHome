@@ -3,3 +3,131 @@
 .form-row-single {
   grid-template-columns: 1fr;
 }
+
+.code-entry-btn {
+  min-height: 54px;
+  border: 1px solid rgba(70, 6, 105, 0.14);
+  border-radius: 16px;
+  background: #f3eff8;
+  color: #460669;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  cursor: pointer;
+}
+
+.pending-visitors-panel {
+  margin: 18px 0;
+  border: 1px solid rgba(70, 6, 105, 0.12);
+  border-radius: 18px;
+  background: #fbf9fd;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.pending-visitors-panel h3 {
+  margin: 0 0 4px;
+  color: #171326;
+  font-size: 16px;
+}
+
+.pending-visitors-panel p {
+  margin: 0;
+  color: #6d6478;
+  font-size: 13px;
+}
+
+.pending-empty {
+  color: #8b8498;
+  font-weight: 700;
+}
+
+.pending-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.pending-card {
+  border: 1px solid rgba(70, 6, 105, 0.1);
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pending-card-info {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.pending-card strong {
+  color: #171326;
+  font-size: 14px;
+}
+
+.pending-card span,
+.pending-card small {
+  color: #6d6478;
+  font-size: 12px;
+}
+
+.pending-delete-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(180, 35, 24, 0.14);
+  border-radius: 12px;
+  background: #fff5f5;
+  color: #b42318;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.visitor-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #e8f7ed;
+  color: #176534;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.code-modal {
+  max-width: 460px;
+}
+
+.code-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.code-form label {
+  color: #524b61;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.code-form input {
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  padding: 0 12px;
+  color: #312a42;
+  font-weight: 700;
+}
