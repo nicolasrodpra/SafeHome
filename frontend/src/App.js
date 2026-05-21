@@ -25,6 +25,7 @@ import RegistroCorrespondencia from "./pages/vigilante/registroCorrespondencia.j
 import RegistroVehiculos from "./pages/vigilante/registroVehiculos.js";
 import RegistroVisitantes from "./pages/vigilante/registroVisitantes.js";
 import VigilanteMenu from "./pages/vigilante/vigilanteMenu.js";
+import VigilantePanicoPage from "./pages/vigilante/vigilantePanico.js";
 import VigilanteQuejasPage from "./pages/vigilante/vigilanteQuejas.js";
 
 // Esta tabla centraliza las rutas privadas del sistema.
@@ -71,6 +72,7 @@ const privateRoutes = [
   { path: "/registroCorrespondencia", element: <RegistroCorrespondencia />, roles: ["Vigilante"] },
   { path: "/registroVisitantes", element: <RegistroVisitantes />, roles: ["Vigilante"] },
   { path: "/registroVehiculos", element: <RegistroVehiculos />, roles: ["Vigilante"] },
+  { path: "/vigilantePanico", element: <VigilantePanicoPage />, roles: ["Vigilante"] },
   { path: "/vigilanteComunicados", element: <AdminComunicados />, roles: ["Vigilante"] },
   { path: "/vigilanteQuejas", element: <VigilanteQuejasPage />, roles: ["Vigilante"] },
 ];

@@ -3,6 +3,7 @@ const path = require("path");
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 const { normalizeComparableText, normalizeText } = require("../../utils/text");
+const { parseBoolean } = require("../../utils/validation");
 
 const MAX_IMAGE_SIZE_BYTES = 6 * 1024 * 1024;
 const IMAGE_MIME_EXTENSIONS = {
@@ -205,7 +206,7 @@ const actualizarComunicado = async (req, res) => {
   const { id } = req.params;
   const asunto = normalizeText(req.body?.asunto);
   const mensaje = normalizeText(req.body?.mensaje);
-  const removeImage = Boolean(req.body?.removeImage);
+  const removeImage = parseBoolean(req.body?.removeImage);
 
   if (!asunto || !mensaje) {
     return res.status(400).json({
@@ -281,10 +282,11 @@ const eliminarComunicado = async (req, res) => {
     const comunicadoRef = comunicadosCollection().doc(id);
     const snapshot = await comunicadoRef.get();
 
-    if (snapshot.exists) {
-      removeStoredImage(normalizeText(snapshot.data()?.imageStoredFileName));
+    if (!snapshot.exists) {
+      return res.status(404).json({ mensaje: "No se encontro el comunicado solicitado." });
     }
 
+    removeStoredImage(normalizeText(snapshot.data()?.imageStoredFileName));
     await comunicadoRef.delete();
     return res.status(200).json({ mensaje: "Comunicado eliminado correctamente." });
   } catch (error) {

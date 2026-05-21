@@ -80,6 +80,88 @@
   line-height: 1.65;
 }
 
+.admin-vigilancia-week-rates {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(82px, 1fr));
+  gap: 10px;
+}
+
+.admin-vigilancia-day-rate {
+  min-height: 92px;
+  padding: 12px 10px;
+  border: 1px solid rgba(70, 6, 105, 0.12);
+  border-radius: 14px;
+  background: #faf9fb;
+  color: inherit;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  text-align: center;
+}
+
+.admin-vigilancia-day-rate.is-selected {
+  border-color: #460669;
+  box-shadow: 0 0 0 2px rgba(70, 6, 105, 0.08);
+}
+
+.admin-vigilancia-day-rate.is-disabled {
+  background: #f7f7f8;
+  border-style: dashed;
+}
+
+.admin-vigilancia-day-rate span {
+  display: block;
+  margin-bottom: 8px;
+  color: #460669;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.admin-vigilancia-day-rate strong {
+  display: block;
+  color: #241b33;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.admin-vigilancia-day-rate.is-disabled strong {
+  color: #8a839a;
+  font-size: 0.75rem;
+}
+
+.admin-vigilancia-charge-toggle {
+  min-height: 46px;
+  padding: 0 12px;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #312a42 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.admin-vigilancia-charge-toggle input {
+  width: 18px !important;
+  min-height: 18px !important;
+  margin: 0 !important;
+  accent-color: #460669;
+}
+
+.admin-vigilancia-settings-form input:disabled {
+  cursor: not-allowed;
+  background: #f1eef4;
+  color: #8a839a;
+}
+
+.admin-vigilancia-settings-form input {
+  color: #241b33;
+}
+
 .admin-vigilancia-settings-card {
   display: flex;
   flex-direction: column;
@@ -262,7 +344,7 @@
 .admin-vigilancia-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 820px;
+  min-width: 1000px;
 }
 
 .admin-vigilancia-table th,
@@ -451,6 +533,10 @@
     min-width: 0;
     width: 100%;
   }
+
+  .admin-vigilancia-week-rates {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -469,5 +555,9 @@
 
   .admin-readonly-modal-overlay {
     padding: 12px;
+  }
+
+  .admin-vigilancia-week-rates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

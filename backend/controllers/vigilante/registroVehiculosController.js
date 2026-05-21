@@ -3,7 +3,15 @@
 // de registros antiguos ya finalizados.
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
-const { readVigilanciaConfig } = require("../../utils/vigilanciaConfig");
+const { readVigilanciaConfig, WEEK_DAY_KEYS } = require("../../utils/vigilanciaConfig");
+const {
+  isAllowedValue,
+  isNumericText,
+  isPositiveInteger,
+  normalizeAllowedValue,
+  normalizeLocationValue,
+  normalizePlate,
+} = require("../../utils/validation");
 
 const vehiculosCollection = () => admin.firestore().collection("vehiculos");
 const usersCollection = () => admin.firestore().collection("users");
@@ -28,18 +36,44 @@ const normalizarNumero = (value) => {
 const normalizarVehiculo = (payload) => ({
   propietario: limpiarTexto(payload.propietario),
   documento: limpiarTexto(payload.documento),
-  placa: limpiarTexto(payload.placa).toUpperCase(),
+  placa: normalizePlate(payload.placa),
   telefono: limpiarTexto(payload.telefono),
-  torre: limpiarTexto(payload.torre),
-  apartamento: limpiarTexto(payload.apartamento),
+  torre: normalizeLocationValue(payload.torre),
+  apartamento: normalizeLocationValue(payload.apartamento),
   parqueadero: limpiarTexto(payload.parqueadero),
-  tipo: limpiarTexto(payload.tipo),
+  tipo: normalizeAllowedValue(payload.tipo, ["Carro", "Moto"]),
 });
 
 const obtenerCamposFaltantes = (vehiculo) =>
   Object.entries(vehiculo)
     .filter(([, value]) => !value)
     .map(([field]) => field);
+
+const validarVehiculo = (vehiculo) => {
+  const camposFaltantes = obtenerCamposFaltantes(vehiculo);
+
+  if (camposFaltantes.length > 0) {
+    return `Completa estos campos: ${camposFaltantes.join(", ")}.`;
+  }
+
+  if (!isNumericText(vehiculo.documento)) {
+    return "El documento del propietario solo puede contener numeros.";
+  }
+
+  if (!isNumericText(vehiculo.telefono)) {
+    return "El telefono del propietario solo puede contener numeros.";
+  }
+
+  if (!isPositiveInteger(vehiculo.parqueadero)) {
+    return "El parqueadero debe ser un numero entero mayor a 0.";
+  }
+
+  if (!isAllowedValue(vehiculo.tipo, ["Carro", "Moto"])) {
+    return "Selecciona un tipo de vehiculo valido.";
+  }
+
+  return "";
+};
 
 const obtenerFechaIngreso = (data = {}) => toDate(data.ingresoAt || data.createdAt || data.fecha);
 
@@ -73,6 +107,30 @@ const calcularCobroVehiculo = ({ ingresoDate, salidaDate, tarifaHora }) => {
     horasCobradas,
     valorCobrado,
   };
+};
+
+const obtenerTarifaPorFecha = (configuracion, fecha) => {
+  const dayKey = WEEK_DAY_KEYS[fecha.getDay()];
+
+  if (configuracion?.cobroPorDia?.[dayKey] === false) {
+    return 0;
+  }
+
+  const tarifaDiaria = normalizarNumero(configuracion?.tarifasPorDia?.[dayKey]);
+  const hasTarifaDiaria = Object.prototype.hasOwnProperty.call(
+    configuracion?.tarifasPorDia || {},
+    dayKey
+  );
+
+  if (hasTarifaDiaria && tarifaDiaria === 0) {
+    return 0;
+  }
+
+  if (Number.isFinite(tarifaDiaria) && tarifaDiaria > 0) {
+    return tarifaDiaria;
+  }
+
+  return normalizarNumero(configuracion?.tarifaHoraVigilante);
 };
 
 const obtenerReferenciaOrden = (vehiculo) => {
@@ -180,6 +238,8 @@ const obtenerPerfilVigilante = async (uid) => {
     uid: vigilanteUid,
     nombre: limpiarTexto(data.nombre) || "Vigilante",
     tarifaHora: normalizarNumero(vigilanciaConfig?.tarifaHoraVigilante),
+    tarifasPorDia: vigilanciaConfig?.tarifasPorDia || {},
+    cobroPorDia: vigilanciaConfig?.cobroPorDia || {},
   };
 };
 
@@ -197,6 +257,45 @@ const buscarVehiculoActivoPorPlaca = async (placa, ignoredId = "") => {
   });
 };
 
+const buscarVehiculoActivoPorParqueadero = async (parqueadero, tipo, ignoredId = "") => {
+  const snapshot = await vehiculosCollection().where("parqueadero", "==", limpiarTexto(parqueadero)).get();
+  const tipoNormalizado = normalizeAllowedValue(tipo, ["Carro", "Moto"]);
+
+  return snapshot.docs.find((snapshotDoc) => {
+    if (snapshotDoc.id === ignoredId) {
+      return false;
+    }
+
+    const estado = snapshotDoc.data()?.estado;
+    const tipoVehiculo = normalizeAllowedValue(snapshotDoc.data()?.tipo, ["Carro", "Moto"]);
+
+    return estado !== "Salio" && tipoVehiculo === tipoNormalizado;
+  });
+};
+
+const validarParqueaderoConfigurado = async (vehiculo) => {
+  const configuracion = await readVigilanciaConfig();
+  const esMoto = vehiculo.tipo === "Moto";
+  const cantidadCarros = Number(configuracion?.cantidadParqueaderosCarro);
+  const cantidadParqueaderos = esMoto
+    ? Number(configuracion?.cantidadParqueaderosMoto) || 0
+    : Number.isFinite(cantidadCarros)
+      ? cantidadCarros
+      : Number(configuracion?.cantidadParqueaderos) || 0;
+  const numeroParqueadero = Number.parseInt(vehiculo.parqueadero, 10);
+  const tipoParqueadero = esMoto ? "motos" : "carros";
+
+  if (!cantidadParqueaderos) {
+    return `Configura la cantidad de parqueaderos para ${tipoParqueadero} desde ingreso de vehiculos antes de registrar ingresos.`;
+  }
+
+  if (numeroParqueadero > cantidadParqueaderos) {
+    return `El parqueadero para ${tipoParqueadero} debe estar entre 1 y ${cantidadParqueaderos}.`;
+  }
+
+  return "";
+};
+
 const obtenerVehiculos = async (req, res) => {
   try {
     await limpiarVehiculosFinalizadosAntiguos();
@@ -212,12 +311,10 @@ const obtenerVehiculos = async (req, res) => {
 
 const crearVehiculo = async (req, res) => {
   const vehiculo = normalizarVehiculo(req.body);
-  const camposFaltantes = obtenerCamposFaltantes(vehiculo);
+  const mensajeValidacion = validarVehiculo(vehiculo);
 
-  if (camposFaltantes.length > 0) {
-    return res.status(400).json({
-      mensaje: `Completa estos campos: ${camposFaltantes.join(", ")}.`,
-    });
+  if (mensajeValidacion) {
+    return res.status(400).json({ mensaje: mensajeValidacion });
   }
 
   try {
@@ -228,6 +325,23 @@ const crearVehiculo = async (req, res) => {
     if (vehiculoActivo) {
       return res.status(400).json({
         mensaje: "Ya existe un vehículo activo con esa placa. Registra la salida antes de volverlo a ingresar.",
+      });
+    }
+
+    const mensajeParqueaderoConfigurado = await validarParqueaderoConfigurado(vehiculo);
+
+    if (mensajeParqueaderoConfigurado) {
+      return res.status(400).json({ mensaje: mensajeParqueaderoConfigurado });
+    }
+
+    const parqueaderoActivo = await buscarVehiculoActivoPorParqueadero(
+      vehiculo.parqueadero,
+      vehiculo.tipo
+    );
+
+    if (parqueaderoActivo) {
+      return res.status(400).json({
+        mensaje: "Ese parqueadero ya esta ocupado por otro vehiculo activo.",
       });
     }
 
@@ -265,12 +379,10 @@ const crearVehiculo = async (req, res) => {
 const actualizarVehiculo = async (req, res) => {
   const { id } = req.params;
   const vehiculo = normalizarVehiculo(req.body);
-  const camposFaltantes = obtenerCamposFaltantes(vehiculo);
+  const mensajeValidacion = validarVehiculo(vehiculo);
 
-  if (camposFaltantes.length > 0) {
-    return res.status(400).json({
-      mensaje: `Completa estos campos: ${camposFaltantes.join(", ")}.`,
-    });
+  if (mensajeValidacion) {
+    return res.status(400).json({ mensaje: mensajeValidacion });
   }
 
   try {
@@ -291,6 +403,24 @@ const actualizarVehiculo = async (req, res) => {
     if (vehiculoActivo) {
       return res.status(400).json({
         mensaje: "Ya existe un vehículo activo con esa placa. Usa otra placa o registra primero su salida.",
+      });
+    }
+
+    const mensajeParqueaderoConfigurado = await validarParqueaderoConfigurado(vehiculo);
+
+    if (mensajeParqueaderoConfigurado) {
+      return res.status(400).json({ mensaje: mensajeParqueaderoConfigurado });
+    }
+
+    const parqueaderoActivo = await buscarVehiculoActivoPorParqueadero(
+      vehiculo.parqueadero,
+      vehiculo.tipo,
+      id
+    );
+
+    if (parqueaderoActivo) {
+      return res.status(400).json({
+        mensaje: "Ese parqueadero ya esta ocupado por otro vehiculo activo.",
       });
     }
 
@@ -337,7 +467,17 @@ const registrarSalidaVehiculo = async (req, res) => {
       });
     }
 
-    if (!Number.isFinite(vigilante.tarifaHora) || vigilante.tarifaHora <= 0) {
+    const salidaDate = new Date();
+    const tarifaSalida = obtenerTarifaPorFecha(
+      {
+        tarifaHoraVigilante: vigilante.tarifaHora,
+        tarifasPorDia: vigilante.tarifasPorDia,
+        cobroPorDia: vigilante.cobroPorDia,
+      },
+      salidaDate
+    );
+
+    if (!Number.isFinite(tarifaSalida) || tarifaSalida < 0) {
       return res.status(400).json({
         mensaje: "El vigilante no tiene una tarifa por hora válida configurada.",
       });
@@ -351,11 +491,10 @@ const registrarSalidaVehiculo = async (req, res) => {
       });
     }
 
-    const salidaDate = new Date();
     const liquidacion = calcularCobroVehiculo({
       ingresoDate,
       salidaDate,
-      tarifaHora: vigilante.tarifaHora,
+      tarifaHora: tarifaSalida,
     });
 
     await vehicleRef.update({
@@ -364,7 +503,7 @@ const registrarSalidaVehiculo = async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       vigilanteSalidaUid: vigilante.uid,
       vigilanteSalidaNombre: vigilante.nombre,
-      tarifaHoraAplicada: vigilante.tarifaHora,
+      tarifaHoraAplicada: tarifaSalida,
       valorCobrado: liquidacion.valorCobrado,
       horasCobradas: liquidacion.horasCobradas,
       duracionMinutos: liquidacion.duracionMinutos,
@@ -387,7 +526,14 @@ const eliminarVehiculo = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await vehiculosCollection().doc(id).delete();
+    const vehicleRef = vehiculosCollection().doc(id);
+    const vehicleDoc = await vehicleRef.get();
+
+    if (!vehicleDoc.exists) {
+      return res.status(404).json({ mensaje: "No se encontro el vehiculo." });
+    }
+
+    await vehicleRef.delete();
     return res.status(200).json({ mensaje: "Vehiculo eliminado" });
   } catch (error) {
     return res.status(500).json({ mensaje: error.message });

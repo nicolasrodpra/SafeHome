@@ -131,7 +131,9 @@ export default function AdminVigilanciaSectionPage({ config }) {
           </div>
         </header>
 
-        {typeof config.renderBeforeSurface === "function" ? config.renderBeforeSurface() : null}
+        {typeof config.renderBeforeSurface === "function"
+          ? config.renderBeforeSurface({ items })
+          : null}
 
         <section className="admin-vigilancia-surface">
           <div className="admin-vigilancia-card-header">

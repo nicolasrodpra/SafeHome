@@ -4,6 +4,7 @@
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 const { normalizeComparableText, normalizeText } = require("../../utils/text");
+const { normalizeAllowedValue } = require("../../utils/validation");
 
 const MENSAJERIA_COLLECTION = "pqrAdministracion";
 const ESTADO_PENDIENTE = "Pendiente";
@@ -13,6 +14,7 @@ const ESTADO_RECHAZADA = "Rechazada";
 const ACCION_RESPONDER = "responder";
 const ACCION_ACEPTAR = "aceptar";
 const ACCION_RECHAZAR = "rechazar";
+const MESSAGE_TYPES = ["Queja", "Solicitud", "Autorización"];
 
 const mensajeriaCollection = () => admin.firestore().collection(MENSAJERIA_COLLECTION);
 
@@ -144,13 +146,20 @@ const listarMensajeria = async (req, res) => {
 };
 
 const crearMensaje = async (req, res) => {
+  const rawType = normalizeText(req.body?.type) || "Queja";
+  const type = normalizeAllowedValue(rawType, MESSAGE_TYPES);
+
+  if (!type) {
+    return res.status(400).json({ mensaje: "Selecciona un tipo de mensaje valido." });
+  }
+
   const payload = {
     residentId: normalizeText(req.body?.residentId),
     residentName: normalizeText(req.body?.residentName),
     residentEmail: normalizeText(req.body?.residentEmail),
     torre: normalizeText(req.body?.torre),
     apartamento: normalizeText(req.body?.apartamento),
-    type: normalizeText(req.body?.type) || "Queja",
+    type,
     subject: normalizeText(req.body?.subject),
     message: normalizeText(req.body?.message),
   };

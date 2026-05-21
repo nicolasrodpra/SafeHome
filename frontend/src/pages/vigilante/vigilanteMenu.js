@@ -1,7 +1,8 @@
 // Menu principal del vigilante.
-// Resume los registros operativos del dia y los accesos a sus modulos.
+// Resume los registros operativos del dia y accesos rapidos.
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import ilustracionMenu from "../../assets/vigilanteHero.png";
 import InternalLayout from "../../layouts/InternalLayout";
 import { getResumenVigilancia } from "../../services/modules/vigilanciaApi";
 import "../../styles/admin/adminMenu.css";
@@ -49,6 +50,12 @@ const dashboardCards = [
     title: "Registro de visitantes",
     to: "/registroVisitantes",
     description: "Registra visitantes y manten trazabilidad de los ingresos al conjunto residencial.",
+  },
+  {
+    icon: "ph-siren",
+    title: "Boton de panico",
+    description: "Consulta alertas activas e historial completo de activaciones.",
+    to: "/vigilantePanico",
   },
   {
     icon: "ph-bell",
@@ -133,16 +140,21 @@ function VigilanteMenu() {
     <InternalLayout>
       {({ profileName }) => (
         <div className="content">
-          <div className="hero-banner">
+          <div className="hero-banner vigilante-hero-banner">
             <div className="hero-banner-text">
               <h1>
                 Hola, <span>{profileName}</span>
               </h1>
               <p>
-                Monitorea ingresos, visitantes y novedades de seguridad en conjuntos residenciales
-                con un control claro y organizado.
+                Monitorea ingresos, visitantes y novedades de seguridad con un
+                control claro y organizado.
               </p>
             </div>
+            <img
+              src={ilustracionMenu}
+              alt="Ilustracion del panel de vigilancia"
+              className="vigilante-hero-image"
+            />
           </div>
 
           <div className="vigilante-stats-grid">

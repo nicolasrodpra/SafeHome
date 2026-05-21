@@ -611,12 +611,13 @@ export default function ReservasCalendarModule({ mode }) {
               const isSelected = cell.dateKey === selectedDateKey;
               const isToday = cell.dateKey === formatDateKey(new Date());
               const isPast = isPastDateKey(cell.dateKey, new Date());
+              const isBlocked = isPast && !isAdminMode;
               const cellClassName = [
                 "reservas-calendar-cell",
                 isSelected ? "is-selected" : "",
                 isToday ? "is-today" : "",
                 isPast ? "is-past" : "",
-                isPast ? "is-blocked" : "",
+                isBlocked ? "is-blocked" : "",
               ]
                 .filter(Boolean)
                 .join(" ");
@@ -627,7 +628,7 @@ export default function ReservasCalendarModule({ mode }) {
                   type="button"
                   className={cellClassName}
                   onClick={() => setSelectedDateKey(cell.dateKey)}
-                  disabled={isPast}
+                  disabled={isBlocked}
                   aria-label={`${getFullDateLabel(cell.dateKey)} con ${cellReservations.length} reserva(s)`}
                   title={`${cellReservations.length} reserva(s) registradas`}
                 >
@@ -678,10 +679,11 @@ export default function ReservasCalendarModule({ mode }) {
                   "reservas-mini-day",
                   day.dateKey === selectedDateKey ? "is-selected" : "",
                   day.dateKey === formatDateKey(new Date()) ? "is-today" : "",
-                  isPastDateKey(day.dateKey, new Date()) ? "is-blocked" : "",
+                  isPastDateKey(day.dateKey, new Date()) && !isAdminMode ? "is-blocked" : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
+                const isMiniBlocked = isPastDateKey(day.dateKey, new Date()) && !isAdminMode;
 
                 return (
                   <button
@@ -689,7 +691,7 @@ export default function ReservasCalendarModule({ mode }) {
                     type="button"
                     className={buttonClassName}
                     onClick={() => setSelectedDateKey(day.dateKey)}
-                    disabled={isPastDateKey(day.dateKey, new Date())}
+                    disabled={isMiniBlocked}
                   >
                     {day.dayNumber}
                   </button>

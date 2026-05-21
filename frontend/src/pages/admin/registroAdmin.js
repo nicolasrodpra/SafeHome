@@ -18,7 +18,6 @@ const initialForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
-  cantidadParqueaderos: "",
   password: "",
   confirmPassword: "",
 };
@@ -47,7 +46,6 @@ const roleDetails = {
     checklist: [
       "Registrar zona de vigilancia",
       "Guardar tipo de sangre",
-      "Definir cantidad de parqueaderos",
     ],
   },
   default: {
@@ -151,8 +149,6 @@ const buildRegisterPayload = (currentForm) => ({
   apartamento: currentForm.rol === "Residente" ? currentForm.apartamento.trim() : "",
   zonaVigilancia: currentForm.rol === "Vigilante" ? currentForm.zonaVigilancia.trim() : "",
   tipoSangre: currentForm.rol === "Vigilante" ? currentForm.tipoSangre.trim() : "",
-  cantidadParqueaderos:
-    currentForm.rol === "Vigilante" ? Number(currentForm.cantidadParqueaderos) : "",
 });
 
 const validateForm = (currentForm) => {
@@ -175,19 +171,9 @@ const validateForm = (currentForm) => {
 
   if (
     currentForm.rol === "Vigilante" &&
-    (!currentForm.zonaVigilancia.trim() ||
-      !currentForm.tipoSangre.trim() ||
-      !currentForm.cantidadParqueaderos.trim())
+    (!currentForm.zonaVigilancia.trim() || !currentForm.tipoSangre.trim())
   ) {
-    return "Para un vigilante debes registrar zona de vigilancia, tipo de sangre y cantidad de parqueaderos.";
-  }
-
-  if (currentForm.rol === "Vigilante") {
-    const cantidadParqueaderos = Number(currentForm.cantidadParqueaderos);
-
-    if (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0) {
-      return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
-    }
+    return "Para un vigilante debes registrar zona de vigilancia y tipo de sangre.";
   }
 
   if (currentForm.password !== currentForm.confirmPassword) {
@@ -248,7 +234,6 @@ export default function RegistroAdminPage() {
         apartamento: nextValue === "Residente" ? currentForm.apartamento : "",
         zonaVigilancia: nextValue === "Vigilante" ? currentForm.zonaVigilancia : "",
         tipoSangre: nextValue === "Vigilante" ? currentForm.tipoSangre : "",
-        cantidadParqueaderos: nextValue === "Vigilante" ? currentForm.cantidadParqueaderos : "",
       };
     });
   };
@@ -487,20 +472,6 @@ export default function RegistroAdminPage() {
                         </div>
                       </FormField>
 
-                      <FormField
-                        id="cantidadParqueaderos"
-                        type="number"
-                        name="cantidadParqueaderos"
-                        label="Cantidad de parqueaderos"
-                        value={form.cantidadParqueaderos}
-                        onChange={handleChange}
-                        placeholder="Ej. 20"
-                        required
-                        min="1"
-                        step="1"
-                        inputMode="numeric"
-                        disabled={loading}
-                      />
                     </>
                   ) : null}
 

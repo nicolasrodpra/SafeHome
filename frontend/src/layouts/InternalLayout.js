@@ -1,12 +1,14 @@
-// Layout interno compartido por administración y vigilancia.
-// Centraliza la navegación, el topbar y los contadores de pendientes.
+// Layout interno compartido por administracion y vigilancia.
+// Centraliza la navegacion, el topbar, las alertas y los contadores pendientes.
 import { useEffect, useRef, useState } from "react";
+import Swal from "sweetalert2";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AssistantChatPanel from "../components/assistant/AssistantChatPanel";
 import asistenteVirtual from "../assets/asistenteVirtual.png";
 import safehomeLogo from "../assets/safehomeLogo.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
+import { attendEmergency, getActiveEmergencies } from "../services/modules/emergencyApi";
 import {
   getMensajeria,
   getMessageTypeLabel,
@@ -18,7 +20,6 @@ import { getFechaActual } from "../utils/getDate";
 import { getUserInitials } from "../utils/userDisplay";
 import "../styles/shared/internalLayout.css";
 
-// Navegación lateral por rol.
 const ADMIN_VIGILANCIA_ITEMS = [
   { icon: "ph-car", label: "Vehiculos", to: "/adminVigilanciaVehiculos" },
   {
@@ -48,7 +49,6 @@ const VIGILANTE_NAV_ITEMS = [
   { icon: "ph-bell", label: "Comunicados", to: "/vigilanteComunicados" },
 ];
 
-// Helpers del topbar y del estado visual.
 const getSessionIdentity = (session) => ({
   name: session?.nombre || "Usuario",
   role: session?.rol || null,
@@ -71,7 +71,6 @@ const buildPendingInboxSummary = ({ messages, role }) => {
   };
 };
 
-// Item reutilizable del menú lateral.
 function SidebarItem({ item, pathname, badgeCount = 0 }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
   const [flyoutStyle, setFlyoutStyle] = useState({});
@@ -206,8 +205,13 @@ export default function InternalLayout({ children }) {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [pendingBaseCount, setPendingBaseCount] = useState(0);
   const [pendingExtraCount, setPendingExtraCount] = useState(0);
+  const [activeEmergency, setActiveEmergency] = useState(null);
+  const [attendingEmergency, setAttendingEmergency] = useState(false);
 
   const userMenuRef = useRef(null);
+  const hasInitializedQuejasRef = useRef(false);
+  const lastPendingQuejasRef = useRef(0);
+  const lastEmergencyIdRef = useRef("");
   const fechaActual = getFechaActual();
   const isVigilante = profileRole === "Vigilante";
   const inboxRoute = isVigilante ? "/vigilanteQuejas" : "/adminMensajeria";
@@ -217,7 +221,6 @@ export default function InternalLayout({ children }) {
   const homeRoute = isVigilante ? "/vigilanteMenu" : "/adminMenu";
   const userInitials = getUserInitials(profileName);
 
-  // Perfil visible en el encabezado.
   useEffect(() => {
     let active = true;
 
@@ -258,19 +261,74 @@ export default function InternalLayout({ children }) {
     };
   }, [session, sessionIdentity.name, sessionIdentity.role]);
 
-  // Contador de pendientes del icono de correo.
   useEffect(() => {
     if (!session?.uid || (profileRole !== "Administrador" && profileRole !== "Vigilante")) {
       setPendingBaseCount(0);
       setPendingExtraCount(0);
+      hasInitializedQuejasRef.current = false;
+      lastPendingQuejasRef.current = 0;
       return undefined;
     }
 
     let cancelled = false;
 
+    const showNewQuejasNotification = async (newCount) => {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: newCount === 1 ? "Tienes una nueva queja" : `Tienes ${newCount} nuevas quejas`,
+        text: "Revisa el sobre para abrir la bandeja de quejas.",
+        showConfirmButton: false,
+        timer: 4500,
+        timerProgressBar: true,
+      });
+
+      if (!("Notification" in window)) {
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        const notification = new Notification("SafeHome", {
+          body:
+            newCount === 1
+              ? "Llego una nueva queja al panel de vigilancia."
+              : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
+        });
+
+        notification.onclick = () => {
+          window.focus();
+          navigate("/vigilanteQuejas");
+          notification.close();
+        };
+
+        return;
+      }
+
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+          const notification = new Notification("SafeHome", {
+            body:
+              newCount === 1
+                ? "Llego una nueva queja al panel de vigilancia."
+                : `Llegaron ${newCount} nuevas quejas al panel de vigilancia.`,
+          });
+
+          notification.onclick = () => {
+            window.focus();
+            navigate("/vigilanteQuejas");
+            notification.close();
+          };
+        }
+      }
+    };
+
     const syncInbox = async () => {
       try {
         const messages = await getMensajeria();
+
         if (cancelled) {
           return;
         }
@@ -282,6 +340,26 @@ export default function InternalLayout({ children }) {
 
         setPendingBaseCount(summary.baseCount);
         setPendingExtraCount(summary.extraCount);
+
+        if (profileRole !== "Vigilante") {
+          return;
+        }
+
+        const nextCount = summary.baseCount;
+
+        if (!hasInitializedQuejasRef.current) {
+          hasInitializedQuejasRef.current = true;
+          lastPendingQuejasRef.current = nextCount;
+          return;
+        }
+
+        const newCount = Math.max(nextCount - lastPendingQuejasRef.current, 0);
+
+        if (newCount > 0) {
+          await showNewQuejasNotification(newCount);
+        }
+
+        lastPendingQuejasRef.current = nextCount;
       } catch (error) {
         if (!cancelled) {
           setPendingBaseCount(0);
@@ -297,9 +375,57 @@ export default function InternalLayout({ children }) {
       cancelled = true;
       window.clearInterval(intervalId);
     };
+  }, [navigate, profileRole, session?.uid]);
+
+  useEffect(() => {
+    if (profileRole !== "Vigilante" || !session?.uid) {
+      setActiveEmergency(null);
+      lastEmergencyIdRef.current = "";
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const syncEmergencies = async () => {
+      try {
+        const emergencies = await getActiveEmergencies();
+
+        if (cancelled) {
+          return;
+        }
+
+        const nextEmergency = emergencies[0] || null;
+        setActiveEmergency(nextEmergency);
+
+        if (nextEmergency && nextEmergency.id !== lastEmergencyIdRef.current) {
+          lastEmergencyIdRef.current = nextEmergency.id;
+          Swal.fire({
+            title: "Emergencia activa",
+            text: `Torre ${nextEmergency.torre} - Apartamento ${nextEmergency.apartamento}`,
+            icon: "error",
+            confirmButtonColor: "#b71c1c",
+          });
+        }
+
+        if (!nextEmergency) {
+          lastEmergencyIdRef.current = "";
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setActiveEmergency(null);
+        }
+      }
+    };
+
+    syncEmergencies();
+    const intervalId = window.setInterval(syncEmergencies, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
   }, [profileRole, session?.uid]);
 
-  // Cierra el menú de usuario al hacer clic fuera.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -313,6 +439,40 @@ export default function InternalLayout({ children }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleAttendEmergency = async () => {
+    if (!activeEmergency?.id || !session?.uid || attendingEmergency) {
+      return;
+    }
+
+    setAttendingEmergency(true);
+
+    try {
+      await attendEmergency(activeEmergency.id, {
+        attendedById: session.uid,
+        attendedByName: profileName || "Vigilancia",
+      });
+
+      setActiveEmergency(null);
+      lastEmergencyIdRef.current = "";
+
+      Swal.fire({
+        title: "Emergencia atendida",
+        text: "La alerta fue marcada como atendida correctamente.",
+        icon: "success",
+        confirmButtonColor: "#460669",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "No se pudo actualizar la emergencia",
+        text: error.message || "Intentalo de nuevo.",
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
+    } finally {
+      setAttendingEmergency(false);
+    }
+  };
 
   return (
     <div className="internal-shell">
@@ -431,6 +591,48 @@ export default function InternalLayout({ children }) {
           userName={profileName}
           session={session}
         />
+
+        {profileRole === "Vigilante" && activeEmergency ? (
+          <div className="emergency-overlay" role="alertdialog" aria-modal="true">
+            <div className="emergency-overlay-backdrop"></div>
+            <section className="emergency-overlay-card">
+              <span className="emergency-overlay-kicker">ALERTA DE EMERGENCIA</span>
+              <h2>Atencion inmediata requerida</h2>
+              <p className="emergency-overlay-copy">
+                Un residente activo el boton de panico. Verifica la ubicacion y atiende la
+                novedad de inmediato.
+              </p>
+
+              <div className="emergency-overlay-details">
+                <div className="emergency-overlay-detail">
+                  <span>Torre</span>
+                  <strong>{activeEmergency.torre || "Sin dato"}</strong>
+                </div>
+                <div className="emergency-overlay-detail">
+                  <span>Apartamento</span>
+                  <strong>{activeEmergency.apartamento || "Sin dato"}</strong>
+                </div>
+                <div className="emergency-overlay-detail">
+                  <span>Residente</span>
+                  <strong>{activeEmergency.residentName || "Sin dato"}</strong>
+                </div>
+                <div className="emergency-overlay-detail">
+                  <span>Hora</span>
+                  <strong>{activeEmergency.createdTimeLabel || "Sin hora"}</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="emergency-overlay-button"
+                onClick={handleAttendEmergency}
+                disabled={attendingEmergency}
+              >
+                {attendingEmergency ? "Actualizando..." : "Marcar como atendida"}
+              </button>
+            </section>
+          </div>
+        ) : null}
       </div>
     </div>
   );

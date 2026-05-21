@@ -1,12 +1,18 @@
-// Módulo de vigilancia del frontend.
-// Agrupa las operaciones de resumen, vehículos, correspondencia y visitantes.
+// Modulo de vigilancia del frontend.
+// Agrupa las operaciones de resumen, alertas, configuracion y registros operativos.
 import { apiDelete, apiGet, apiPost, apiPut } from "../apiClient";
 
 export const getResumenVigilancia = async () =>
   apiGet("/resumen-vigilancia", "No se pudo cargar el resumen de vigilancia.");
 
+export const getAlertasPanico = async () =>
+  apiGet("/alertas-panico", "No se pudieron cargar las alertas de panico.");
+
+export const resolveAlertaPanico = async (id, payload) =>
+  apiPut(`/alertas-panico/${id}/resolver`, payload, "No se pudo marcar la alerta como atendida.");
+
 export const getVigilanciaConfig = async () =>
-  apiGet("/vigilancia/configuracion", "No se pudo cargar la configuración de vigilancia.");
+  apiGet("/vigilancia/configuracion", "No se pudo cargar la configuracion de vigilancia.");
 
 export const updateVigilanciaConfig = async (payload) => {
   const data = await apiPut(
@@ -18,24 +24,34 @@ export const updateVigilanciaConfig = async (payload) => {
   return data.configuracion;
 };
 
+export const updateVigilanciaParkingConfig = async (payload) => {
+  const data = await apiPut(
+    "/vigilancia/configuracion/parqueaderos",
+    payload,
+    "No se pudo actualizar la cantidad de parqueaderos."
+  );
+
+  return data.configuracion;
+};
+
 export const getVehiculos = async () =>
-  apiGet("/vehiculos", "No se pudo cargar el registro de vehículos.");
+  apiGet("/vehiculos", "No se pudo cargar el registro de vehiculos.");
 
 export const createVehiculo = async (payload) => {
-  const data = await apiPost("/vehiculos", payload, "No se pudo registrar el vehículo.");
+  const data = await apiPost("/vehiculos", payload, "No se pudo registrar el vehiculo.");
   return data.vehiculo;
 };
 
 export const updateVehiculo = async (id, payload) => {
-  const data = await apiPut(`/vehiculos/${id}`, payload, "No se pudo actualizar el vehículo.");
+  const data = await apiPut(`/vehiculos/${id}`, payload, "No se pudo actualizar el vehiculo.");
   return data.vehiculo;
 };
 
 export const registerVehiculoSalida = async (id, payload) =>
-  apiPost(`/vehiculos/${id}/salida`, payload, "No se pudo registrar la salida del vehículo.");
+  apiPost(`/vehiculos/${id}/salida`, payload, "No se pudo registrar la salida del vehiculo.");
 
 export const deleteVehiculo = async (id) =>
-  apiDelete(`/vehiculos/${id}`, "No se pudo eliminar el vehículo.");
+  apiDelete(`/vehiculos/${id}`, "No se pudo eliminar el vehiculo.");
 
 export const getCorrespondencia = async () =>
   apiGet("/correspondencia", "No se pudo cargar la correspondencia.");

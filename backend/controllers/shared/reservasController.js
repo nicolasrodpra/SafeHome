@@ -8,6 +8,7 @@
 
 const admin = require("../../config/firebaseAdmin");
 const { normalizeText } = require("../../utils/text");
+const { isValidDateKey, normalizeLocationValue } = require("../../utils/validation");
 
 // Horas de operación de zonas comunes (7 AM a 10 PM)
 const OPENING_HOUR = 7;
@@ -54,8 +55,16 @@ const SHARED_CAPACITY_ZONE_KEYS = new Set(["piscina", "gimnasio"]);
 // Acceso a la colección de Firestore donde se guardan todas las reservas
 const reservasCollection = () => admin.firestore().collection("reservasZonasComunes");
 
-// Convierte un valor a número de forma segura
-const toNumber = (value) => Number(value);
+// Convierte horas/duracion a enteros estrictos.
+const toInteger = (value) => {
+  const normalizedValue = typeof value === "number" ? String(value) : normalizeText(value);
+
+  if (!/^-?\d+$/.test(normalizedValue)) {
+    return NaN;
+  }
+
+  return Number.parseInt(normalizedValue, 10);
+};
 
 // Obtiene las reglas (duración máxima) de una zona según su clave
 const getZoneRule = (zoneKey) => ZONE_RULES[normalizeText(zoneKey)] || null;
@@ -117,35 +126,36 @@ const mapReserva = (snapshotDoc) => {
     dateKey: normalizeText(data.dateKey),        // Ej: "2026-04-08"
     zoneKey: normalizeText(data.zoneKey),        // Ej: "piscina"
     zoneLabel: normalizeText(data.zoneLabel),    // Ej: "Piscina"
-    startHour: toNumber(data.startHour),         // Ej: 14 (2 PM)
-    endHour: toNumber(data.endHour),             // Ej: 15 (3 PM)
-    duration: toNumber(data.duration),           // Ej: 1 (hora)
+    startHour: toInteger(data.startHour),        // Ej: 14 (2 PM)
+    endHour: toInteger(data.endHour),            // Ej: 15 (3 PM)
+    duration: toInteger(data.duration),          // Ej: 1 (hora)
     userId: normalizeText(data.userId),          // ID del residente
     residentName: normalizeText(data.residentName),
     residentEmail: normalizeText(data.residentEmail),
     cedula: normalizeText(data.cedula),          // Cédula del residente
-    torre: normalizeText(data.torre),            // Torre del edificio
-    apartamento: normalizeText(data.apartamento), // Número del apartamento
+    torre: normalizeLocationValue(data.torre),   // Torre del edificio
+    apartamento: normalizeLocationValue(data.apartamento), // Número del apartamento
   };
 };
 
 // Prepara los datos de la reserva desde el request del frontend
 // Normaliza tipos y calcula la hora de fin si es necesario
 const buildReservaPayload = (body = {}) => {
-  const startHour = toNumber(body.startHour);
-  const duration = toNumber(body.duration);
+  const startHour = toInteger(body.startHour);
+  const duration = toInteger(body.duration);
+  const zoneRule = getZoneRule(body.zoneKey);
   
   // Si tenemos hora inicio y duración, calculamos la hora fin
   // De lo contrario usamos la hora fin que envió el frontend
   const computedEndHour =
     Number.isFinite(startHour) && Number.isFinite(duration)
       ? startHour + duration
-      : toNumber(body.endHour);
+      : toInteger(body.endHour);
 
   return {
     dateKey: normalizeText(body.dateKey),
     zoneKey: normalizeText(body.zoneKey),
-    zoneLabel: normalizeText(body.zoneLabel),
+    zoneLabel: zoneRule?.label || normalizeText(body.zoneLabel),
     startHour,
     endHour: computedEndHour,
     duration,
@@ -153,8 +163,8 @@ const buildReservaPayload = (body = {}) => {
     residentName: normalizeText(body.residentName),
     residentEmail: normalizeText(body.residentEmail),
     cedula: normalizeText(body.cedula),
-    torre: normalizeText(body.torre),
-    apartamento: normalizeText(body.apartamento),
+    torre: normalizeLocationValue(body.torre),
+    apartamento: normalizeLocationValue(body.apartamento),
   };
 };
 
@@ -195,7 +205,7 @@ const getReservationValidation = ({ reservas, reserva, reservationId }) => {
   }
 
   // Validación 2: Se proporciona una fecha
-  if (!reserva.dateKey) {
+  if (!reserva.dateKey || !isValidDateKey(reserva.dateKey)) {
     return { valid: false, message: "Debes indicar la fecha de la reserva." };
   }
 
@@ -207,6 +217,15 @@ const getReservationValidation = ({ reservas, reserva, reservationId }) => {
   // Validación 4: Duración válida y mayor a 0
   if (!Number.isFinite(reserva.duration) || reserva.duration <= 0) {
     return { valid: false, message: "La duración de la reserva no es válida." };
+  }
+
+  if (
+    !Number.isInteger(reserva.startHour) ||
+    !Number.isInteger(reserva.endHour) ||
+    !Number.isInteger(reserva.duration) ||
+    reserva.endHour !== reserva.startHour + reserva.duration
+  ) {
+    return { valid: false, message: "Las horas de la reserva no son validas." };
   }
 
   // Validación 5: Hora de inicio dentro del horario permitido (7 AM a 10 PM)
@@ -439,8 +458,14 @@ const eliminarReserva = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Eliminar documento de Firestore
-    await reservasCollection().doc(id).delete();
+    const docRef = reservasCollection().doc(id);
+    const snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      return res.status(404).json({ mensaje: "La reserva que intentas eliminar no existe." });
+    }
+
+    await docRef.delete();
     return res.status(200).json({ mensaje: "Reserva eliminada correctamente." });
   } catch (error) {
     return res.status(500).json({ mensaje: error.message });

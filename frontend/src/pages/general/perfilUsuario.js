@@ -17,6 +17,8 @@ const roleDescriptions = {
   Vigilante: "Controla accesos, novedades y registros operativos del conjunto residencial.",
 };
 
+const bloodTypeOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 const emptyForm = {
   nombres: "",
   apellidos: "",
@@ -27,7 +29,6 @@ const emptyForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
-  cantidadParqueaderos: "",
 };
 
 const getFieldValue = (value) => (value ? value : "No disponible");
@@ -87,12 +88,6 @@ const buildProfileFromSource = (source = {}, session = null) => {
     apartamento: source.apartamento || session?.apartamento || "",
     zonaVigilancia: source.zonaVigilancia || session?.zonaVigilancia || "",
     tipoSangre: source.tipoSangre || session?.tipoSangre || "",
-    cantidadParqueaderos:
-      typeof source.cantidadParqueaderos === "number"
-        ? source.cantidadParqueaderos
-        : typeof session?.cantidadParqueaderos === "number"
-          ? session.cantidadParqueaderos
-          : 0,
   };
 };
 
@@ -106,7 +101,6 @@ const buildFormFromProfile = (profile) => ({
   apartamento: profile?.apartamento || "",
   zonaVigilancia: profile?.zonaVigilancia || "",
   tipoSangre: profile?.tipoSangre || "",
-  cantidadParqueaderos: profile?.cantidadParqueaderos ? String(profile.cantidadParqueaderos) : "",
 });
 
 const buildProfileUpdatePayload = (form) => ({
@@ -117,9 +111,6 @@ const buildProfileUpdatePayload = (form) => ({
   apartamento: form.apartamento.trim(),
   zonaVigilancia: form.zonaVigilancia.trim(),
   tipoSangre: form.tipoSangre.trim(),
-  cantidadParqueaderos: form.cantidadParqueaderos.trim()
-    ? Number(form.cantidadParqueaderos)
-    : "",
 });
 
 const getMissingRequiredFields = (form, role, vigilanciaTarifaHora) => {
@@ -141,8 +132,7 @@ const getMissingRequiredFields = (form, role, vigilanciaTarifaHora) => {
   if (role === "Vigilante") {
     fields.push(
       { label: "zona de vigilancia", value: form.zonaVigilancia },
-      { label: "tipo de sangre", value: form.tipoSangre },
-      { label: "cantidad de parqueaderos", value: form.cantidadParqueaderos }
+      { label: "tipo de sangre", value: form.tipoSangre }
     );
 
     if (!(Number(vigilanciaTarifaHora) > 0)) {
@@ -173,7 +163,6 @@ const getRoleSpecificFields = (profile, vigilanciaTarifaHora = 0) => {
         label: "Tarifa por hora",
         value: vigilanciaTarifaHora ? `$${vigilanciaTarifaHora}` : "",
       },
-      { label: "Cantidad de parqueaderos", value: profile.cantidadParqueaderos || "" },
     ];
   }
 
@@ -205,7 +194,9 @@ export default function PerfilUsuarioPage() {
   };
 
   const handleFieldChange = (fieldName) => (event) => {
-    setForm((current) => ({ ...current, [fieldName]: event.target.value }));
+    const nextValue = event.target.value;
+
+    setForm((current) => ({ ...current, [fieldName]: nextValue }));
   };
 
   const handleCancel = () => {
@@ -465,13 +456,20 @@ export default function PerfilUsuarioPage() {
                       </div>
                       <div className="profile-field">
                         <label>Tipo de sangre</label>
-                        <input
+                        <select
                           name="tipoSangre"
                           value={form.tipoSangre || ""}
                           onChange={handleFieldChange("tipoSangre")}
                           required
                           disabled={!editMode || loading}
-                        />
+                        >
+                          <option value="">Selecciona el tipo de sangre</option>
+                          {bloodTypeOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="profile-field">
                         <label>Tarifa por hora</label>
@@ -485,19 +483,6 @@ export default function PerfilUsuarioPage() {
                           }
                           disabled
                           title="La tarifa del vigilante se configura desde administraciÃ³n."
-                        />
-                      </div>
-                      <div className="profile-field">
-                        <label>Cantidad de parqueaderos</label>
-                        <input
-                          name="cantidadParqueaderos"
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={form.cantidadParqueaderos || ""}
-                          onChange={handleFieldChange("cantidadParqueaderos")}
-                          required
-                          disabled={!editMode || loading}
                         />
                       </div>
                     </>
