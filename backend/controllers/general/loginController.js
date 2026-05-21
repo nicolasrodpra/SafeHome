@@ -5,6 +5,22 @@ const admin = require("../../config/firebaseAdmin");
 const { buildUserProfile } = require("../../utils/userProfile");
 
 const limpiarTexto = (value) => (typeof value === "string" ? value.trim() : "");
+const invalidLocalProxy = "http://127.0.0.1:9";
+
+const clearInvalidLocalProxy = () => {
+  [
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "all_proxy",
+  ].forEach((proxyKey) => {
+    if (process.env[proxyKey] === invalidLocalProxy) {
+      delete process.env[proxyKey];
+    }
+  });
+};
 
 // Esta función valida el login en Firebase Auth y luego busca
 // el perfil del usuario en Firestore para completar la sesión.
@@ -17,6 +33,8 @@ const login = async (req, res) => {
   }
 
   try {
+    clearInvalidLocalProxy();
+
     const firebaseRes = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API_KEY}`,
       {
