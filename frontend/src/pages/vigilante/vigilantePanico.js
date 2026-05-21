@@ -5,6 +5,7 @@ import useSession from "../../hooks/useSession";
 import {
   getAlertasPanico,
   markAlertaPanicoEnCamino,
+  resolveAlertaPanico,
 } from "../../services/modules/vigilanciaApi";
 import "../../styles/vigilante/vigilanteMenu.css";
 
@@ -43,7 +44,7 @@ const getResidentAudioSrc = (alerta) => {
   return "";
 };
 
-function AlertaPanicoCard({ alerta, onMarkOnWay, workingAction }) {
+function AlertaPanicoCard({ alerta, onMarkOnWay, onResolve, workingAction }) {
   const isOnWay = alerta.status === "En camino";
   const audioSrc = getResidentAudioSrc(alerta);
 
@@ -84,6 +85,14 @@ function AlertaPanicoCard({ alerta, onMarkOnWay, workingAction }) {
         ) : (
           <span className="vigilante-panico-note">Esperando confirmacion del residente</span>
         )}
+        <button
+          type="button"
+          className="vigilante-panico-resolve-btn"
+          onClick={() => onResolve(alerta)}
+          disabled={Boolean(workingAction)}
+        >
+          {workingAction === "resolve" ? "Marcando..." : "Marcar atendida"}
+        </button>
       </div>
     </article>
   );
@@ -93,7 +102,7 @@ export default function VigilantePanicoPage() {
   const session = useSession();
   const [historialPanico, setHistorialPanico] = useState([]);
   const [loadingPanico, setLoadingPanico] = useState(true);
-  const [markingOnWayId, setMarkingOnWayId] = useState("");
+  const [workingAlert, setWorkingAlert] = useState({ id: "", action: "" });
 
   const loadAlertasPanico = useCallback(async () => {
     try {
@@ -113,11 +122,11 @@ export default function VigilantePanicoPage() {
   }, [loadAlertasPanico]);
 
   const handleMarkOnWay = async (alerta) => {
-    if (!alerta?.id || markingOnWayId) {
+    if (!alerta?.id || workingAlert.id) {
       return;
     }
 
-    setMarkingOnWayId(alerta.id);
+    setWorkingAlert({ id: alerta.id, action: "onway" });
     try {
       await markAlertaPanicoEnCamino(alerta.id, {
         responderId: session?.uid || session?.id || session?.userId || "",
@@ -141,7 +150,40 @@ export default function VigilantePanicoPage() {
         text: error.message || "Intenta de nuevo en unos segundos.",
       });
     } finally {
-      setMarkingOnWayId("");
+      setWorkingAlert({ id: "", action: "" });
+    }
+  };
+
+  const handleResolveAlerta = async (alerta) => {
+    if (!alerta?.id || workingAlert.id) {
+      return;
+    }
+
+    setWorkingAlert({ id: alerta.id, action: "resolve" });
+    try {
+      await resolveAlertaPanico(alerta.id, {
+        resolvedById: session?.uid || session?.id || session?.userId || "",
+        resolvedByName: session?.nombre || "Vigilante",
+      });
+
+      await loadAlertasPanico();
+
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Alerta marcada como atendida",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo actualizar",
+        text: error.message || "Intenta de nuevo en unos segundos.",
+      });
+    } finally {
+      setWorkingAlert({ id: "", action: "" });
     }
   };
 
@@ -172,7 +214,8 @@ export default function VigilantePanicoPage() {
                   key={alerta.id}
                   alerta={alerta}
                   onMarkOnWay={handleMarkOnWay}
-                  workingAction={markingOnWayId === alerta.id ? "onway" : ""}
+                  onResolve={handleResolveAlerta}
+                  workingAction={workingAlert.id === alerta.id ? workingAlert.action : ""}
                 />
               ))}
             </div>

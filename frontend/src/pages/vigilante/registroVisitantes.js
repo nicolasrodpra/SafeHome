@@ -491,20 +491,20 @@ export default function RegistroVisitantes() {
                   <th>Apartamento</th>
                   <th>Motivo</th>
                   <th>Fecha</th>
-                  <th>Hora entrada</th>
+                  <th>Hora</th>
                   <th>Estado</th>
                   <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
-                {enteredVisitors.length === 0 ? (
+                {visitors.length === 0 ? (
                   <tr>
                     <td colSpan={12} className="guard-module-empty-row">
-                      No hay visitantes con ingreso registrado.
+                      No hay visitantes registrados.
                     </td>
                   </tr>
                 ) : (
-                  enteredVisitors.map((visitor) => (
+                  visitors.map((visitor) => (
                     <tr key={visitor.id}>
                       <td>
                         <div
@@ -531,7 +531,9 @@ export default function RegistroVisitantes() {
                       <td>{visitor.fecha}</td>
                       <td>{visitor.hora}</td>
                       <td>
-                        <span className="visitor-status-badge">{visitor.estado || "Ingreso"}</span>
+                        <span className="visitor-status-badge">
+                          {visitor.estado || visitor.status || "Pendiente"}
+                        </span>
                       </td>
                       <td>
                         <div className="action-btns">
