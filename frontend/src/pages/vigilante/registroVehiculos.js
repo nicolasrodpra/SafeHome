@@ -5,8 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import useSession from "../../hooks/useSession";
 import InternalLayout from "../../layouts/InternalLayout";
-import { getUserProfile } from "../../services/modules/userApi";
-import { updateSessionProfile } from "../../services/sessionService";
+import ParkingVisualizerModal from "../../components/vigilancia/ParkingVisualizerModal";
 import {
   createVehiculo,
   getVehiculos,
@@ -165,9 +164,19 @@ const happenedDuringShift = (value, shiftStartIso) => {
   return targetDate.getTime() >= shiftStartDate.getTime();
 };
 
-function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkingOptions }) {
+function VehicleModal({
+  isOpen,
+  onClose,
+  onSave,
+  editingVehicle,
+  loading,
+  parkingOptionsByType,
+  parkingCapacityByType,
+}) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  const currentParkingOptions = parkingOptionsByType?.[form.tipo] || [];
+  const currentParkingCapacity = parkingCapacityByType?.[form.tipo] || 0;
 
   useEffect(() => {
     if (editingVehicle) {
@@ -199,12 +208,16 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkin
     else if (!/^\d+$/.test(form.telefono.trim())) nextErrors.telefono = "Solo numeros";
     if (!form.torre.trim()) nextErrors.torre = "Requerido";
     if (!form.apartamento.trim()) nextErrors.apartamento = "Requerido";
+    if (!form.tipo) nextErrors.tipo = "Requerido";
     if (!form.parqueadero.trim()) {
       nextErrors.parqueadero = "Requerido";
-    } else if (!parkingOptions.includes(form.parqueadero)) {
-      nextErrors.parqueadero = `Debe estar entre 1 y ${parkingOptions.length}`;
+    } else if (!form.tipo) {
+      nextErrors.parqueadero = "Selecciona primero el tipo";
+    } else if (currentParkingCapacity === 0) {
+      nextErrors.parqueadero = `Sin parqueaderos para ${form.tipo.toLowerCase()}`;
+    } else if (!currentParkingOptions.includes(form.parqueadero)) {
+      nextErrors.parqueadero = "Selecciona un parqueadero disponible";
     }
-    if (!form.tipo) nextErrors.tipo = "Requerido";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -328,36 +341,46 @@ function VehicleModal({ isOpen, onClose, onSave, editingVehicle, loading, parkin
             </div>
 
             <div className="form-group">
-              <label>Parqueadero</label>
-              <select
-                value={form.parqueadero}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, parqueadero: event.target.value }))
-                }
-              >
-                <option value="">Seleccionar...</option>
-                {parkingOptions.map((parkingOption) => (
-                  <option key={parkingOption} value={parkingOption}>
-                    {parkingOption}
-                  </option>
-                ))}
-              </select>
-              {errors.parqueadero && <span className="field-error">{errors.parqueadero}</span>}
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
               <label>Tipo de vehículo</label>
               <select
                 value={form.tipo}
-                onChange={(event) => setForm((prev) => ({ ...prev, tipo: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    tipo: event.target.value,
+                    parqueadero: "",
+                  }))
+                }
               >
                 <option value="">Seleccionar...</option>
                 <option value="Carro">Carro</option>
                 <option value="Moto">Moto</option>
               </select>
               {errors.tipo && <span className="field-error">{errors.tipo}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>
+                Parqueadero
+                {form.tipo ? ` para ${form.tipo.toLowerCase()}` : ""}
+              </label>
+              <select
+                value={form.parqueadero}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, parqueadero: event.target.value }))
+                }
+                disabled={!form.tipo || currentParkingCapacity === 0}
+              >
+                <option value="">
+                  {form.tipo ? "Seleccionar..." : "Selecciona el tipo primero"}
+                </option>
+                {currentParkingOptions.map((parkingOption) => (
+                  <option key={parkingOption} value={parkingOption}>
+                    {parkingOption}
+                  </option>
+                ))}
+              </select>
+              {errors.parqueadero && <span className="field-error">{errors.parqueadero}</span>}
             </div>
           </div>
 
@@ -379,6 +402,7 @@ export default function RegistroVehiculos() {
   const session = useSession();
   const [vehicles, setVehicles] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [parkingModalOpen, setParkingModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [exitingId, setExitingId] = useState(null);
@@ -386,9 +410,8 @@ export default function RegistroVehiculos() {
   const [tarifasPorDiaActual, setTarifasPorDiaActual] = useState({});
   const [cobroPorDiaActual, setCobroPorDiaActual] = useState({});
   const [tarifaConfigLoaded, setTarifaConfigLoaded] = useState(false);
-  const [cantidadParqueaderosActual, setCantidadParqueaderosActual] = useState(
-    Number(session?.cantidadParqueaderos) || 0
-  );
+  const [cantidadParqueaderosCarroActual, setCantidadParqueaderosCarroActual] = useState(0);
+  const [cantidadParqueaderosMotoActual, setCantidadParqueaderosMotoActual] = useState(0);
   const [searchPlaca, setSearchPlaca] = useState("");
   const [cashShift, setCashShift] = useState(null);
 
@@ -410,10 +433,17 @@ export default function RegistroVehiculos() {
       const config = await getVigilanciaConfig();
 
       setTarifaHoraActual(Number(config?.tarifaHoraVigilante) || 0);
+      const carParkings = Number(config?.cantidadParqueaderosCarro);
+      setCantidadParqueaderosCarroActual(
+        Number.isFinite(carParkings) ? carParkings : Number(config?.cantidadParqueaderos) || 0
+      );
+      setCantidadParqueaderosMotoActual(Number(config?.cantidadParqueaderosMoto) || 0);
       setTarifasPorDiaActual(config?.tarifasPorDia || {});
       setCobroPorDiaActual(config?.cobroPorDia || {});
     } catch (error) {
       setTarifaHoraActual(0);
+      setCantidadParqueaderosCarroActual(0);
+      setCantidadParqueaderosMotoActual(0);
       setTarifasPorDiaActual({});
       setCobroPorDiaActual({});
     } finally {
@@ -452,60 +482,6 @@ export default function RegistroVehiculos() {
     persistShift(session.uid, nextShift);
   }, [session?.uid]);
 
-  useEffect(() => {
-    let active = true;
-    const tarifaGuardada = Number(session?.tarifaHora);
-    const cantidadGuardada = Number(session?.cantidadParqueaderos);
-
-    if (
-      Number.isFinite(tarifaGuardada) &&
-      tarifaGuardada > 0 &&
-      Number.isFinite(cantidadGuardada) &&
-      cantidadGuardada > 0
-    ) {
-      setCantidadParqueaderosActual(cantidadGuardada);
-      return () => {
-        active = false;
-      };
-    }
-
-    if (!session?.uid) {
-      setCantidadParqueaderosActual(0);
-      return () => {
-        active = false;
-      };
-    }
-
-    const loadTarifa = async () => {
-      try {
-        const profile = await getUserProfile(session.uid);
-        const tarifaPerfil = Number(profile?.tarifaHora) || 0;
-
-        if (!active) {
-          return;
-        }
-
-        setCantidadParqueaderosActual(Number(profile?.cantidadParqueaderos) || 0);
-
-        if (tarifaPerfil > 0 || Number(profile?.cantidadParqueaderos) > 0) {
-          updateSessionProfile({
-            cantidadParqueaderos: Number(profile?.cantidadParqueaderos) || 0,
-          });
-        }
-      } catch (error) {
-        if (active) {
-          setCantidadParqueaderosActual(0);
-        }
-      }
-    };
-
-    loadTarifa();
-
-    return () => {
-      active = false;
-    };
-  }, [session?.uid, session?.tarifaHora, session?.cantidadParqueaderos]);
-
   const filteredVehicles = useMemo(() => {
     const placaBuscada = normalizeText(searchPlaca);
 
@@ -516,23 +492,70 @@ export default function RegistroVehiculos() {
     return vehicles.filter((vehicle) => normalizeText(vehicle.placa).includes(placaBuscada));
   }, [vehicles, searchPlaca]);
 
+  const allActiveVehicles = useMemo(
+    () => vehicles.filter((vehicle) => vehicle.estado !== "Salio"),
+    [vehicles]
+  );
+
   const activeVehicles = useMemo(
     () => filteredVehicles.filter((vehicle) => vehicle.estado !== "Salio"),
     [filteredVehicles]
   );
+  const occupiedParkingNumbersByType = useMemo(() => {
+    const groups = {
+      Carro: new Set(),
+      Moto: new Set(),
+    };
+
+    allActiveVehicles
+      .filter((vehicle) => vehicle.id !== editingVehicle?.id)
+      .forEach((vehicle) => {
+        const vehicleType = vehicle.tipo === "Moto" ? "Moto" : "Carro";
+        const parkingNumber = String(vehicle.parqueadero || "").trim();
+
+        if (parkingNumber) {
+          groups[vehicleType].add(parkingNumber);
+        }
+      });
+
+    return groups;
+  }, [allActiveVehicles, editingVehicle]);
 
   const totalCarros = activeVehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
   const totalMotos = activeVehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
-  const totalParqueaderosDisponibles = Math.max(
-    cantidadParqueaderosActual - activeVehicles.length,
+  const activeCarros = allActiveVehicles.filter((vehicle) => vehicle.tipo === "Carro").length;
+  const activeMotos = allActiveVehicles.filter((vehicle) => vehicle.tipo === "Moto").length;
+  const totalParqueaderosDisponiblesCarro = Math.max(
+    cantidadParqueaderosCarroActual - activeCarros,
     0
   );
-  const parkingOptions = useMemo(
-    () =>
-      Array.from({ length: Math.max(cantidadParqueaderosActual, 0) }, (_, index) =>
+  const totalParqueaderosDisponiblesMoto = Math.max(
+    cantidadParqueaderosMotoActual - activeMotos,
+    0
+  );
+  const totalParqueaderosDisponibles =
+    totalParqueaderosDisponiblesCarro + totalParqueaderosDisponiblesMoto;
+  const parkingCapacityByType = useMemo(
+    () => ({
+      Carro: cantidadParqueaderosCarroActual,
+      Moto: cantidadParqueaderosMotoActual,
+    }),
+    [cantidadParqueaderosCarroActual, cantidadParqueaderosMotoActual]
+  );
+  const parkingOptionsByType = useMemo(
+    () => ({
+      Carro: Array.from({ length: Math.max(cantidadParqueaderosCarroActual, 0) }, (_, index) =>
         String(index + 1)
-      ),
-    [cantidadParqueaderosActual]
+      ).filter((parkingOption) => !occupiedParkingNumbersByType.Carro.has(parkingOption)),
+      Moto: Array.from({ length: Math.max(cantidadParqueaderosMotoActual, 0) }, (_, index) =>
+        String(index + 1)
+      ).filter((parkingOption) => !occupiedParkingNumbersByType.Moto.has(parkingOption)),
+    }),
+    [
+      cantidadParqueaderosCarroActual,
+      cantidadParqueaderosMotoActual,
+      occupiedParkingNumbersByType,
+    ]
   );
   const currentDayKey = WEEK_DAY_KEYS[new Date().getDay()];
   const tarifaHoraDelDia = useMemo(
@@ -772,7 +795,9 @@ export default function RegistroVehiculos() {
                   </div>
                   <div className="counter-info">
                     <span className="counter-number">{totalParqueaderosDisponibles}</span>
-                    <span className="counter-label">Parqueaderos disponibles</span>
+                    <span className="counter-label">
+                      {totalParqueaderosDisponiblesCarro} carros / {totalParqueaderosDisponiblesMoto} motos
+                    </span>
                   </div>
                 </div>
 
@@ -786,6 +811,15 @@ export default function RegistroVehiculos() {
                   </div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                className="parking-view-btn"
+                onClick={() => setParkingModalOpen(true)}
+              >
+                <i className="ph-light ph-car-profile" aria-hidden="true"></i>
+                <span>Visualizar Parqueaderos</span>
+              </button>
 
               <button type="button" className="register-btn" onClick={() => setModalOpen(true)}>
                 <span>
@@ -829,7 +863,9 @@ export default function RegistroVehiculos() {
                   <th>Torre</th>
                   <th>Apto</th>
                   <th>Parqueadero</th>
+                  <th>Vigilante ingreso</th>
                   <th>Ingreso</th>
+                  <th>Vigilante salida</th>
                   <th>Salida</th>
                   <th>Estado</th>
                   <th>Cobro</th>
@@ -839,7 +875,7 @@ export default function RegistroVehiculos() {
               <tbody>
                 {filteredVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="guard-module-empty-row">
+                    <td colSpan={15} className="guard-module-empty-row">
                       No hay vehículos que coincidan con la búsqueda.
                     </td>
                   </tr>
@@ -862,9 +898,11 @@ export default function RegistroVehiculos() {
                       <td>{vehicle.torre}</td>
                       <td>{vehicle.apartamento}</td>
                       <td>{String(vehicle.parqueadero || "--")}</td>
+                      <td>{vehicle.vigilanteRegistroNombre || "--"}</td>
                       <td>
                         {vehicle.fechaIngreso || vehicle.fecha} {vehicle.horaIngreso || vehicle.hora}
                       </td>
+                      <td>{vehicle.vigilanteSalidaNombre || "--"}</td>
                       <td>
                         {vehicle.fechaSalida ? `${vehicle.fechaSalida} ${vehicle.horaSalida}` : "--"}
                       </td>
@@ -1020,7 +1058,16 @@ export default function RegistroVehiculos() {
         onSave={handleSave}
         editingVehicle={editingVehicle}
         loading={loadingForm}
-        parkingOptions={parkingOptions}
+        parkingOptionsByType={parkingOptionsByType}
+        parkingCapacityByType={parkingCapacityByType}
+      />
+
+      <ParkingVisualizerModal
+        isOpen={parkingModalOpen}
+        onClose={() => setParkingModalOpen(false)}
+        totalCarParkings={cantidadParqueaderosCarroActual}
+        totalMotoParkings={cantidadParqueaderosMotoActual}
+        vehicles={vehicles}
       />
     </InternalLayout>
   );

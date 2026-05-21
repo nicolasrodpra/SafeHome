@@ -24,6 +24,16 @@ export const updateVigilanciaConfig = async (payload) => {
   return data.configuracion;
 };
 
+export const updateVigilanciaParkingConfig = async (payload) => {
+  const data = await apiPut(
+    "/vigilancia/configuracion/parqueaderos",
+    payload,
+    "No se pudo actualizar la cantidad de parqueaderos."
+  );
+
+  return data.configuracion;
+};
+
 export const getVehiculos = async () =>
   apiGet("/vehiculos", "No se pudo cargar el registro de vehiculos.");
 

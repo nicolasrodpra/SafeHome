@@ -15,6 +15,12 @@ const normalizeNumber = (value) => {
   return Number.isFinite(parsedValue) ? parsedValue : 0;
 };
 
+const normalizePositiveInteger = (value) => {
+  const parsedValue = Number.parseInt(String(value || "").trim(), 10);
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+};
+
 const WEEK_DAY_KEYS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
 
 const normalizeDailyRates = (value = {}) =>
@@ -36,9 +42,20 @@ const normalizeDailyChargeFlags = (value = {}, dailyRates = {}) =>
 const readVigilanciaConfig = async () => {
   const snapshot = await vigilanciaConfigDoc().get();
   const data = snapshot.data() || {};
+  const hasCarParkingConfig = Object.prototype.hasOwnProperty.call(
+    data,
+    "cantidadParqueaderosCarro"
+  );
+  const cantidadParqueaderosCarro = normalizePositiveInteger(
+    hasCarParkingConfig ? data.cantidadParqueaderosCarro : data.cantidadParqueaderos
+  );
+  const cantidadParqueaderosMoto = normalizePositiveInteger(data.cantidadParqueaderosMoto);
 
   return {
     tarifaHoraVigilante: normalizeNumber(data.tarifaHoraVigilante),
+    cantidadParqueaderos: cantidadParqueaderosCarro + cantidadParqueaderosMoto,
+    cantidadParqueaderosCarro,
+    cantidadParqueaderosMoto,
     tarifasPorDia: normalizeDailyRates(data.tarifasPorDia),
     cobroPorDia: normalizeDailyChargeFlags(data.cobroPorDia, data.tarifasPorDia),
     updatedAt: data.updatedAt || null,

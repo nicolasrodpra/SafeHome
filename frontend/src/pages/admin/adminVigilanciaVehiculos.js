@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import AdminVigilanciaSectionPage from "../../components/admin/AdminVigilanciaSectionPage";
+import ParkingVisualizerModal from "../../components/vigilancia/ParkingVisualizerModal";
 import useSession from "../../hooks/useSession";
 import {
   getVehiculos,
   getVigilanciaConfig,
   updateVigilanciaConfig,
+  updateVigilanciaParkingConfig,
 } from "../../services/modules/vigilanciaApi";
 
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
@@ -52,15 +54,19 @@ const getFirstChargeableRate = (rates, chargeFlags) => {
   return Number(rates?.[chargeableDay?.key]) || 0;
 };
 
-function VigilanciaTarifaPanel() {
+function VigilanciaTarifaPanel({ vehicles = [] }) {
   const session = useSession();
   const [tarifaActual, setTarifaActual] = useState(0);
+  const [cantidadParqueaderosCarroActual, setCantidadParqueaderosCarroActual] = useState(0);
+  const [cantidadParqueaderosMotoActual, setCantidadParqueaderosMotoActual] = useState(0);
   const [tarifaInput, setTarifaInput] = useState("");
   const [tarifasPorDia, setTarifasPorDia] = useState(() => buildDailyRates());
   const [cobroPorDia, setCobroPorDia] = useState(() => buildDailyChargeFlags());
   const [selectedDayKey, setSelectedDayKey] = useState("lunes");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [parkingModalOpen, setParkingModalOpen] = useState(false);
+  const [savingParking, setSavingParking] = useState(false);
   const draftRef = useRef({
     tarifasPorDia: buildDailyRates(),
     cobroPorDia: buildDailyChargeFlags(),
@@ -78,6 +84,11 @@ function VigilanciaTarifaPanel() {
       cobroPorDia: nextChargeFlags,
     };
     setTarifaActual(nextTarifa);
+    const carParkings = Number(config?.cantidadParqueaderosCarro);
+    setCantidadParqueaderosCarroActual(
+      Number.isFinite(carParkings) ? carParkings : Number(config?.cantidadParqueaderos) || 0
+    );
+    setCantidadParqueaderosMotoActual(Number(config?.cantidadParqueaderosMoto) || 0);
     setTarifasPorDia(nextRates);
     setCobroPorDia(nextChargeFlags);
     setTarifaInput(nextRates.lunes || "");
@@ -89,6 +100,8 @@ function VigilanciaTarifaPanel() {
       applyConfigState(config);
     } catch (error) {
       setTarifaActual(0);
+      setCantidadParqueaderosCarroActual(0);
+      setCantidadParqueaderosMotoActual(0);
       setTarifaInput("");
       const emptyRates = buildDailyRates();
       const emptyChargeFlags = buildDailyChargeFlags();
@@ -225,77 +238,130 @@ function VigilanciaTarifaPanel() {
     }
   };
 
+  const handleSaveParking = async (nextTotals) => {
+    setSavingParking(true);
+
+    try {
+      const updatedConfig = await updateVigilanciaParkingConfig({
+        cantidadParqueaderosCarro: nextTotals.carro,
+        cantidadParqueaderosMoto: nextTotals.moto,
+        updatedByUid: session?.uid || "",
+        updatedByName: session?.nombre || "Administracion",
+      });
+
+      applyConfigState(updatedConfig);
+
+      Swal.fire({
+        title: "Parqueaderos actualizados",
+        text: "La cantidad quedo disponible para vigilancia y administracion.",
+        icon: "success",
+        confirmButtonColor: "#460669",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "No se pudo actualizar la cantidad de parqueaderos.",
+        icon: "error",
+        confirmButtonColor: "#460669",
+      });
+    } finally {
+      setSavingParking(false);
+    }
+  };
+
   return (
-    <section className="admin-vigilancia-settings-panel">
-      <div className="admin-vigilancia-settings-copy">
-        <span className="admin-vigilancia-settings-kicker">Configuracion</span>
-        <h2>Tarifa de parqueadero visitante</h2>
-        <p>
-          Define desde administracion el valor por hora que usara vigilancia al registrar la salida
-          de vehiculos.
-        </p>
+    <>
+      <section className="admin-vigilancia-settings-panel">
+        <div className="admin-vigilancia-settings-copy">
+          <span className="admin-vigilancia-settings-kicker">Configuracion</span>
+          <h2>Tarifa de parqueadero visitante</h2>
+          <p>
+            Define desde administracion el valor por hora que usara vigilancia al registrar la salida
+            de vehiculos.
+          </p>
 
-        <div className="admin-vigilancia-week-rates">
-          {weekDays.map((day) => {
-            const dayCharges = cobroPorDia[day.key] !== false;
-            return (
-              <button
-                key={day.key}
-                type="button"
-                className={`admin-vigilancia-day-rate ${
-                  selectedDayKey === day.key ? "is-selected" : ""
-                } ${dayCharges ? "" : "is-disabled"}`}
-                onClick={() => setSelectedDayKey(day.key)}
-              >
-                <span>{day.label}</span>
-                <strong>{dayCharges ? formatCurrency(tarifasPorDia[day.key]) : "Sin cobro"}</strong>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="admin-vigilancia-settings-card">
-        <div className="admin-vigilancia-settings-current">
-          <span>Tarifa del dia seleccionado</span>
-          <strong>
-            {loading
-              ? "Cargando..."
-              : selectedDayCharges
-                ? formatCurrency(tarifasPorDia[selectedDayKey])
-                : "Sin cobro"}
-          </strong>
+          <div className="admin-vigilancia-week-rates">
+            {weekDays.map((day) => {
+              const dayCharges = cobroPorDia[day.key] !== false;
+              return (
+                <button
+                  key={day.key}
+                  type="button"
+                  className={`admin-vigilancia-day-rate ${
+                    selectedDayKey === day.key ? "is-selected" : ""
+                  } ${dayCharges ? "" : "is-disabled"}`}
+                  onClick={() => setSelectedDayKey(day.key)}
+                >
+                  <span>{day.label}</span>
+                  <strong>{dayCharges ? formatCurrency(tarifasPorDia[day.key]) : "Sin cobro"}</strong>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="admin-vigilancia-settings-form">
-          <label className="admin-vigilancia-charge-toggle">
-            <input
-              type="checkbox"
-              checked={selectedDayCharges}
-              onChange={(event) => handleChargeToggle(event.target.checked)}
-            />
-            Cobrar tarifa este dia
-          </label>
+        <div className="admin-vigilancia-settings-card">
+          <div className="admin-vigilancia-settings-current">
+            <span>Tarifa del dia seleccionado</span>
+            <strong>
+              {loading
+                ? "Cargando..."
+                : selectedDayCharges
+                  ? formatCurrency(tarifasPorDia[selectedDayKey])
+                  : "Sin cobro"}
+            </strong>
+          </div>
 
-          <label>
-            Nueva tarifa para {selectedDay.name}
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={tarifaInput}
-              onChange={(event) => handleRateChange(event.target.value)}
-              placeholder="Ej. 5000"
-              disabled={!selectedDayCharges}
-            />
-          </label>
+          <div className="admin-vigilancia-settings-form">
+            <label className="admin-vigilancia-charge-toggle">
+              <input
+                type="checkbox"
+                checked={selectedDayCharges}
+                onChange={(event) => handleChargeToggle(event.target.checked)}
+              />
+              Cobrar tarifa este dia
+            </label>
 
-          <button type="button" onClick={handleSave} disabled={saving || loading}>
-            {saving ? "Guardando..." : "Guardar tarifa"}
-          </button>
+            <label>
+              Nueva tarifa para {selectedDay.name}
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={tarifaInput}
+                onChange={(event) => handleRateChange(event.target.value)}
+                placeholder="Ej. 5000"
+                disabled={!selectedDayCharges}
+              />
+            </label>
+
+            <button type="button" onClick={handleSave} disabled={saving || loading}>
+              {saving ? "Guardando..." : "Guardar tarifa"}
+            </button>
+
+            <button
+              type="button"
+              className="parking-view-btn admin-parking-view-btn"
+              onClick={() => setParkingModalOpen(true)}
+            >
+              <i className="ph-light ph-car-profile" aria-hidden="true"></i>
+              <span>Visualizar Parqueaderos</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <ParkingVisualizerModal
+        isOpen={parkingModalOpen}
+        onClose={() => setParkingModalOpen(false)}
+        totalCarParkings={cantidadParqueaderosCarroActual}
+        totalMotoParkings={cantidadParqueaderosMotoActual}
+        vehicles={vehicles}
+        canEdit
+        saving={savingParking}
+        onSaveTotal={handleSaveParking}
+      />
+    </>
   );
 }
 
@@ -304,7 +370,7 @@ const config = {
   icon: "ph-car",
   loadItems: getVehiculos,
   emptyMessage: "No hay vehiculos registrados.",
-  renderBeforeSurface: () => <VigilanciaTarifaPanel />,
+  renderBeforeSurface: ({ items }) => <VigilanciaTarifaPanel vehicles={items} />,
   filters: [
     {
       key: "placa",
@@ -320,6 +386,12 @@ const config = {
     { key: "placa", label: "Placa" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
+    { key: "parqueadero", label: "Parqueadero" },
+    {
+      key: "vigilanteRegistroNombre",
+      label: "Vigilante ingreso",
+      render: (item) => item.vigilanteRegistroNombre || "--",
+    },
     {
       key: "fechaIngreso",
       label: "Ingreso",
@@ -353,6 +425,7 @@ const config = {
     { key: "telefono", label: "Telefono" },
     { key: "torre", label: "Torre" },
     { key: "apartamento", label: "Apartamento" },
+    { key: "parqueadero", label: "Parqueadero" },
     { key: "fechaIngreso", label: "Fecha de ingreso" },
     { key: "horaIngreso", label: "Hora de ingreso" },
     { key: "fechaSalida", label: "Fecha de salida" },

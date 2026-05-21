@@ -31,12 +31,6 @@ const normalizarUbicacion = (value) => {
 
 const getResidentLocationKey = (torre, apartamento) => `${torre}__${apartamento}`;
 
-const parseCantidadParqueaderos = (value) => {
-  const textValue = typeof value === "number" ? String(value) : limpiarTexto(value);
-
-  return /^\d+$/.test(textValue) ? Number.parseInt(textValue, 10) : NaN;
-};
-
 const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Reglas específicas del residente para evitar duplicar torre + apartamento.
@@ -94,7 +88,6 @@ const construirDatosPorRol = ({
   apartamento,
   zonaVigilancia,
   tipoSangre,
-  cantidadParqueaderos,
   residentLocationKey,
 }) => {
   if (rol === "Residente") {
@@ -102,7 +95,7 @@ const construirDatosPorRol = ({
   }
 
   if (rol === "Vigilante") {
-    return { zonaVigilancia, tipoSangre, cantidadParqueaderos };
+    return { zonaVigilancia, tipoSangre };
   }
 
   return {};
@@ -114,25 +107,17 @@ const validarCamposPorRol = ({
   apartamento,
   zonaVigilancia,
   tipoSangre,
-  cantidadParqueaderos,
 }) => {
   if (rol === "Residente" && (!torre || !apartamento)) {
     return "Para registrar un residente debes completar torre y apartamento.";
   }
 
-  if (
-    rol === "Vigilante" &&
-    (!zonaVigilancia || !tipoSangre || Number.isNaN(cantidadParqueaderos))
-  ) {
-    return "Para registrar un vigilante debes completar la zona de vigilancia, el tipo de sangre y la cantidad de parqueaderos.";
+  if (rol === "Vigilante" && (!zonaVigilancia || !tipoSangre)) {
+    return "Para registrar un vigilante debes completar la zona de vigilancia y el tipo de sangre.";
   }
 
   if (rol === "Vigilante" && !TIPOS_SANGRE_VALIDOS.includes(tipoSangre)) {
     return "Selecciona un tipo de sangre válido.";
-  }
-
-  if (rol === "Vigilante" && cantidadParqueaderos <= 0) {
-    return "La cantidad de parqueaderos del vigilante debe ser mayor a 0.";
   }
 
   return "";
@@ -213,7 +198,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     apartamento,
     zonaVigilancia,
     tipoSangre,
-    cantidadParqueaderos,
   } = req.body;
 
   const rolFinal = limpiarTexto(rol) || rolPorDefecto;
@@ -228,7 +212,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   const apartamentoNormalizado = normalizarUbicacion(apartamento);
   const zonaVigilanciaNormalizada = limpiarTexto(zonaVigilancia);
   const tipoSangreNormalizado = limpiarTexto(tipoSangre);
-  const cantidadParqueaderosNormalizada = parseCantidadParqueaderos(cantidadParqueaderos);
   const residentLocationKey =
     rolFinal === "Residente"
       ? getResidentLocationKey(torreNormalizada, apartamentoNormalizado)
@@ -256,7 +239,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
     apartamento: apartamentoNormalizado,
     zonaVigilancia: zonaVigilanciaNormalizada,
     tipoSangre: tipoSangreNormalizado,
-    cantidadParqueaderos: cantidadParqueaderosNormalizada,
   });
 
   if (mensajeCamposPorRol) {
@@ -318,7 +300,6 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
         apartamento: apartamentoNormalizado,
         zonaVigilancia: zonaVigilanciaNormalizada,
         tipoSangre: tipoSangreNormalizado,
-        cantidadParqueaderos: cantidadParqueaderosNormalizada,
         residentLocationKey,
       }),
       tarifaHora: tarifaHoraConfigurada,

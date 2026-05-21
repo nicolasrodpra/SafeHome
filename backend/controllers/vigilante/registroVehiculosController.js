@@ -257,6 +257,45 @@ const buscarVehiculoActivoPorPlaca = async (placa, ignoredId = "") => {
   });
 };
 
+const buscarVehiculoActivoPorParqueadero = async (parqueadero, tipo, ignoredId = "") => {
+  const snapshot = await vehiculosCollection().where("parqueadero", "==", limpiarTexto(parqueadero)).get();
+  const tipoNormalizado = normalizeAllowedValue(tipo, ["Carro", "Moto"]);
+
+  return snapshot.docs.find((snapshotDoc) => {
+    if (snapshotDoc.id === ignoredId) {
+      return false;
+    }
+
+    const estado = snapshotDoc.data()?.estado;
+    const tipoVehiculo = normalizeAllowedValue(snapshotDoc.data()?.tipo, ["Carro", "Moto"]);
+
+    return estado !== "Salio" && tipoVehiculo === tipoNormalizado;
+  });
+};
+
+const validarParqueaderoConfigurado = async (vehiculo) => {
+  const configuracion = await readVigilanciaConfig();
+  const esMoto = vehiculo.tipo === "Moto";
+  const cantidadCarros = Number(configuracion?.cantidadParqueaderosCarro);
+  const cantidadParqueaderos = esMoto
+    ? Number(configuracion?.cantidadParqueaderosMoto) || 0
+    : Number.isFinite(cantidadCarros)
+      ? cantidadCarros
+      : Number(configuracion?.cantidadParqueaderos) || 0;
+  const numeroParqueadero = Number.parseInt(vehiculo.parqueadero, 10);
+  const tipoParqueadero = esMoto ? "motos" : "carros";
+
+  if (!cantidadParqueaderos) {
+    return `Configura la cantidad de parqueaderos para ${tipoParqueadero} desde ingreso de vehiculos antes de registrar ingresos.`;
+  }
+
+  if (numeroParqueadero > cantidadParqueaderos) {
+    return `El parqueadero para ${tipoParqueadero} debe estar entre 1 y ${cantidadParqueaderos}.`;
+  }
+
+  return "";
+};
+
 const obtenerVehiculos = async (req, res) => {
   try {
     await limpiarVehiculosFinalizadosAntiguos();
@@ -286,6 +325,23 @@ const crearVehiculo = async (req, res) => {
     if (vehiculoActivo) {
       return res.status(400).json({
         mensaje: "Ya existe un vehículo activo con esa placa. Registra la salida antes de volverlo a ingresar.",
+      });
+    }
+
+    const mensajeParqueaderoConfigurado = await validarParqueaderoConfigurado(vehiculo);
+
+    if (mensajeParqueaderoConfigurado) {
+      return res.status(400).json({ mensaje: mensajeParqueaderoConfigurado });
+    }
+
+    const parqueaderoActivo = await buscarVehiculoActivoPorParqueadero(
+      vehiculo.parqueadero,
+      vehiculo.tipo
+    );
+
+    if (parqueaderoActivo) {
+      return res.status(400).json({
+        mensaje: "Ese parqueadero ya esta ocupado por otro vehiculo activo.",
       });
     }
 
@@ -347,6 +403,24 @@ const actualizarVehiculo = async (req, res) => {
     if (vehiculoActivo) {
       return res.status(400).json({
         mensaje: "Ya existe un vehículo activo con esa placa. Usa otra placa o registra primero su salida.",
+      });
+    }
+
+    const mensajeParqueaderoConfigurado = await validarParqueaderoConfigurado(vehiculo);
+
+    if (mensajeParqueaderoConfigurado) {
+      return res.status(400).json({ mensaje: mensajeParqueaderoConfigurado });
+    }
+
+    const parqueaderoActivo = await buscarVehiculoActivoPorParqueadero(
+      vehiculo.parqueadero,
+      vehiculo.tipo,
+      id
+    );
+
+    if (parqueaderoActivo) {
+      return res.status(400).json({
+        mensaje: "Ese parqueadero ya esta ocupado por otro vehiculo activo.",
       });
     }
 

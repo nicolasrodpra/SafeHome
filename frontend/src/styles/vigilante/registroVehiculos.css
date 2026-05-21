@@ -230,6 +230,11 @@
   background: #faf9fb;
 }
 
+.guard-module-header-tools .parking-view-btn {
+  min-height: 54px;
+  height: auto;
+}
+
 .plus-sq {
   width: 30px;
   height: 30px;
@@ -256,7 +261,7 @@
 
 .vehicle-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 1180px;
   border-collapse: collapse;
   background: #ffffff;
 }

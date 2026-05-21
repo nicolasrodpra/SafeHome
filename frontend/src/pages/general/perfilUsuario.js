@@ -29,7 +29,6 @@ const emptyForm = {
   apartamento: "",
   zonaVigilancia: "",
   tipoSangre: "",
-  cantidadParqueaderos: "",
 };
 
 const getFieldValue = (value) => (value ? value : "No disponible");
@@ -89,12 +88,6 @@ const buildProfileFromSource = (source = {}, session = null) => {
     apartamento: source.apartamento || session?.apartamento || "",
     zonaVigilancia: source.zonaVigilancia || session?.zonaVigilancia || "",
     tipoSangre: source.tipoSangre || session?.tipoSangre || "",
-    cantidadParqueaderos:
-      typeof source.cantidadParqueaderos === "number"
-        ? source.cantidadParqueaderos
-        : typeof session?.cantidadParqueaderos === "number"
-          ? session.cantidadParqueaderos
-          : 0,
   };
 };
 
@@ -108,7 +101,6 @@ const buildFormFromProfile = (profile) => ({
   apartamento: profile?.apartamento || "",
   zonaVigilancia: profile?.zonaVigilancia || "",
   tipoSangre: profile?.tipoSangre || "",
-  cantidadParqueaderos: profile?.cantidadParqueaderos ? String(profile.cantidadParqueaderos) : "",
 });
 
 const buildProfileUpdatePayload = (form) => ({
@@ -119,12 +111,7 @@ const buildProfileUpdatePayload = (form) => ({
   apartamento: form.apartamento.trim(),
   zonaVigilancia: form.zonaVigilancia.trim(),
   tipoSangre: form.tipoSangre.trim(),
-  cantidadParqueaderos: form.cantidadParqueaderos.trim()
-    ? Number(form.cantidadParqueaderos)
-    : "",
 });
-
-const isPositiveIntegerText = (value) => /^\d+$/.test(String(value || "").trim()) && Number(value) > 0;
 
 const getMissingRequiredFields = (form, role, vigilanciaTarifaHora) => {
   const fields = [
@@ -145,8 +132,7 @@ const getMissingRequiredFields = (form, role, vigilanciaTarifaHora) => {
   if (role === "Vigilante") {
     fields.push(
       { label: "zona de vigilancia", value: form.zonaVigilancia },
-      { label: "tipo de sangre", value: form.tipoSangre },
-      { label: "cantidad de parqueaderos", value: form.cantidadParqueaderos }
+      { label: "tipo de sangre", value: form.tipoSangre }
     );
 
     if (!(Number(vigilanciaTarifaHora) > 0)) {
@@ -177,7 +163,6 @@ const getRoleSpecificFields = (profile, vigilanciaTarifaHora = 0) => {
         label: "Tarifa por hora",
         value: vigilanciaTarifaHora ? `$${vigilanciaTarifaHora}` : "",
       },
-      { label: "Cantidad de parqueaderos", value: profile.cantidadParqueaderos || "" },
     ];
   }
 
@@ -209,10 +194,7 @@ export default function PerfilUsuarioPage() {
   };
 
   const handleFieldChange = (fieldName) => (event) => {
-    const nextValue =
-      fieldName === "cantidadParqueaderos"
-        ? event.target.value.replace(/\D+/g, "")
-        : event.target.value;
+    const nextValue = event.target.value;
 
     setForm((current) => ({ ...current, [fieldName]: nextValue }));
   };
@@ -318,16 +300,6 @@ export default function PerfilUsuarioPage() {
       Swal.fire({
         title: "Campos obligatorios pendientes",
         text: `Completa estos campos antes de guardar: ${missingFields.join(", ")}.`,
-        icon: "warning",
-        confirmButtonColor: "#460669",
-      });
-      return;
-    }
-
-    if (profile.rol === "Vigilante" && !isPositiveIntegerText(form.cantidadParqueaderos)) {
-      Swal.fire({
-        title: "Cantidad invalida",
-        text: "La cantidad de parqueaderos debe ser un entero mayor a 0.",
         icon: "warning",
         confirmButtonColor: "#460669",
       });
@@ -511,19 +483,6 @@ export default function PerfilUsuarioPage() {
                           }
                           disabled
                           title="La tarifa del vigilante se configura desde administraciÃ³n."
-                        />
-                      </div>
-                      <div className="profile-field">
-                        <label>Cantidad de parqueaderos</label>
-                        <input
-                          name="cantidadParqueaderos"
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={form.cantidadParqueaderos || ""}
-                          onChange={handleFieldChange("cantidadParqueaderos")}
-                          required
-                          disabled={!editMode || loading}
                         />
                       </div>
                     </>

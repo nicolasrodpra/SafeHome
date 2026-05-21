@@ -19,27 +19,6 @@ const compareByText = (firstValue = "", secondValue = "") =>
     sensitivity: "base",
   });
 
-const parsePositiveNumber = (value) => {
-  const normalizedValue = typeof value === "number" ? String(value) : normalizeText(value);
-  return /^\d+$/.test(normalizedValue) ? Number.parseInt(normalizedValue, 10) : NaN;
-};
-
-const hasProvidedNumberValue = (value) => {
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-
-  return normalizeText(value) !== "";
-};
-
-const resolveEditableNumberField = (currentValue, rawValue) => {
-  if (rawValue === undefined || !hasProvidedNumberValue(rawValue)) {
-    return currentValue;
-  }
-
-  return parsePositiveNumber(rawValue);
-};
-
 const getSortableNumber = (value) => {
   const normalizedValue = normalizeText(value);
   const match = normalizedValue.match(/\d+/);
@@ -164,7 +143,6 @@ const buildProfileUpdatePayload = ({
   zonaVigilancia,
   tipoSangre,
   tarifaHora,
-  cantidadParqueaderos,
 }) => ({
   nombre: nombreCompleto,
   nombres,
@@ -176,10 +154,6 @@ const buildProfileUpdatePayload = ({
   zonaVigilancia: currentProfile.rol === "Vigilante" ? zonaVigilancia : currentProfile.zonaVigilancia,
   tipoSangre: currentProfile.rol === "Vigilante" ? tipoSangre : currentProfile.tipoSangre,
   tarifaHora: currentProfile.rol === "Vigilante" ? tarifaHora : currentProfile.tarifaHora,
-  cantidadParqueaderos:
-    currentProfile.rol === "Vigilante"
-      ? cantidadParqueaderos
-      : currentProfile.cantidadParqueaderos,
   correo: currentProfile.email,
   email: currentProfile.email,
   updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -245,10 +219,6 @@ const actualizarPerfilUsuario = async (req, res) => {
         ? normalizeAllowedValue(req.body?.tipoSangre, TIPOS_SANGRE_VALIDOS)
         : normalizeText(req.body?.tipoSangre);
     let tarifaHora = currentProfile.tarifaHora;
-    const cantidadParqueaderos = resolveEditableNumberField(
-      currentProfile.cantidadParqueaderos,
-      req.body?.cantidadParqueaderos
-    );
 
     if (currentProfile.rol === "Vigilante") {
       const vigilanciaConfig = await readVigilanciaConfig();
@@ -268,15 +238,6 @@ const actualizarPerfilUsuario = async (req, res) => {
       return res.status(400).json({ mensaje: "Selecciona un tipo de sangre valido." });
     }
 
-    if (
-      currentProfile.rol === "Vigilante" &&
-      (!Number.isFinite(cantidadParqueaderos) || cantidadParqueaderos <= 0)
-    ) {
-      return res.status(400).json({
-        mensaje: "La cantidad de parqueaderos del vigilante debe ser mayor a 0.",
-      });
-    }
-
     await usersCollection()
       .doc(uid)
       .set(
@@ -288,7 +249,6 @@ const actualizarPerfilUsuario = async (req, res) => {
           zonaVigilancia,
           tipoSangre,
           tarifaHora,
-          cantidadParqueaderos,
         }),
         { merge: true }
       );

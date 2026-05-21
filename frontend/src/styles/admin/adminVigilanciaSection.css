@@ -344,7 +344,7 @@
 .admin-vigilancia-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 820px;
+  min-width: 1000px;
 }
 
 .admin-vigilancia-table th,
