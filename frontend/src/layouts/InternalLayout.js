@@ -8,7 +8,7 @@ import asistenteVirtual from "../assets/asistenteVirtual.png";
 import safehomeLogo from "../assets/safehomeLogo.png";
 import useSession from "../hooks/useSession";
 import { cerrarSesion } from "../services/authService";
-import { attendEmergency, getActiveEmergencies } from "../services/modules/emergencyApi";
+import { getActiveEmergencies } from "../services/modules/emergencyApi";
 import {
   getMensajeria,
   getMessageTypeLabel,
@@ -270,7 +270,6 @@ export default function InternalLayout({ children }) {
   const [pendingBaseCount, setPendingBaseCount] = useState(0);
   const [pendingExtraCount, setPendingExtraCount] = useState(0);
   const [activeEmergency, setActiveEmergency] = useState(null);
-  const [attendingEmergency, setAttendingEmergency] = useState(false);
 
   const userMenuRef = useRef(null);
   const hasInitializedQuejasRef = useRef(false);
@@ -287,7 +286,6 @@ export default function InternalLayout({ children }) {
   const navItems = isVigilante ? VIGILANTE_NAV_ITEMS : ADMIN_NAV_ITEMS;
   const homeRoute = isVigilante ? "/vigilanteMenu" : "/adminMenu";
   const userInitials = getUserInitials(profileName);
-  const isPanicRoute = pathname === "/vigilantePanico";
 
   useEffect(() => {
     let active = true;
@@ -564,42 +562,6 @@ export default function InternalLayout({ children }) {
     };
   }, []);
 
-  const handleAttendEmergency = async () => {
-    if (!activeEmergency?.id || attendingEmergency) {
-      return;
-    }
-
-    setAttendingEmergency(true);
-
-    try {
-      await attendEmergency(activeEmergency.id, {
-        attendedById: session?.uid || session?.id || session?.userId || "",
-        attendedByName: profileName || session?.nombre || "Vigilancia",
-      });
-
-      emergencySwalOpenRef.current = false;
-      Swal.close();
-      setActiveEmergency(null);
-      lastEmergencyIdRef.current = "";
-
-      Swal.fire({
-        title: "Emergencia atendida",
-        text: "La alerta fue marcada como atendida correctamente.",
-        icon: "success",
-        confirmButtonColor: "#b71c1c",
-      });
-    } catch (error) {
-      Swal.fire({
-        title: "No se pudo actualizar la emergencia",
-        text: error.message || "Intentalo de nuevo.",
-        icon: "error",
-        confirmButtonColor: "#b71c1c",
-      });
-    } finally {
-      setAttendingEmergency(false);
-    }
-  };
-
   return (
     <div className="internal-shell">
       <aside className="internal-sidebar">
@@ -720,17 +682,19 @@ export default function InternalLayout({ children }) {
 
         {profileRole === "Vigilante" && activeEmergency ? (
           <div
-            className={`emergency-overlay ${isPanicRoute ? "is-route-panel" : ""}`}
+            className={`emergency-overlay ${
+              pathname === "/vigilantePanico" ? "is-route-panel" : ""
+            }`}
             role="alertdialog"
-            aria-modal={isPanicRoute ? "false" : "true"}
+            aria-modal={pathname === "/vigilantePanico" ? "false" : "true"}
           >
             <div className="emergency-overlay-backdrop"></div>
             <section className="emergency-overlay-card">
               <span className="emergency-overlay-kicker">ALERTA DE EMERGENCIA</span>
               <h2>Atencion inmediata requerida</h2>
               <p className="emergency-overlay-copy">
-                Un residente activo el boton de panico. Puedes abrir el panel completo o marcar la
-                emergencia como atendida desde aqui.
+                Un residente activo el boton de panico. La alerta solo puede marcarse como
+                atendida desde la vista de boton de panico.
               </p>
 
               <div className="emergency-overlay-details">
@@ -752,23 +716,13 @@ export default function InternalLayout({ children }) {
                 </div>
               </div>
 
-              <div className="emergency-overlay-actions">
-                <button
-                  type="button"
-                  className="emergency-overlay-button emergency-overlay-button-secondary"
-                  onClick={() => navigate("/vigilantePanico")}
-                >
-                  Ir al panel de panico
-                </button>
-                <button
-                  type="button"
-                  className="emergency-overlay-button"
-                  onClick={handleAttendEmergency}
-                  disabled={attendingEmergency}
-                >
-                  {attendingEmergency ? "Actualizando..." : "Marcar como atendida"}
-                </button>
-              </div>
+              <button
+                type="button"
+                className="emergency-overlay-button"
+                onClick={() => navigate("/vigilantePanico")}
+              >
+                Atender alerta
+              </button>
             </section>
           </div>
         ) : null}

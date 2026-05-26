@@ -230,7 +230,6 @@ const renderQrVisitante = async (req, res) => {
   const visitorDocument = safe(parsedPayload.identificacion || parsedPayload.documento);
   const visitorPhone = safe(parsedPayload.telefono);
   const entryHour = safe(parsedPayload.horaEntrada || parsedPayload.horaEntradaProgramada);
-  const exitHour = safe(parsedPayload.horaSalida);
   const visitorVehicleType = safe(parsedPayload.tipoVehiculo || parsedPayload.tipo);
   const visitorParking = safe(parsedPayload.parqueadero || parsedPayload.parqueaderoVehiculo);
 
@@ -270,7 +269,6 @@ const renderQrVisitante = async (req, res) => {
               <tr><td class="label">Identificacion</td><td class="value">${visitorDocument || "No registrada"}</td></tr>
               <tr><td class="label">Telefono</td><td class="value">${visitorPhone || "No registrado"}</td></tr>
               <tr><td class="label">Hora de entrada</td><td class="value">${entryHour || "No registrada"}</td></tr>
-              <tr><td class="label">Hora de salida</td><td class="value">${exitHour || "No registrada"}</td></tr>
               <tr><td class="label">Estado</td><td class="value">${safe(parsedPayload.estado || parsedPayload.status) || "Pendiente"}</td></tr>
               <tr><td class="label">Entra con vehiculo</td><td class="value">${yesNo(parsedPayload.conVehiculo)}</td></tr>
               <tr><td class="label">Tipo de vehiculo</td><td class="value">${visitorVehicleType || "No aplica"}</td></tr>

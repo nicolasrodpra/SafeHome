@@ -509,22 +509,23 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at center, rgba(255, 84, 84, 0.18), transparent 36%),
-    linear-gradient(135deg, rgba(79, 0, 0, 0.78), rgba(166, 23, 38, 0.72));
-  animation: emergencyPulse 1s infinite alternate;
+    radial-gradient(circle at center, rgba(70, 6, 105, 0.2), transparent 34%),
+    linear-gradient(135deg, rgba(31, 23, 46, 0.82), rgba(70, 6, 105, 0.68));
+  animation: emergencyPulse 0.9s infinite alternate;
 }
 
 .emergency-overlay-card {
   position: relative;
   width: min(100%, 760px);
   padding: 34px;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  border-radius: 28px;
-  background: linear-gradient(145deg, rgba(103, 5, 5, 0.96), rgba(186, 26, 26, 0.96));
-  color: #ffffff;
-  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(70, 6, 105, 0.14);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #fbf9fd 100%);
+  color: #1f172e;
+  box-shadow: 0 0 0 8px rgba(70, 6, 105, 0.12), 0 28px 70px rgba(17, 24, 39, 0.34);
   text-align: center;
-  animation: emergencyCardPulse 1s infinite alternate;
+  animation: emergencyCardPulse 0.9s infinite alternate;
 }
 
 .emergency-overlay-card::before {
@@ -532,8 +533,8 @@
   position: absolute;
   inset: 0 0 auto;
   height: 8px;
-  border-radius: 28px 28px 0 0;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.16));
+  border-radius: 22px 22px 0 0;
+  background: linear-gradient(90deg, #460669, #dc2626);
 }
 
 .emergency-overlay-kicker {
@@ -541,17 +542,18 @@
   margin-bottom: 12px;
   padding: 7px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: #f3eff8;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.82);
+  color: #460669;
 }
 
 .emergency-overlay-card h2 {
   margin: 0 0 12px;
   font-size: clamp(2.1rem, 5vw, 3.5rem);
   line-height: 0.95;
+  color: #2b1f36;
 }
 
 .emergency-overlay-copy {
@@ -559,7 +561,7 @@
   margin: 0 auto 22px;
   font-size: 1rem;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.88);
+  color: #5f536f;
 }
 
 .emergency-overlay-details {
@@ -572,8 +574,8 @@
 .emergency-overlay-detail {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #ffffff;
+  border: 1px solid #eee7f5;
 }
 
 .emergency-overlay-detail span {
@@ -582,40 +584,29 @@
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.74);
+  color: #460669;
 }
 
 .emergency-overlay-detail strong {
   font-size: 1.3rem;
   font-weight: 700;
-}
-
-.emergency-overlay-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
+  color: #1f172e;
 }
 
 .emergency-overlay-button {
-  min-width: 220px;
+  min-width: 260px;
   min-height: 56px;
   padding: 0 24px;
   border: 0;
   border-radius: 16px;
-  background: #ffffff;
-  color: #aa1717;
+  background: #460669;
+  color: #ffffff;
   font-family: "Poppins", sans-serif;
   font-size: 0.96rem;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 12px 26px rgba(70, 6, 105, 0.24);
   transition: transform 0.18s ease, opacity 0.18s ease;
-}
-
-.emergency-overlay-button-secondary {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
 }
 
 .emergency-overlay-button:hover:not(:disabled) {
@@ -657,13 +648,13 @@
   display: none;
 }
 
-.emergency-overlay.is-route-panel .emergency-overlay-actions {
+.emergency-overlay.is-route-panel .emergency-overlay-button {
   display: none;
 }
 
 @keyframes emergencyPulse {
   from {
-    opacity: 0.78;
+    opacity: 0.82;
   }
 
   to {
@@ -673,11 +664,11 @@
 
 @keyframes emergencyCardPulse {
   from {
-    box-shadow: 0 0 0 6px rgba(255, 84, 84, 0.08), 0 24px 52px rgba(0, 0, 0, 0.32);
+    box-shadow: 0 0 0 6px rgba(70, 6, 105, 0.1), 0 28px 70px rgba(17, 24, 39, 0.3);
   }
 
   to {
-    box-shadow: 0 0 0 12px rgba(255, 84, 84, 0.14), 0 24px 58px rgba(0, 0, 0, 0.36);
+    box-shadow: 0 0 0 12px rgba(70, 6, 105, 0.16), 0 28px 70px rgba(17, 24, 39, 0.36);
   }
 }
 

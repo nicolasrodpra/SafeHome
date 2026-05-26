@@ -122,8 +122,8 @@
   margin-top: 22px;
   margin-bottom: 18px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 84, 84, 0.24);
-  background: linear-gradient(135deg, #fff8f8 0%, #ffffff 100%);
+  border: 1px solid rgba(70, 6, 105, 0.1);
+  background: #ffffff;
   padding: 16px;
 }
 
@@ -144,7 +144,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #a61726;
+  color: #460669;
   font-size: 1rem;
   font-weight: 800;
 }
@@ -156,7 +156,7 @@
 .vigilante-panico-head span {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #7b2030;
+  color: #6b5e74;
 }
 
 .vigilante-panico-empty {
@@ -172,10 +172,10 @@
 }
 
 .vigilante-panico-card {
-  border: 1px solid rgba(173, 32, 47, 0.22);
+  border: 1px solid rgba(70, 6, 105, 0.12);
   border-radius: 14px;
-  background: #fff;
-  padding: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbf9fd 100%);
+  padding: 14px;
 }
 
 .vigilante-panico-card.is-on-way {
@@ -194,8 +194,8 @@
 .vigilante-panico-chip {
   padding: 5px 10px;
   border-radius: 999px;
-  background: #ffebee;
-  color: #8f1122;
+  background: #fee2e2;
+  color: #b91c1c;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -227,13 +227,13 @@
   margin-top: 10px;
   padding: 10px;
   border-radius: 12px;
-  background: #fff4f6;
+  background: #f3eff8;
 }
 
 .vigilante-panico-audio span {
   display: block;
   margin-bottom: 6px;
-  color: #a61726;
+  color: #460669;
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -263,12 +263,12 @@
 }
 
 .vigilante-panico-onway-btn {
-  background: #fff1f3;
-  color: #a61726;
+  background: #f3eff8;
+  color: #460669;
 }
 
 .vigilante-panico-resolve-btn {
-  background: #b0152c;
+  background: #460669;
   color: #fff;
 }
 
@@ -278,8 +278,8 @@
   min-height: 34px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: #fff1f3;
-  color: #a61726;
+  background: #f3eff8;
+  color: #460669;
   font-size: 0.76rem;
   font-weight: 800;
 }
