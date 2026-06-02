@@ -5,10 +5,10 @@ const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
 const { normalizeText } = require("../../utils/text");
 const { isNumericText, normalizeLocationValue } = require("../../utils/validation");
+const { readVigilanciaConfig } = require("../../utils/vigilanciaConfig");
 
 const visitantesCollection = () => admin.firestore().collection("visitantes");
 const vehiculosCollection = () => admin.firestore().collection("vehiculos");
-const usersCollection = () => admin.firestore().collection("users");
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const ESTADO_PENDIENTE = "Pendiente";
 const ESTADO_INGRESO = "Ingreso";
@@ -123,10 +123,7 @@ const validarVisitante = (visitante) => {
 };
 
 const crearVisitante = async (req, res) => {
-  const visitante = normalizarVisitante({
-    ...req.body,
-    codigoAcceso: req.body?.codigoAcceso || `VST-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-  });
+  const visitante = normalizarVisitante(req.body);
   const mensajeValidacion = validarVisitante(visitante);
 
   if (mensajeValidacion) {
@@ -134,6 +131,27 @@ const crearVisitante = async (req, res) => {
   }
 
   try {
+    if (visitante.conVehiculo) {
+      const tipoVehiculo = normalizarTipoVehiculoVisitante(visitante.tipoVehiculo);
+      const parqueaderoSolicitado = normalizeText(visitante.parqueadero);
+      const parqueaderoDisponible =
+        parqueaderoSolicitado && (await parqueaderoDisponibleParaTipo(parqueaderoSolicitado, tipoVehiculo))
+          ? parqueaderoSolicitado
+          : await asignarParqueaderoDisponible(tipoVehiculo);
+
+      if (!parqueaderoDisponible) {
+        return res.status(400).json({
+          mensaje: `No hay cupos de parqueadero disponibles para ${tipoVehiculo.toLowerCase()}s. No se genero codigo de acceso.`,
+        });
+      }
+
+      visitante.parqueadero = parqueaderoDisponible;
+    }
+
+    visitante.codigoAcceso =
+      visitante.codigoAcceso ||
+      `VST-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const ref = await visitantesCollection().add({
       ...visitante,
       status: visitante.estado,
@@ -191,6 +209,23 @@ const actualizarVisitante = async (req, res) => {
       return res.status(400).json({ mensaje: mensajeValidacion });
     }
 
+    if (visitante.conVehiculo) {
+      const tipoVehiculo = normalizarTipoVehiculoVisitante(visitante.tipoVehiculo);
+      const parqueaderoSolicitado = normalizeText(visitante.parqueadero);
+      const parqueaderoDisponible =
+        parqueaderoSolicitado && (await parqueaderoDisponibleParaTipo(parqueaderoSolicitado, tipoVehiculo))
+          ? parqueaderoSolicitado
+          : await asignarParqueaderoDisponible(tipoVehiculo);
+
+      if (!parqueaderoDisponible) {
+        return res.status(400).json({
+          mensaje: `No hay cupos de parqueadero disponibles para ${tipoVehiculo.toLowerCase()}s. No se actualizo el visitante.`,
+        });
+      }
+
+      visitante.parqueadero = parqueaderoDisponible;
+    }
+
     await docRef.update({
       ...visitante,
       status: visitante.estado,
@@ -227,6 +262,47 @@ const eliminarVisitante = async (req, res) => {
 const normalizarTipoVehiculoVisitante = (value) =>
   normalizeText(value).toLowerCase() === "carro" ? "Carro" : "Moto";
 
+const obtenerCapacidadParqueaderos = async () => {
+  const configuracion = await readVigilanciaConfig();
+
+  return {
+    Carro: Number(configuracion?.cantidadParqueaderosCarro) || 0,
+    Moto: Number(configuracion?.cantidadParqueaderosMoto) || 0,
+  };
+};
+
+const obtenerParqueaderosOcupadosPorTipo = async (tipoVehiculo) => {
+  const vehiclesSnapshot = await vehiculosCollection().get();
+  const tipoNormalizado = normalizarTipoVehiculoVisitante(tipoVehiculo);
+
+  return new Set(
+    vehiclesSnapshot.docs
+      .filter((snapshotDoc) => {
+        const data = snapshotDoc.data() || {};
+        return (
+          data.estado !== "Salio" &&
+          normalizarTipoVehiculoVisitante(data.tipo) === tipoNormalizado
+        );
+      })
+      .map((snapshotDoc) => normalizeText(snapshotDoc.data()?.parqueadero))
+      .filter(Boolean)
+  );
+};
+
+const parqueaderoDisponibleParaTipo = async (parqueadero, tipoVehiculo) => {
+  const parqueaderoNormalizado = normalizeText(parqueadero);
+  const tipoNormalizado = normalizarTipoVehiculoVisitante(tipoVehiculo);
+  const capacidad = await obtenerCapacidadParqueaderos();
+  const numeroParqueadero = Number.parseInt(parqueaderoNormalizado, 10);
+
+  if (!numeroParqueadero || numeroParqueadero > capacidad[tipoNormalizado]) {
+    return false;
+  }
+
+  const ocupados = await obtenerParqueaderosOcupadosPorTipo(tipoNormalizado);
+  return !ocupados.has(parqueaderoNormalizado);
+};
+
 const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
   if (!visitante?.conVehiculo) {
     return;
@@ -254,9 +330,12 @@ const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
     return;
   }
 
+  const tipoVehiculo = normalizarTipoVehiculoVisitante(visitante.tipoVehiculo || visitante.tipo);
+  const parqueaderoSolicitado = normalizeText(visitante.parqueadero || visitante.parqueaderoVehiculo);
   const parqueadero =
-    normalizeText(visitante.parqueadero || visitante.parqueaderoVehiculo) ||
-    (await asignarParqueaderoDisponible());
+    parqueaderoSolicitado && (await parqueaderoDisponibleParaTipo(parqueaderoSolicitado, tipoVehiculo))
+      ? parqueaderoSolicitado
+      : await asignarParqueaderoDisponible(tipoVehiculo);
 
   if (!parqueadero) {
     return;
@@ -271,7 +350,7 @@ const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
     torre: normalizeLocationValue(visitante.torre || visitante.residenteTorre),
     apartamento: normalizeLocationValue(visitante.apartamento || visitante.residenteApartamento),
     parqueadero,
-    tipo: normalizarTipoVehiculoVisitante(visitante.tipoVehiculo || visitante.tipo),
+    tipo: tipoVehiculo,
     estado: "Activo",
     fecha: admin.firestore.Timestamp.fromDate(ingresoDate),
     ingresoAt: admin.firestore.Timestamp.fromDate(ingresoDate),
@@ -289,21 +368,16 @@ const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
   });
 };
 
-const asignarParqueaderoDisponible = async () => {
-  const usersSnapshot = await usersCollection().get();
-  const cantidadParqueaderos = usersSnapshot.docs.reduce((maxValue, snapshotDoc) => {
-    const currentValue = Number(snapshotDoc.data()?.cantidadParqueaderos);
-    return Number.isFinite(currentValue) && currentValue > maxValue ? currentValue : maxValue;
-  }, 0);
+const asignarParqueaderoDisponible = async (tipoVehiculo = "Moto") => {
+  const tipoNormalizado = normalizarTipoVehiculoVisitante(tipoVehiculo);
+  const capacidad = await obtenerCapacidadParqueaderos();
+  const limiteParqueaderos = capacidad[tipoNormalizado];
 
-  const vehiclesSnapshot = await vehiculosCollection().get();
-  const parqueaderosOcupados = new Set(
-    vehiclesSnapshot.docs
-      .filter((snapshotDoc) => snapshotDoc.data()?.estado !== "Salio")
-      .map((snapshotDoc) => normalizeText(snapshotDoc.data()?.parqueadero))
-      .filter(Boolean)
-  );
-  const limiteParqueaderos = cantidadParqueaderos || Math.max(parqueaderosOcupados.size + 1, 1);
+  if (!limiteParqueaderos) {
+    return "";
+  }
+
+  const parqueaderosOcupados = await obtenerParqueaderosOcupadosPorTipo(tipoNormalizado);
 
   for (let index = 1; index <= limiteParqueaderos; index += 1) {
     const parqueadero = String(index);

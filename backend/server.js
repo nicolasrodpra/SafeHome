@@ -6,6 +6,7 @@ const cors = require("cors");
 const express = require("express");
 const path = require("path");
 const admin = require("./config/firebaseAdmin");
+const { readVigilanciaConfig } = require("./utils/vigilanciaConfig");
 
 const manualConvivenciaRoutes = require("./routes/admin/manualConvivenciaRoutes");
 const registroAdminRoutes = require("./routes/admin/registroAdminRoutes");
@@ -107,9 +108,14 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
     return "";
   }
 
+  const tipoVehiculo = normalizeQrVehicleType(visitorData?.tipoVehiculo || visitorData?.tipo);
+  const parqueaderoSolicitado = String(
+    visitorData?.parqueadero || visitorData?.parqueaderoVehiculo || ""
+  ).trim();
   const parqueadero =
-    String(visitorData?.parqueadero || visitorData?.parqueaderoVehiculo || "").trim() ||
-    (await assignAvailableParking());
+    parqueaderoSolicitado && (await isRequestedParkingAvailable(parqueaderoSolicitado, tipoVehiculo))
+      ? parqueaderoSolicitado
+      : await assignAvailableParking(tipoVehiculo);
 
   if (!parqueadero) {
     return "";
@@ -124,7 +130,7 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
     torre: String(visitorData?.torre || visitorData?.residenteTorre || "").trim(),
     apartamento: String(visitorData?.apartamento || visitorData?.residenteApartamento || "").trim(),
     parqueadero,
-    tipo: normalizeQrVehicleType(visitorData?.tipoVehiculo || visitorData?.tipo),
+    tipo: tipoVehiculo,
     estado: "Activo",
     fecha: admin.firestore.Timestamp.fromDate(now),
     ingresoAt: admin.firestore.Timestamp.fromDate(now),
@@ -144,21 +150,52 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
   return parqueadero;
 };
 
-const assignAvailableParking = async () => {
-  const usersSnapshot = await admin.firestore().collection("users").get();
-  const maxParking = usersSnapshot.docs.reduce((maxValue, snapshotDoc) => {
-    const currentValue = Number(snapshotDoc.data()?.cantidadParqueaderos);
-    return Number.isFinite(currentValue) && currentValue > maxValue ? currentValue : maxValue;
-  }, 0);
+const getParkingCapacity = async () => {
+  const configuracion = await readVigilanciaConfig();
+  return {
+    Carro: Number(configuracion?.cantidadParqueaderosCarro) || 0,
+    Moto: Number(configuracion?.cantidadParqueaderosMoto) || 0,
+  };
+};
 
+const getOccupiedParkingByType = async (tipoVehiculo) => {
+  const tipoNormalizado = normalizeQrVehicleType(tipoVehiculo);
   const vehiclesSnapshot = await admin.firestore().collection("vehiculos").get();
-  const occupiedParking = new Set(
+  return new Set(
     vehiclesSnapshot.docs
-      .filter((snapshotDoc) => snapshotDoc.data()?.estado !== "Salio")
+      .filter((snapshotDoc) => {
+        const data = snapshotDoc.data() || {};
+        return data.estado !== "Salio" && normalizeQrVehicleType(data.tipo) === tipoNormalizado;
+      })
       .map((snapshotDoc) => String(snapshotDoc.data()?.parqueadero || "").trim())
       .filter(Boolean)
   );
-  const parkingLimit = maxParking || Math.max(occupiedParking.size + 1, 1);
+};
+
+const isRequestedParkingAvailable = async (parqueadero, tipoVehiculo) => {
+  const parqueaderoNormalizado = String(parqueadero || "").trim();
+  const tipoNormalizado = normalizeQrVehicleType(tipoVehiculo);
+  const capacidad = await getParkingCapacity();
+  const numeroParqueadero = Number.parseInt(parqueaderoNormalizado, 10);
+
+  if (!numeroParqueadero || numeroParqueadero > capacidad[tipoNormalizado]) {
+    return false;
+  }
+
+  const occupiedParking = await getOccupiedParkingByType(tipoNormalizado);
+  return !occupiedParking.has(parqueaderoNormalizado);
+};
+
+const assignAvailableParking = async (tipoVehiculo = "Moto") => {
+  const tipoNormalizado = normalizeQrVehicleType(tipoVehiculo);
+  const capacidad = await getParkingCapacity();
+  const parkingLimit = capacidad[tipoNormalizado];
+
+  if (!parkingLimit) {
+    return "";
+  }
+
+  const occupiedParking = await getOccupiedParkingByType(tipoNormalizado);
 
   for (let index = 1; index <= parkingLimit; index += 1) {
     const parkingNumber = String(index);
