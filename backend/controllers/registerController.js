@@ -51,6 +51,27 @@ const existeResidenteEnUbicacion = async (torre, apartamento) => {
   });
 };
 
+const existeUsuarioConCorreo = async (email) => {
+  const emailNormalizado = limpiarTexto(email).toLowerCase();
+
+  if (!emailNormalizado) {
+    return false;
+  }
+
+  const [emailSnapshot, correoSnapshot, authResult] = await Promise.allSettled([
+    usersCollection().where("email", "==", emailNormalizado).limit(1).get(),
+    usersCollection().where("correo", "==", emailNormalizado).limit(1).get(),
+    admin.auth().getUserByEmail(emailNormalizado),
+  ]);
+
+  const existeEnFirestore =
+    (emailSnapshot.status === "fulfilled" && !emailSnapshot.value.empty) ||
+    (correoSnapshot.status === "fulfilled" && !correoSnapshot.value.empty);
+  const existeEnAuth = authResult.status === "fulfilled";
+
+  return existeEnFirestore || existeEnAuth;
+};
+
 const reservarUbicacionResidente = async ({ torre, apartamento, email }) => {
   const locationRef = residentLocationsCollection().doc(getResidentLocationKey(torre, apartamento));
 
@@ -259,6 +280,12 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   ) {
     return res.status(400).json({
       mensaje: `Ya existe un residente registrado en la torre ${torreNormalizada} apartamento ${apartamentoNormalizado}.`,
+    });
+  }
+
+  if (await existeUsuarioConCorreo(emailNormalizado)) {
+    return res.status(400).json({
+      mensaje: "Ya hay un rol registrado con ese correo.",
     });
   }
 
