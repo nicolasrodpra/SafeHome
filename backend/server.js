@@ -312,16 +312,64 @@ const renderQrVisitante = async (req, res) => {
           h2 { margin:0 0 8px; color:#460669; font-size:18px; }
           .copy { color:#665d72; margin:0 0 12px; }
           .vehicle-alert {
-            background:#fff;
-            border:1px solid #eadff1;
-            border-left:6px solid #7a124f;
-            border-radius:14px;
-            box-shadow:0 12px 34px rgba(49, 9, 77, .08);
+            display:flex;
+            gap:12px;
+            align-items:flex-start;
+            background:linear-gradient(135deg, #ffffff 0%, #fbf7fd 100%);
+            border:1px solid rgba(70, 6, 105, .14);
+            border-radius:16px;
+            box-shadow:0 14px 38px rgba(49, 9, 77, .1);
             color:#2c2437;
-            padding:14px 16px;
+            padding:16px;
+            margin:14px 0 18px;
           }
-          .vehicle-alert-title { color:#460669; font-size:15px; font-weight:800; margin:0 0 6px; }
-          .vehicle-alert-copy { color:#6d5f75; font-size:14px; font-weight:600; line-height:1.45; margin:0; }
+          .vehicle-alert-icon {
+            width:42px;
+            height:42px;
+            border-radius:14px;
+            background:#f4e9f8;
+            color:#7a124f;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex:0 0 auto;
+            font-size:22px;
+            font-weight:800;
+          }
+          .vehicle-alert-content { min-width:0; }
+          .vehicle-alert-kicker {
+            display:inline-flex;
+            align-items:center;
+            min-height:24px;
+            padding:0 10px;
+            border-radius:999px;
+            background:#f3e8f8;
+            color:#460669;
+            font-size:11px;
+            font-weight:800;
+            letter-spacing:.04em;
+            text-transform:uppercase;
+            margin-bottom:8px;
+          }
+          .vehicle-alert-title {
+            color:#21182f;
+            font-size:17px;
+            font-weight:800;
+            margin:0 0 6px;
+          }
+          .vehicle-alert-copy {
+            color:#675b73;
+            font-size:14px;
+            font-weight:600;
+            line-height:1.5;
+            margin:0;
+          }
+          .vehicle-alert-note {
+            color:#8a315f;
+            font-size:13px;
+            font-weight:700;
+            margin:8px 0 0;
+          }
           table { width:100%; border-collapse: collapse; }
           td { border-bottom:1px solid #efedf3; padding:9px 6px; font-size:14px; vertical-align: top; }
           td.label { color:#6f647d; width:38%; font-weight:700; }
@@ -339,8 +387,13 @@ const renderQrVisitante = async (req, res) => {
           ${
             parkingAuthorizationError
               ? `<div class="vehicle-alert">
-                  <p class="vehicle-alert-title">Visitante ingresado, vehiculo pendiente</p>
-                  <p class="vehicle-alert-copy">${parkingAuthorizationError}</p>
+                  <div class="vehicle-alert-icon">!</div>
+                  <div class="vehicle-alert-content">
+                    <span class="vehicle-alert-kicker">Parqueadero no disponible</span>
+                    <p class="vehicle-alert-title">Visitante ingresado correctamente</p>
+                    <p class="vehicle-alert-copy">${parkingAuthorizationError}</p>
+                    <p class="vehicle-alert-note">El acceso del visitante queda registrado; el vehiculo no se agrego al modulo de parqueadero.</p>
+                  </div>
                 </div>`
               : ""
           }
