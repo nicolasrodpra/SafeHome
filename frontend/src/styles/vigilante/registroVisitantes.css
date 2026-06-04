@@ -108,26 +108,116 @@
 }
 
 .code-modal {
-  max-width: 460px;
+  max-width: 420px;
+  border-radius: 20px;
+  box-shadow: 0 22px 60px rgba(23, 15, 43, 0.2);
+}
+
+.code-modal .modal-stripe {
+  height: 3px;
+  background: linear-gradient(90deg, #460669 0%, #7f3aa8 100%);
+}
+
+.code-modal .modal-header {
+  align-items: center;
+  gap: 14px;
+  padding: 20px 20px 0;
+}
+
+.code-modal .modal-header-left {
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.code-modal .modal-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: #f2eafa;
+  color: #460669;
+  font-size: 1.1rem;
+  flex: 0 0 auto;
+}
+
+.code-modal .modal-title {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: #21182f;
+}
+
+.code-modal .modal-subtitle {
+  margin-top: 4px;
+  color: #78698b;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.code-modal .modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  flex: 0 0 auto;
 }
 
 .code-form {
   display: grid;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 9px;
+  padding: 18px 20px 20px;
 }
 
 .code-form label {
-  color: #524b61;
-  font-size: 12px;
+  color: #6c607b;
+  font-size: 0.72rem;
   font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .code-form input {
-  min-height: 46px;
-  border-radius: 14px;
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  padding: 0 12px;
-  color: #312a42;
+  min-height: 48px;
+  border-radius: 13px;
+  border: 1px solid rgba(70, 6, 105, 0.12);
+  background: #ffffff;
+  padding: 0 14px;
+  color: #21182f;
+  font-size: 0.9rem;
   font-weight: 700;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.code-form input:focus {
+  border-color: rgba(70, 6, 105, 0.42);
+  box-shadow: 0 0 0 4px rgba(70, 6, 105, 0.08);
+}
+
+.code-form .modal-actions {
+  margin-top: 10px;
+  gap: 10px;
+}
+
+.code-form .btn-cancel,
+.code-form .btn-save {
+  min-height: 44px;
+  border-radius: 13px;
+  font-size: 0.83rem;
+}
+
+.code-form .btn-save {
+  box-shadow: 0 10px 22px rgba(70, 6, 105, 0.18);
+}
+
+@media (max-width: 520px) {
+  .code-modal {
+    max-width: calc(100vw - 28px);
+  }
+
+  .code-modal .modal-header {
+    padding: 18px 18px 0;
+  }
+
+  .code-form {
+    padding: 16px 18px 18px;
+  }
 }
