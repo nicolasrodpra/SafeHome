@@ -72,6 +72,22 @@ const existeUsuarioConCorreo = async (email) => {
   return existeEnFirestore || existeEnAuth;
 };
 
+const existeVigilanteConCedula = async (cedula) => {
+  const cedulaNormalizada = limpiarTexto(cedula);
+
+  if (!cedulaNormalizada) {
+    return false;
+  }
+
+  const snapshot = await usersCollection()
+    .where("rol", "==", "Vigilante")
+    .where("cedula", "==", cedulaNormalizada)
+    .limit(1)
+    .get();
+
+  return !snapshot.empty;
+};
+
 const reservarUbicacionResidente = async ({ torre, apartamento, email }) => {
   const locationRef = residentLocationsCollection().doc(getResidentLocationKey(torre, apartamento));
 
@@ -286,6 +302,12 @@ const registrarUsuario = async (req, res, rolPorDefecto) => {
   if (await existeUsuarioConCorreo(emailNormalizado)) {
     return res.status(400).json({
       mensaje: "Ya hay un rol registrado con ese correo.",
+    });
+  }
+
+  if (rolFinal === "Vigilante" && (await existeVigilanteConCedula(cedulaNormalizada))) {
+    return res.status(400).json({
+      mensaje: "Ya existe un vigilante registrado con esa cedula.",
     });
   }
 
