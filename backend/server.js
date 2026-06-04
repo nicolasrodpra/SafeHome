@@ -84,8 +84,15 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
   const hasVehicle = Boolean(visitorData?.conVehiculo);
   const placa = String(visitorData?.placa || "").trim().toUpperCase();
 
-  if (!hasVehicle || !placa) {
-    return "";
+  if (!hasVehicle) {
+    return { ok: true, parqueadero: "" };
+  }
+
+  if (!placa) {
+    return {
+      ok: false,
+      mensaje: "El visitante tiene vehiculo registrado, pero no tiene placa. No se registro el vehiculo.",
+    };
   }
 
   const vehiculosRef = admin.firestore().collection("vehiculos");
@@ -95,7 +102,10 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
     .get();
 
   if (!alreadyLinkedSnapshot.empty) {
-    return String(alreadyLinkedSnapshot.docs[0].data()?.parqueadero || "").trim();
+    return {
+      ok: true,
+      parqueadero: String(alreadyLinkedSnapshot.docs[0].data()?.parqueadero || "").trim(),
+    };
   }
 
   const activePlateSnapshot = await vehiculosRef.where("placa", "==", placa).get();
@@ -105,7 +115,10 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
   });
 
   if (hasActivePlate) {
-    return "";
+    return {
+      ok: false,
+      mensaje: `La placa ${placa} ya tiene un vehiculo activo. No se registro el vehiculo.`,
+    };
   }
 
   const tipoVehiculo = normalizeQrVehicleType(visitorData?.tipoVehiculo || visitorData?.tipo);
@@ -118,7 +131,10 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
       : await assignAvailableParking(tipoVehiculo);
 
   if (!parqueadero) {
-    return "";
+    return {
+      ok: false,
+      mensaje: `No hay cupos de parqueadero disponibles para ${tipoVehiculo.toLowerCase()}s. No se registro el vehiculo.`,
+    };
   }
 
   const now = new Date();
@@ -147,7 +163,7 @@ const registerVisitorVehicleIfNeeded = async ({ visitorId, visitorData }) => {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  return parqueadero;
+  return { ok: true, parqueadero };
 };
 
 const getParkingCapacity = async () => {
@@ -225,28 +241,39 @@ const renderQrVisitante = async (req, res) => {
   const safe = (value) => String(value || "").trim();
   const yesNo = (value) => (value ? "Si" : "No");
   const visitanteId = safe(parsedPayload.visitanteId);
+  let parkingAuthorizationError = "";
   if (visitanteId) {
     try {
       const visitorDoc = await admin.firestore().collection("visitantes").doc(visitanteId).get();
       if (visitorDoc.exists) {
         const visitorData = visitorDoc.data() || {};
         if ((visitorData.estado || visitorData.status) === "Pendiente") {
+          const vehicleResult = await registerVisitorVehicleIfNeeded({
+            visitorId: visitanteId,
+            visitorData,
+          });
+
+          if (!vehicleResult.ok) {
+            parkingAuthorizationError = vehicleResult.mensaje;
+          }
+
           await visitorDoc.ref.update({
             estado: "Ingreso",
             status: "Ingreso",
             horaIngreso: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
+        } else {
+          const vehicleResult = await registerVisitorVehicleIfNeeded({
+            visitorId: visitanteId,
+            visitorData,
+          });
+          if (!vehicleResult.ok) {
+            parkingAuthorizationError = vehicleResult.mensaje;
+          }
         }
         const updatedVisitorDoc = await visitorDoc.ref.get();
-        parsedPayload = { ...updatedVisitorDoc.data(), ...parsedPayload, estado: "Ingreso", status: "Ingreso" };
-        const assignedParking = await registerVisitorVehicleIfNeeded({
-          visitorId: visitanteId,
-          visitorData: parsedPayload,
-        });
-        if (assignedParking) {
-          parsedPayload.parqueadero = assignedParking;
-        }
+        parsedPayload = { ...parsedPayload, ...updatedVisitorDoc.data() };
       }
     } catch (error) {
       // Si falla la lectura, seguimos mostrando la informacion incluida en el QR.
@@ -284,6 +311,17 @@ const renderQrVisitante = async (req, res) => {
           h1 { margin:0 0 6px; color:#460669; font-size:24px; }
           h2 { margin:0 0 8px; color:#460669; font-size:18px; }
           .copy { color:#665d72; margin:0 0 12px; }
+          .vehicle-alert {
+            background:#fff;
+            border:1px solid #eadff1;
+            border-left:6px solid #7a124f;
+            border-radius:14px;
+            box-shadow:0 12px 34px rgba(49, 9, 77, .08);
+            color:#2c2437;
+            padding:14px 16px;
+          }
+          .vehicle-alert-title { color:#460669; font-size:15px; font-weight:800; margin:0 0 6px; }
+          .vehicle-alert-copy { color:#6d5f75; font-size:14px; font-weight:600; line-height:1.45; margin:0; }
           table { width:100%; border-collapse: collapse; }
           td { border-bottom:1px solid #efedf3; padding:9px 6px; font-size:14px; vertical-align: top; }
           td.label { color:#6f647d; width:38%; font-weight:700; }
@@ -298,6 +336,14 @@ const renderQrVisitante = async (req, res) => {
             <p class="copy">Informacion generada desde el QR de ingreso.</p>
             <span class="badge">Codigo: ${safe(parsedPayload.codigoAcceso) || "N/A"}</span>
           </div>
+          ${
+            parkingAuthorizationError
+              ? `<div class="vehicle-alert">
+                  <p class="vehicle-alert-title">Visitante ingresado, vehiculo pendiente</p>
+                  <p class="vehicle-alert-copy">${parkingAuthorizationError}</p>
+                </div>`
+              : ""
+          }
 
           <div class="card">
             <h2>Datos del visitante</h2>

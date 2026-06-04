@@ -131,23 +131,6 @@ const crearVisitante = async (req, res) => {
   }
 
   try {
-    if (visitante.conVehiculo) {
-      const tipoVehiculo = normalizarTipoVehiculoVisitante(visitante.tipoVehiculo);
-      const parqueaderoSolicitado = normalizeText(visitante.parqueadero);
-      const parqueaderoDisponible =
-        parqueaderoSolicitado && (await parqueaderoDisponibleParaTipo(parqueaderoSolicitado, tipoVehiculo))
-          ? parqueaderoSolicitado
-          : await asignarParqueaderoDisponible(tipoVehiculo);
-
-      if (!parqueaderoDisponible) {
-        return res.status(400).json({
-          mensaje: `No hay cupos de parqueadero disponibles para ${tipoVehiculo.toLowerCase()}s. No se genero codigo de acceso.`,
-        });
-      }
-
-      visitante.parqueadero = parqueaderoDisponible;
-    }
-
     visitante.codigoAcceso =
       visitante.codigoAcceso ||
       `VST-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -207,23 +190,6 @@ const actualizarVisitante = async (req, res) => {
 
     if (mensajeValidacion) {
       return res.status(400).json({ mensaje: mensajeValidacion });
-    }
-
-    if (visitante.conVehiculo) {
-      const tipoVehiculo = normalizarTipoVehiculoVisitante(visitante.tipoVehiculo);
-      const parqueaderoSolicitado = normalizeText(visitante.parqueadero);
-      const parqueaderoDisponible =
-        parqueaderoSolicitado && (await parqueaderoDisponibleParaTipo(parqueaderoSolicitado, tipoVehiculo))
-          ? parqueaderoSolicitado
-          : await asignarParqueaderoDisponible(tipoVehiculo);
-
-      if (!parqueaderoDisponible) {
-        return res.status(400).json({
-          mensaje: `No hay cupos de parqueadero disponibles para ${tipoVehiculo.toLowerCase()}s. No se actualizo el visitante.`,
-        });
-      }
-
-      visitante.parqueadero = parqueaderoDisponible;
     }
 
     await docRef.update({
@@ -305,13 +271,16 @@ const parqueaderoDisponibleParaTipo = async (parqueadero, tipoVehiculo) => {
 
 const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
   if (!visitante?.conVehiculo) {
-    return;
+    return { ok: true, parqueadero: "" };
   }
 
   const placa = normalizeText(visitante.placa).toUpperCase();
 
   if (!placa) {
-    return;
+    return {
+      ok: false,
+      mensaje: "El visitante tiene vehiculo registrado, pero no tiene placa. No se registro el vehiculo.",
+    };
   }
 
   const linkedSnapshot = await vehiculosCollection()
@@ -320,14 +289,20 @@ const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
     .get();
 
   if (!linkedSnapshot.empty) {
-    return;
+    return {
+      ok: true,
+      parqueadero: normalizeText(linkedSnapshot.docs[0].data()?.parqueadero),
+    };
   }
 
   const activePlateSnapshot = await vehiculosCollection().where("placa", "==", placa).get();
   const hasActivePlate = activePlateSnapshot.docs.some((snapshotDoc) => snapshotDoc.data()?.estado !== "Salio");
 
   if (hasActivePlate) {
-    return;
+    return {
+      ok: false,
+      mensaje: `La placa ${placa} ya tiene un vehiculo activo. No se registro el vehiculo.`,
+    };
   }
 
   const tipoVehiculo = normalizarTipoVehiculoVisitante(visitante.tipoVehiculo || visitante.tipo);
@@ -338,7 +313,10 @@ const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
       : await asignarParqueaderoDisponible(tipoVehiculo);
 
   if (!parqueadero) {
-    return;
+    return {
+      ok: false,
+      mensaje: `No hay cupos de parqueadero disponibles para ${tipoVehiculo.toLowerCase()}s. No se registro el vehiculo.`,
+    };
   }
 
   const ingresoDate = new Date();
@@ -366,6 +344,8 @@ const crearVehiculoDesdeVisitante = async ({ visitanteId, visitante }) => {
     parqueadero,
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
+
+  return { ok: true, parqueadero };
 };
 
 const asignarParqueaderoDisponible = async (tipoVehiculo = "Moto") => {
@@ -407,9 +387,20 @@ const ingresarVisitantePorCodigo = async (req, res) => {
     }
 
     const currentDoc = snapshot.docs[0];
-    const estadoActual = currentDoc.data()?.estado || currentDoc.data()?.status || ESTADO_PENDIENTE;
+    const currentData = currentDoc.data() || {};
+    const estadoActual = currentData.estado || currentData.status || ESTADO_PENDIENTE;
+    let advertenciaVehiculo = "";
 
     if (estadoActual !== ESTADO_INGRESO) {
+      const resultadoVehiculo = await crearVehiculoDesdeVisitante({
+        visitanteId: currentDoc.id,
+        visitante: currentData,
+      });
+
+      if (!resultadoVehiculo.ok) {
+        advertenciaVehiculo = resultadoVehiculo.mensaje;
+      }
+
       await currentDoc.ref.update({
         estado: ESTADO_INGRESO,
         status: ESTADO_INGRESO,
@@ -419,13 +410,10 @@ const ingresarVisitantePorCodigo = async (req, res) => {
     }
 
     const updatedDoc = await currentDoc.ref.get();
-    await crearVehiculoDesdeVisitante({
-      visitanteId: currentDoc.id,
-      visitante: updatedDoc.data() || {},
-    });
 
     return res.status(200).json({
       mensaje: estadoActual === ESTADO_INGRESO ? "El visitante ya habia ingresado." : "Visitante ingresado",
+      advertenciaVehiculo,
       visitante: mapVisitante(updatedDoc),
     });
   } catch (error) {
