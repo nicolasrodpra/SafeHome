@@ -1,7 +1,6 @@
-const fs = require("fs");
-const path = require("path");
 const admin = require("../../config/firebaseAdmin");
 const { formatDateLabel, formatTimeLabel, toDate } = require("../../utils/firestoreDates");
+const { deleteStorageFile, uploadBufferToStorage } = require("../../utils/firebaseStorage");
 const { normalizeComparableText, normalizeText } = require("../../utils/text");
 const { parseBoolean } = require("../../utils/validation");
 
@@ -13,12 +12,15 @@ const IMAGE_MIME_EXTENSIONS = {
   "image/webp": ".webp",
   "image/gif": ".gif",
 };
-const comunicadosUploadsDir = path.join(__dirname, "..", "..", "uploads", "comunicados");
 
 const comunicadosCollection = () => admin.firestore().collection("comunicados");
 
-const ensureUploadsDir = () => {
-  fs.mkdirSync(comunicadosUploadsDir, { recursive: true });
+const cleanupStorageFile = async (filePath) => {
+  try {
+    await deleteStorageFile(filePath);
+  } catch (error) {
+    console.warn("No se pudo eliminar el archivo anterior del comunicado:", error.message);
+  }
 };
 
 const sanitizeFileName = (fileName = "imagen") =>
@@ -28,24 +30,7 @@ const sanitizeFileName = (fileName = "imagen") =>
     .replace(/[^\w.-]/g, "")
     .toLowerCase();
 
-const getComunicadoImageUrl = (req, storedFileName) =>
-  storedFileName
-    ? `${req.protocol}://${req.get("host")}/uploads/comunicados/${encodeURIComponent(storedFileName)}`
-    : "";
-
-const removeStoredImage = (storedFileName) => {
-  if (!storedFileName) {
-    return;
-  }
-
-  const imagePath = path.join(comunicadosUploadsDir, storedFileName);
-
-  if (fs.existsSync(imagePath)) {
-    fs.unlinkSync(imagePath);
-  }
-};
-
-const parseImagePayload = ({ imageData, imageName }) => {
+const parseImagePayload = async ({ imageData, imageName }) => {
   const normalizedImageData = normalizeText(imageData);
   const normalizedImageName = normalizeText(imageName);
 
@@ -79,13 +64,18 @@ const parseImagePayload = ({ imageData, imageName }) => {
   }
 
   const storedFileName = `${Date.now()}-${sanitizeFileName(normalizedImageName || `comunicado${extension}`)}`;
-
-  ensureUploadsDir();
-  fs.writeFileSync(path.join(comunicadosUploadsDir, storedFileName), buffer);
+  const storagePath = `comunicados/${storedFileName}`;
+  const uploadedImage = await uploadBufferToStorage({
+    filePath: storagePath,
+    buffer,
+    contentType: mimeType,
+  });
 
   return {
     imageName: normalizedImageName || storedFileName,
     imageStoredFileName: storedFileName,
+    imageStoragePath: uploadedImage.storagePath,
+    imageUrl: uploadedImage.downloadUrl,
   };
 };
 
@@ -104,7 +94,7 @@ const sortByFechaDesc = (firstItem, secondItem) => {
   return secondDate - firstDate;
 };
 
-const mapComunicado = (snapshotDoc, req) => {
+const mapComunicado = (snapshotDoc) => {
   const data = snapshotDoc.data() || {};
   const createdAt = toDate(data.fecha || data.createdAt);
 
@@ -115,7 +105,8 @@ const mapComunicado = (snapshotDoc, req) => {
     senderRole: resolveSenderRole(data.senderRole || data.rol),
     senderLabel: normalizeText(data.senderLabel) || getSenderLabel(data.senderRole || data.rol),
     imageName: normalizeText(data.imageName),
-    imageUrl: getComunicadoImageUrl(req, normalizeText(data.imageStoredFileName)),
+    imageUrl: normalizeText(data.imageUrl),
+    imageStoragePath: normalizeText(data.imageStoragePath),
     fecha: formatDateLabel(createdAt),
     hora: formatTimeLabel(createdAt),
     fechaCompleta: createdAt?.toISOString?.() || null,
@@ -130,6 +121,8 @@ const buildComunicadoPayload = ({
   senderLabel,
   imageName,
   imageStoredFileName,
+  imageStoragePath,
+  imageUrl,
 }) => ({
   asunto,
   mensaje,
@@ -137,6 +130,8 @@ const buildComunicadoPayload = ({
   senderLabel,
   imageName: normalizeText(imageName),
   imageStoredFileName: normalizeText(imageStoredFileName),
+  imageStoragePath: normalizeText(imageStoragePath),
+  imageUrl: normalizeText(imageUrl),
   fecha: admin.firestore.FieldValue.serverTimestamp(),
   createdAt: admin.firestore.FieldValue.serverTimestamp(),
   updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -145,7 +140,7 @@ const buildComunicadoPayload = ({
 const listarComunicados = async (req, res) => {
   try {
     const snapshot = await comunicadosCollection().get();
-    const comunicados = snapshot.docs.map((docSnapshot) => mapComunicado(docSnapshot, req)).sort(sortByFechaDesc);
+    const comunicados = snapshot.docs.map((docSnapshot) => mapComunicado(docSnapshot)).sort(sortByFechaDesc);
 
     return res.status(200).json(comunicados.map(({ createdAt, ...comunicado }) => comunicado));
   } catch (error) {
@@ -168,7 +163,7 @@ const crearComunicado = async (req, res) => {
   let storedImage = null;
 
   try {
-    storedImage = parseImagePayload({
+    storedImage = await parseImagePayload({
       imageData: req.body?.imageData,
       imageName: req.body?.imageName,
     });
@@ -181,6 +176,8 @@ const crearComunicado = async (req, res) => {
         senderLabel,
         imageName: storedImage?.imageName || "",
         imageStoredFileName: storedImage?.imageStoredFileName || "",
+        imageStoragePath: storedImage?.imageStoragePath || "",
+        imageUrl: storedImage?.imageUrl || "",
       })
     );
 
@@ -193,11 +190,11 @@ const crearComunicado = async (req, res) => {
         senderRole,
         senderLabel,
         imageName: storedImage?.imageName || "",
-        imageUrl: getComunicadoImageUrl(req, storedImage?.imageStoredFileName || ""),
+        imageUrl: storedImage?.imageUrl || "",
       },
     });
   } catch (error) {
-    removeStoredImage(storedImage?.imageStoredFileName);
+    await deleteStorageFile(storedImage?.imageStoragePath);
     return res.status(error.statusCode || 500).json({ mensaje: error.message });
   }
 };
@@ -225,9 +222,9 @@ const actualizarComunicado = async (req, res) => {
     }
 
     const currentData = snapshot.data() || {};
-    const currentStoredImage = normalizeText(currentData.imageStoredFileName);
+    const currentStoragePath = normalizeText(currentData.imageStoragePath);
 
-    nextStoredImage = parseImagePayload({
+    nextStoredImage = await parseImagePayload({
       imageData: req.body?.imageData,
       imageName: req.body?.imageName,
     });
@@ -241,19 +238,23 @@ const actualizarComunicado = async (req, res) => {
     if (nextStoredImage) {
       payload.imageName = nextStoredImage.imageName;
       payload.imageStoredFileName = nextStoredImage.imageStoredFileName;
+      payload.imageStoragePath = nextStoredImage.imageStoragePath;
+      payload.imageUrl = nextStoredImage.imageUrl;
     } else if (removeImage) {
       payload.imageName = "";
       payload.imageStoredFileName = "";
+      payload.imageStoragePath = "";
+      payload.imageUrl = "";
     }
 
     await comunicadoRef.update(payload);
 
-    if (nextStoredImage && currentStoredImage) {
-      removeStoredImage(currentStoredImage);
+    if (nextStoredImage && currentStoragePath) {
+      await cleanupStorageFile(currentStoragePath);
     }
 
-    if (removeImage && currentStoredImage) {
-      removeStoredImage(currentStoredImage);
+    if (removeImage && currentStoragePath) {
+      await cleanupStorageFile(currentStoragePath);
     }
 
     return res.status(200).json({
@@ -263,14 +264,11 @@ const actualizarComunicado = async (req, res) => {
         asunto,
         mensaje,
         imageName: payload.imageName || normalizeText(currentData.imageName),
-        imageUrl: getComunicadoImageUrl(
-          req,
-          payload.imageStoredFileName || (removeImage ? "" : currentStoredImage)
-        ),
+        imageUrl: payload.imageUrl || (removeImage ? "" : normalizeText(currentData.imageUrl)),
       },
     });
   } catch (error) {
-    removeStoredImage(nextStoredImage?.imageStoredFileName);
+    await deleteStorageFile(nextStoredImage?.imageStoragePath);
     return res.status(error.statusCode || 500).json({ mensaje: error.message });
   }
 };
@@ -286,7 +284,7 @@ const eliminarComunicado = async (req, res) => {
       return res.status(404).json({ mensaje: "No se encontro el comunicado solicitado." });
     }
 
-    removeStoredImage(normalizeText(snapshot.data()?.imageStoredFileName));
+    await deleteStorageFile(normalizeText(snapshot.data()?.imageStoragePath));
     await comunicadoRef.delete();
     return res.status(200).json({ mensaje: "Comunicado eliminado correctamente." });
   } catch (error) {

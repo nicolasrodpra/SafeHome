@@ -1,14 +1,11 @@
 // Controlador del asistente virtual.
 // Construye contexto según el rol, intenta consultar un modelo externo
 // y si falla usa respuestas locales guiadas por módulo.
-const fs = require("fs");
 const https = require("https");
-const path = require("path");
 const admin = require("../../config/firebaseAdmin");
 const { normalizeComparableText, normalizeText } = require("../../utils/text");
 
 const MAX_ITEMS_PER_COLLECTION = 6;
-const manualMetadataPath = path.join(__dirname, "..", "..", "data", "manualConvivencia.json");
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
@@ -76,20 +73,22 @@ const countTodayFromField = async (collectionName, fieldName = "fecha") => {
   }).length;
 };
 
-const readManualMetadata = () => {
+const readManualMetadata = async () => {
   try {
-    if (!fs.existsSync(manualMetadataPath)) {
+    const snapshot = await collection("appSettings").doc("manualConvivencia").get();
+
+    if (!snapshot.exists) {
       return null;
     }
 
-    return JSON.parse(fs.readFileSync(manualMetadataPath, "utf8"));
+    return snapshot.data();
   } catch (error) {
     return null;
   }
 };
 
-const buildManualContext = () => {
-  const metadata = readManualMetadata();
+const buildManualContext = async () => {
+  const metadata = await readManualMetadata();
 
   if (!metadata) {
     return {
@@ -102,7 +101,10 @@ const buildManualContext = () => {
     disponible: true,
     archivo: metadata.fileName,
     actualizadoPor: metadata.updatedBy || "Administrador",
-    actualizadoEn: metadata.updatedAt || "",
+    actualizadoEn:
+      typeof metadata.updatedAt?.toDate === "function"
+        ? metadata.updatedAt.toDate().toISOString()
+        : metadata.updatedAt || "",
     nota:
       "El sistema solo tiene acceso al PDF y a sus metadatos. Para reglas exactas del manual debes consultar el documento publicado.",
   };
@@ -218,7 +220,7 @@ const buildResidentContext = async (session) => {
       apartamento: session.apartamento,
       email: session.email,
     },
-    manual: buildManualContext(),
+    manual: await buildManualContext(),
     comunicados,
     mensajes: mensajes.filter((item) => item.residentId === session.uid),
     reservas: reservas.filter((item) => item.userId === session.uid),

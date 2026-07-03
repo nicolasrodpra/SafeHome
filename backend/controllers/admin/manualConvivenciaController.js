@@ -1,86 +1,69 @@
 // Controlador del manual de convivencia.
-// Administra el PDF en disco y un archivo de metadatos para saber
-// cual es el manual publicado actualmente.
-const fs = require("fs");
-const path = require("path");
+// Guarda el PDF en Firebase Storage y sus metadatos en Firestore.
+const admin = require("../../config/firebaseAdmin");
+const { deleteStorageFile, uploadBufferToStorage } = require("../../utils/firebaseStorage");
 
-const uploadsDir = path.join(__dirname, "..", "..", "uploads", "manual-convivencia");
-const dataDir = path.join(__dirname, "..", "..", "data");
-const metadataPath = path.join(dataDir, "manualConvivencia.json");
+const manualDoc = () => admin.firestore().collection("appSettings").doc("manualConvivencia");
 const maxFileSize = 10 * 1024 * 1024;
 
-// Este paso crea las carpetas necesarias antes de guardar el PDF
-// y su archivo de metadatos.
-const ensureDirectories = () => {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  fs.mkdirSync(dataDir, { recursive: true });
+const cleanupStorageFile = async (filePath) => {
+  try {
+    await deleteStorageFile(filePath);
+  } catch (error) {
+    console.warn("No se pudo eliminar el archivo anterior del manual:", error.message);
+  }
 };
 
-// Limpiamos el nombre del archivo para evitar espacios raros
-// o caracteres que puedan dar problemas al guardarlo.
 const sanitizeFileName = (fileName = "manual.pdf") =>
-  fileName.replace(/\s+/g, "-").replace(/[^\w.-]/g, "").toLowerCase();
+  String(fileName)
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w.-]/g, "")
+    .toLowerCase();
 
-// Con esta URL el frontend puede abrir el manual usando la ruta pública del servidor.
-const getPublicUrl = (req, fileName) =>
-  `${req.protocol}://${req.get("host")}/uploads/manual-convivencia/${encodeURIComponent(fileName)}`;
+const readMetadata = async () => {
+  const snapshot = await manualDoc().get();
 
-// Aquí leemos los metadatos del manual actual. Si algo falla,
-// devolvemos `null` para que la app entienda que no hay manual publicado.
-const readMetadata = () => {
-  try {
-    if (!fs.existsSync(metadataPath)) {
-      return null;
-    }
-
-    return JSON.parse(fs.readFileSync(metadataPath, "utf8"));
-  } catch (error) {
+  if (!snapshot.exists) {
     return null;
   }
+
+  return snapshot.data();
 };
 
-// Guardamos un pequeño resumen del archivo para no tener que leer el PDF
-// completo cada vez que el frontend pregunta por el manual.
-const writeMetadata = (metadata) => {
-  ensureDirectories();
-  fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2), "utf8");
-};
-
-// Antes de subir una nueva versión eliminamos la anterior
-// para que no queden PDFs viejos ocupando espacio.
-const removeCurrentFile = () => {
-  const currentMetadata = readMetadata();
-
-  if (!currentMetadata?.storedFileName) {
-    return;
-  }
-
-  const currentFilePath = path.join(uploadsDir, currentMetadata.storedFileName);
-
-  if (fs.existsSync(currentFilePath)) {
-    fs.unlinkSync(currentFilePath);
-  }
-};
-
-// Esta ruta devuelve la información del manual actual, si existe.
-const getManualConvivencia = (req, res) => {
-  const metadata = readMetadata();
-
+const mapMetadata = (metadata) => {
   if (!metadata) {
-    return res.json({ manual: null });
+    return null;
   }
 
-  return res.json({
-    manual: {
-      ...metadata,
-      url: getPublicUrl(req, metadata.storedFileName),
-    },
-  });
+  return {
+    fileName: metadata.fileName || "",
+    fileSize: metadata.fileSize || 0,
+    storedFileName: metadata.storedFileName || "",
+    storagePath: metadata.storagePath || "",
+    url: metadata.url || "",
+    updatedBy: metadata.updatedBy || "Administrador",
+    updatedByEmail: metadata.updatedByEmail || "",
+    updatedAt:
+      typeof metadata.updatedAt?.toDate === "function"
+        ? metadata.updatedAt.toDate().toISOString()
+        : metadata.updatedAt || "",
+  };
 };
 
-// Esta función recibe el PDF en base64, valida su tamaño y formato,
-// lo guarda en disco y actualiza sus metadatos.
-const uploadManualConvivencia = (req, res) => {
+const getManualConvivencia = async (req, res) => {
+  try {
+    const metadata = await readMetadata();
+
+    return res.json({
+      manual: mapMetadata(metadata),
+    });
+  } catch (error) {
+    return res.status(500).json({ mensaje: error.message });
+  }
+};
+
+const uploadManualConvivencia = async (req, res) => {
   const { fileName, fileData, updatedBy, updatedByEmail } = req.body || {};
 
   if (!fileName || !fileData) {
@@ -94,53 +77,62 @@ const uploadManualConvivencia = (req, res) => {
   const match = String(fileData).match(/^data:application\/pdf;base64,(.+)$/);
 
   if (!match) {
-    return res.status(400).json({ mensaje: "El archivo enviado no tiene un formato PDF válido." });
+    return res.status(400).json({ mensaje: "El archivo enviado no tiene un formato PDF valido." });
   }
 
   const buffer = Buffer.from(match[1], "base64");
 
   if (buffer.length > maxFileSize) {
-    return res.status(400).json({ mensaje: "El archivo supera el límite de 10 MB." });
+    return res.status(400).json({ mensaje: "El archivo supera el limite de 10 MB." });
   }
 
-  ensureDirectories();
-  removeCurrentFile();
-
+  const currentMetadata = await readMetadata();
   const storedFileName = `${Date.now()}-${sanitizeFileName(fileName)}`;
-  const destinationPath = path.join(uploadsDir, storedFileName);
-
-  fs.writeFileSync(destinationPath, buffer);
+  const uploadedManual = await uploadBufferToStorage({
+    filePath: `manual-convivencia/${storedFileName}`,
+    buffer,
+    contentType: "application/pdf",
+  });
 
   const metadata = {
     fileName,
     fileSize: buffer.length,
     storedFileName,
+    storagePath: uploadedManual.storagePath,
+    url: uploadedManual.downloadUrl,
     updatedBy: updatedBy || "Administrador",
     updatedByEmail: updatedByEmail || "",
-    updatedAt: new Date().toISOString(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  writeMetadata(metadata);
+  try {
+    await manualDoc().set(metadata);
+    await cleanupStorageFile(currentMetadata?.storagePath);
 
-  return res.status(201).json({
-    mensaje: "Manual publicado correctamente.",
-    manual: {
-      ...metadata,
-      url: getPublicUrl(req, storedFileName),
-    },
-  });
+    return res.status(201).json({
+      mensaje: "Manual publicado correctamente.",
+      manual: {
+        ...mapMetadata(metadata),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    await deleteStorageFile(uploadedManual.storagePath);
+    return res.status(500).json({ mensaje: error.message });
+  }
 };
 
-// Aquí eliminamos tanto el archivo físico como los metadatos
-// para dejar el módulo sin manual publicado.
-const deleteManualConvivencia = (req, res) => {
-  removeCurrentFile();
+const deleteManualConvivencia = async (req, res) => {
+  try {
+    const currentMetadata = await readMetadata();
 
-  if (fs.existsSync(metadataPath)) {
-    fs.unlinkSync(metadataPath);
+    await deleteStorageFile(currentMetadata?.storagePath);
+    await manualDoc().delete();
+
+    return res.json({ mensaje: "Manual eliminado correctamente.", manual: null });
+  } catch (error) {
+    return res.status(500).json({ mensaje: error.message });
   }
-
-  return res.json({ mensaje: "Manual eliminado correctamente.", manual: null });
 };
 
 module.exports = {
